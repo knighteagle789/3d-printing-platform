@@ -1,0 +1,41 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+.vs/
+.vscode/
+*.log
+
+# Node
+node_modules/
+.next/
+out/
+.env.local
+.env.production.local
+npm-debug.log*
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Azure
+local.settings.json
+.azure/
+
+# Secrets
+*.pfx
+*.key
+appsettings.Development.json
