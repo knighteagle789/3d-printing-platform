@@ -1,0 +1,6 @@
+@PrintHub.API_HostAddress = http://localhost:5267
+
+GET {{PrintHub.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
