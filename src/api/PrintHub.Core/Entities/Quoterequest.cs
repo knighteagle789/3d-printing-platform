@@ -33,9 +33,93 @@ namespace PrintHub.Core.Entities
         /// <summary>
         /// Customer's budget range (optional)
         /// </summary>
+        public BudgetRange? BudgetRangeOption { get; set; }
         public decimal? BudgetMin { get; set; }
         
         public decimal? BudgetMax { get; set; }
+
+        /// <summary>
+        /// Display the budget as a user-friendly string based on the provided values
+        /// </summary>
+        /// <returns></returns>
+        public string GetBudgetDisplay()
+        {
+            // if custom budget specified
+            if (BudgetMin.HasValue || BudgetMax.HasValue)
+            {
+                if (BudgetMin.HasValue && BudgetMax.HasValue)
+                {
+                    return $"${BudgetMin.Value:F2} - ${BudgetMax.Value:F2}";
+                }
+                else if (BudgetMax.HasValue)
+                {
+                    return $"Up to ${BudgetMax.Value:F2}";
+                }
+                else // BudgetMax.HasValue
+                {
+                    return $"At least ${BudgetMin.Value:F2}";
+                }
+            }
+
+            return BudgetRangeOption switch
+            {
+                BudgetRange.Under50 => "Under $50",
+                BudgetRange.Between50And100 => "$50 - $100",
+                BudgetRange.Between100And200 => "$100 - $200",
+                BudgetRange.Between200And500 => "$200 - $500",
+                BudgetRange.Over500 => "Over $500",
+                BudgetRange.NoPreference => "No Preference",
+                _ => "Not Specified"
+            };
+        }
+
+        /// <summary>
+        /// Check if a quote price is within budget
+        /// </summary>
+        public bool IsWithinBudget(decimal quotePrice)
+        {
+            // If custom max specified, use it
+            if (BudgetMax.HasValue)
+            {
+                return quotePrice <= BudgetMax.Value;
+            }
+
+            //otherwise check enum range
+            return BudgetRangeOption switch
+            {
+                BudgetRange.Under50 => quotePrice <= 50m,           // up to 50
+                BudgetRange.Between50And100 => quotePrice <= 100m,  // up to 100
+                BudgetRange.Between100And200 => quotePrice <= 200m, // up to 200
+                BudgetRange.Between200And500 => quotePrice <= 500m, // up to 500
+                BudgetRange.Over500 => true,                        // No upper limit
+                BudgetRange.NoPreference => true,
+                null => true,
+                _ => true
+            };
+        }
+
+        /// <summary>
+        /// Get maximum budget value for filtering/sorting
+        /// </summary>
+        public decimal? GetMaxBudget()
+        {
+            if (BudgetMax.HasValue)
+            {
+                return BudgetMax.Value;
+            }
+
+            return BudgetRangeOption switch
+            {
+                BudgetRange.Under50 => 50m,
+                BudgetRange.Between50And100 => 100m,
+                BudgetRange.Between100And200 => 200m,
+                BudgetRange.Between200And500 => 500m,
+                BudgetRange.Over500 => null, // No upper limit
+                BudgetRange.NoPreference => null,
+                null => null,
+                _ => null
+            };
+        }
         
         public DateTime CreatedAt { get; set; }
         
@@ -106,5 +190,18 @@ namespace PrintHub.Core.Entities
         Declined,       // Customer declined quote
         Expired,        // Quote expired without acceptance
         Cancelled       // Request cancelled
+    }
+
+    /// <summary>
+    /// Customer's budget range for the quote request
+    /// </summary>
+    public enum BudgetRange
+    {
+        Under50,
+        Between50And100,
+        Between100And200,
+        Between200And500,
+        Over500,
+        NoPreference
     }
 }
