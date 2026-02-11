@@ -16,7 +16,7 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.Property(p => p.DetailedDescription).HasMaxLength(5000);
             builder.Property(p => p.ImageUrl).IsRequired().HasMaxLength(1000);
             builder.Property(p => p.AdditionalImages).HasColumnType("jsonb");
-            builder.Property(p => p.Tags).HasMaxLength(500);
+            builder.Property(p => p.Tags).HasColumnType("text[]");
             builder.Property(p => p.Category).IsRequired().HasConversion<string>().HasMaxLength(50);
             builder.Property(p => p.ProjectDetails).HasColumnType("jsonb");
             builder.Property(p => p.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -24,6 +24,8 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.HasIndex(p => p.IsFeatured);
             builder.HasIndex(p => p.Category);
             builder.HasIndex(p => p.IsPublished);
+            builder.HasIndex(p => p.Tags)
+                .HasMethod("GIN");
 
             builder.HasOne(p => p.Material)
                 .WithMany()
@@ -45,7 +47,7 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.Property(b => b.Content).IsRequired();
             builder.Property(b => b.FeaturedImageUrl).HasMaxLength(1000);
             builder.Property(b => b.Category).IsRequired().HasConversion<string>().HasMaxLength(50);
-            builder.Property(b => b.Tags).HasMaxLength(500);
+            builder.Property(b => b.Tags).HasColumnType("text[]");
             builder.Property(b => b.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.HasIndex(b => b.Slug).IsUnique();
@@ -53,6 +55,8 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.HasIndex(b => b.Category);
             builder.HasIndex(b => b.IsPublished);
             builder.HasIndex(b => b.PublishedAt);
+            builder.HasIndex(b => b.Tags)
+                .HasMethod("GIN");
 
             builder.HasOne(b => b.Author)
                 .WithMany()

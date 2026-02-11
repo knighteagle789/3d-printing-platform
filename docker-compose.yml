@@ -26,7 +26,7 @@ services:
 
   # pgAdmin - Database Management UI (Optional)
   pgadmin:
-    image: dpage/pgadmin4:8.2
+    image: dpage/pgadmin4:latest
     container_name: printhub-pgadmin
     restart: unless-stopped
     environment:

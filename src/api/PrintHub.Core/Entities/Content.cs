@@ -29,7 +29,7 @@ namespace PrintHub.Core.Entities
         /// <summary>
         /// Tags for categorization (comma-separated or JSON)
         /// </summary>
-        public string? Tags { get; set; }
+        public string[]? Tags { get; set; }
         
         public Guid? MaterialId { get; set; }
         
@@ -97,7 +97,7 @@ namespace PrintHub.Core.Entities
         /// <summary>
         /// Tags for categorization (comma-separated or JSON)
         /// </summary>
-        public string? Tags { get; set; }
+        public string[]? Tags { get; set; }
         
         public bool IsPublished { get; set; }
         
