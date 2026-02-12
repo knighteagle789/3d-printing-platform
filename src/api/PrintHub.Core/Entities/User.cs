@@ -66,7 +66,7 @@ namespace PrintHub.Core.Entities
     {
         Customer,
         Admin,
-        Operator,
+        Staff,
         Manager
     }
 }

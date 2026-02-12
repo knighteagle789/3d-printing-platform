@@ -1,132 +1,199 @@
 using Microsoft.EntityFrameworkCore;
-using PrintHub.Infrastructure.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Serilog;
+using PrintHub.Infrastructure.Data;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Configure Serilog
+// ─── Bootstrap Logger ─────────────────────────────────────────────────────────
+// Set up temporary logger BEFORE builder so startup errors are captured
 Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.File("logs/printhub-.txt", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
+    .CreateBootstrapLogger();
 
-builder.Host.UseSerilog();
-
-// Add services to the container
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Database Configuration
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+try
 {
-    options.UseNpgsql(connectionString, npgsqlOptions =>
+    Log.Information("Starting PrintHub API...");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // ─── Serilog ──────────────────────────────────────────────────────────────
+    // YOUR VERSION: File logging + log context enrichment (kept!)
+    Log.Logger = new LoggerConfiguration()
+        .ReadFrom.Configuration(builder.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File("logs/printhub-.txt", rollingInterval: RollingInterval.Day)
+        .CreateLogger();
+
+    builder.Host.UseSerilog();
+
+    // ─── Controllers + Swagger ────────────────────────────────────────────────
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+
+    // .NET 10 simplified Swagger setup - JWT auth is auto-detected
+    builder.Services.AddSwaggerGen();
+
+    // ─── Database ─────────────────────────────────────────────────────────────
+    // YOUR VERSION: EnableRetryOnFailure (kept - production resilience!)
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
-        npgsqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorCodesToAdd: null
-        );
-        npgsqlOptions.MigrationsAssembly("PrintHub.Infrastructure");
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorCodesToAdd: null
+            );
+            npgsqlOptions.MigrationsAssembly("PrintHub.Infrastructure");
+        });
+
+        if (builder.Environment.IsDevelopment())
+        {
+            options.EnableSensitiveDataLogging();
+            options.EnableDetailedErrors();
+        }
     });
 
-    // Enable detailed errors in development
-    if (builder.Environment.IsDevelopment())
+    // ─── Seeder ───────────────────────────────────────────────────────────────
+    // MY VERSION: Register as scoped service for DI (needed for new seeder!)
+    builder.Services.AddScoped<DatabaseSeeder>();
+
+    // ─── Authentication ───────────────────────────────────────────────────────
+    // MY VERSION: JWT authentication (needed before you add protected endpoints)
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(
+                        builder.Configuration["Jwt:Key"]!))
+            };
+        });
+
+    builder.Services.AddAuthorization(options =>
     {
-        options.EnableSensitiveDataLogging();
-        options.EnableDetailedErrors();
+        options.AddPolicy("AdminOnly",
+            policy => policy.RequireRole("Admin"));
+        options.AddPolicy("StaffOrAdmin",
+            policy => policy.RequireRole("Staff", "Admin"));
+    });
+
+    // ─── CORS ─────────────────────────────────────────────────────────────────
+    // YOUR VERSION: Allows WebAppUrl from config + localhost fallbacks (kept!)
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowWebApp", policy =>
+        {
+            policy.WithOrigins(
+                    builder.Configuration["WebAppUrl"] ?? "http://localhost:3000",
+                    "http://localhost:3000",
+                    "https://localhost:3000"
+                )
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        });
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    var app = builder.Build();
+    // ══════════════════════════════════════════════════════════════════════════
+
+    // ─── Database Migration + Seeding ─────────────────────────────────────────
+    // Must run BEFORE middleware pipeline so DB is ready for requests
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<ApplicationDbContext>();
+
+            Log.Information("Applying database migrations...");
+            await context.Database.MigrateAsync();
+
+            // MY VERSION: Resolves from DI (matches new instance-based seeder)
+            Log.Information("Seeding database...");
+            var seeder = services.GetRequiredService<DatabaseSeeder>();
+            await seeder.SeedAsync();
+
+            Log.Information("Database initialization completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while migrating or seeding the database.");
+            throw;
+        }
     }
-});
 
-// CORS Configuration
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowWebApp", policy =>
+    // ─── Middleware Pipeline ──────────────────────────────────────────────────
+    // ORDER MATTERS - each middleware runs in sequence for every request
+
+    if (app.Environment.IsDevelopment())
     {
-        policy.WithOrigins(
-                builder.Configuration["WebAppUrl"] ?? "http://localhost:3000",
-                "http://localhost:3000",
-                "https://localhost:3000"
-            )
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
-    });
-});
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "PrintHub API V1");
+            options.RoutePrefix = string.Empty; // Swagger at root URL
+        });
+    }
 
-var app = builder.Build();
+    app.UseSerilogRequestLogging(); // Log all requests
 
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
+    app.UseHttpsRedirection();      // HTTP → HTTPS
+
+    app.UseCors("AllowWebApp");     // CORS headers (must be before auth!)
+
+    app.UseAuthentication();        // Who are you? (NEW - was missing!)
+
+    app.UseAuthorization();         // What can you do?
+
+    app.MapControllers();           // Route to controllers
+
+    // YOUR VERSION: Custom health check (kept - more informative than NuGet package!)
+    app.MapGet("/health", async (ApplicationDbContext db) =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "PrintHub API V1");
-        options.RoutePrefix = string.Empty; // Swagger at root
+        try
+        {
+            await db.Database.CanConnectAsync();
+            return Results.Ok(new { status = "Healthy", database = "Connected" });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                detail: ex.Message,
+                statusCode: 503,
+                title: "Database connection failed"
+            );
+        }
     });
+
+    Log.Information("PrintHub API started successfully!");
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "PrintHub API failed to start!");
+    return 1;
+}
+finally
+{
+    // Ensure all logs are flushed before exit
+    Log.CloseAndFlush();
 }
 
-app.UseSerilogRequestLogging();
+return 0;
 
-app.UseHttpsRedirection();
-
-app.UseCors("AllowWebApp");
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-// Simple health check endpoint
-app.MapGet("/health", async (ApplicationDbContext db) =>
-{
-    try
-    {
-        // Try to connect to database
-        await db.Database.CanConnectAsync();
-        return Results.Ok(new { status = "Healthy", database = "Connected" });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem(
-            detail: ex.Message,
-            statusCode: 503,
-            title: "Database connection failed"
-        );
-    }
-});
-
-// Database Migration and Seeding
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        
-        // Apply migrations
-        Log.Information("Applying database migrations...");
-        await context.Database.MigrateAsync();
-        
-        // Seed database
-        Log.Information("Seeding database...");
-        await DatabaseSeeder.SeedAsync(context);
-        
-        Log.Information("Database initialization completed successfully");
-    }
-    catch (Exception ex)
-    {
-        Log.Error(ex, "An error occurred while migrating or seeding the database");
-        throw;
-    }
-}
-
-Log.Information("Starting PrintHub API...");
-app.Run();
-
-// Make the implicit Program class public for testing
+// Make the implicit Program class public for testing (YOUR VERSION - kept!)
 public partial class Program { }
