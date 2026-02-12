@@ -55,7 +55,7 @@ namespace PrintHub.Core.Entities
                 {
                     return $"Up to ${BudgetMax.Value:F2}";
                 }
-                else // BudgetMax.HasValue
+                else // BudgetMin.HasValue
                 {
                     return $"At least ${BudgetMin.Value:F2}";
                 }
