@@ -44,7 +44,7 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.Property(b => b.Title).IsRequired().HasMaxLength(300);
             builder.Property(b => b.Slug).IsRequired().HasMaxLength(350);
             builder.Property(b => b.Summary).IsRequired().HasMaxLength(500);
-            builder.Property(b => b.Content).IsRequired();
+            builder.Property(b => b.Content).IsRequired().HasColumnType("text");
             builder.Property(b => b.FeaturedImageUrl).HasMaxLength(1000);
             builder.Property(b => b.Category).IsRequired().HasConversion<string>().HasMaxLength(50);
             builder.Property(b => b.Tags).HasColumnType("text[]");

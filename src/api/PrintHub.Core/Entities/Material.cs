@@ -30,6 +30,13 @@ namespace PrintHub.Core.Entities
         /// Material properties as JSON (strength, flexibility, temperature resistance, etc.)
         /// </summary>
         public string? Properties { get; set; }
+
+        /// <summary>
+        /// Foreign key to the printing technology this material is compatible with.
+        /// Nullable because some materials might work with multiple technologies
+        /// (handled later with a many-to-many relationship if needed).
+        /// </summary>
+        public Guid? PrintingTechnologyId { get; set; }
         
         public bool IsActive { get; set; } = true;
         
@@ -39,6 +46,7 @@ namespace PrintHub.Core.Entities
         
         // Navigation properties
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public virtual PrintingTechnology? PrintingTechnology { get; set; }
     }
     
     /// <summary>

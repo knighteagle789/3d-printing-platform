@@ -22,6 +22,14 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.HasIndex(m => m.Name);
             builder.HasIndex(m => m.Type);
             builder.HasIndex(m => m.IsActive);
+
+            // Relationship: Material -> PrintingTechnology (many-to-one)
+            builder.HasOne(m => m.PrintingTechnology)
+                   .WithMany()
+                   .HasForeignKey(m => m.PrintingTechnologyId)
+                   .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasIndex(m => m.PrintingTechnologyId);
         }
     }
 

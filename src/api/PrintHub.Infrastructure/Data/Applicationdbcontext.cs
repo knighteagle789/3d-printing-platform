@@ -59,7 +59,7 @@ namespace PrintHub.Infrastructure.Data
             {
                 foreach (var property in entityType.GetProperties())
                 {
-                    if (property.ClrType == typeof(decimal) || property.ClrType == typeof(decimal?))
+                    if (property.GetPrecision() == null)
                     {
                         property.SetPrecision(18);
                         property.SetScale(2);
@@ -72,7 +72,9 @@ namespace PrintHub.Infrastructure.Data
             {
                 foreach (var property in entityType.GetProperties())
                 {
-                    if (property.ClrType == typeof(string) && property.GetMaxLength() == null)
+                    if (property.ClrType == typeof(string) 
+                        && property.GetMaxLength() == null
+                        && property.GetColumnType() == null)
                     {
                         property.SetMaxLength(500);
                     }
@@ -110,7 +112,7 @@ namespace PrintHub.Infrastructure.Data
             {
                 if (entry.State == EntityState.Added)
                 {
-                    if (entry.Property("CreatedAt").CurrentValue == null)
+                    if (entry.Metadata.FindProperty("CreatedAt") != null && entry.Property("CreatedAt").CurrentValue == null)
                     {
                         entry.Property("CreatedAt").CurrentValue = DateTime.UtcNow;
                     }
