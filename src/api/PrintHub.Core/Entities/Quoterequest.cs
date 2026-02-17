@@ -44,21 +44,16 @@ namespace PrintHub.Core.Entities
         /// <returns></returns>
         public string GetBudgetDisplay()
         {
-            // if custom budget specified
+            // If custom budget specified, use pattern matching to handle all cases
             if (BudgetMin.HasValue || BudgetMax.HasValue)
             {
-                if (BudgetMin.HasValue && BudgetMax.HasValue)
+                return (BudgetMin, BudgetMax) switch
                 {
-                    return $"${BudgetMin.Value:F2} - ${BudgetMax.Value:F2}";
-                }
-                else if (BudgetMax.HasValue)
-                {
-                    return $"Up to ${BudgetMax.Value:F2}";
-                }
-                else // BudgetMin.HasValue
-                {
-                    return $"At least ${BudgetMin.Value:F2}";
-                }
+                    (not null, not null) => $"${BudgetMin.Value:F2} - ${BudgetMax.Value:F2}",
+                    (null, not null) => $"Up to ${BudgetMax.Value:F2}",
+                    (not null, null) => $"At least ${BudgetMin.Value:F2}",
+                    _ => "Not Specified"
+                };
             }
 
             return BudgetRangeOption switch
