@@ -1,0 +1,22 @@
+using PrintHub.Core.DTOs.Users;
+
+namespace PrintHub.Core.Interfaces.Services;
+
+/// <summary>
+/// Service for authentication and user management.
+/// Handles registration, login, token generation, and user queries.
+/// </summary>
+public interface IAuthService
+{
+    // --- Authentication ---
+    Task<AuthResponse> RegisterAsync(RegisterRequest request);
+    Task<AuthResponse?> LoginAsync(LoginRequest request);
+    Task<AuthResponse?> RefreshTokenAsync(string token);
+
+    // --- User management ---
+    Task<UserResponse?> GetUserByIdAsync(Guid id);
+    Task<UserResponse?> GetUserByEmailAsync(string email);
+    Task<UserResponse?> UpdateUserAsync(Guid id, UpdateUserRequest request);
+    Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
+    Task<bool> DeactivateUserAsync(Guid id);
+}

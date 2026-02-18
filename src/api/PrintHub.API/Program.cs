@@ -5,6 +5,7 @@ using System.Text;
 using Serilog;
 using PrintHub.Infrastructure.Data;
 using PrintHub.Infrastructure;
+using PrintHub.API;
 
 // ─── Bootstrap Logger ─────────────────────────────────────────────────────────
 // Set up temporary logger BEFORE builder so startup errors are captured
@@ -60,6 +61,7 @@ try
     });
 
     builder.Services.AddInfrastructureServices(); // Register infrastructure services (repositories, etc.)
+    builder.Services.AddApplicationServices();      // Register application services (business logic)
 
     // ─── Authentication ───────────────────────────────────────────────────────
     // MY VERSION: JWT authentication (needed before you add protected endpoints)
