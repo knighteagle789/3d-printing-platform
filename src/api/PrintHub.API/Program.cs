@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Serilog;
@@ -35,7 +36,29 @@ try
     builder.Services.AddEndpointsApiExplorer();
 
     // .NET 10 simplified Swagger setup - JWT auth is auto-detected
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Title = "PrintHub API",
+            Version = "v1"
+        });
+
+        const string schemeId = "bearer";
+
+        options.AddSecurityDefinition(schemeId, new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = schemeId,
+            BearerFormat = "JWT",
+            Description = "Paste a JWT here. Swagger will send: Authorization: Bearer {your token}"
+        });
+
+        options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference(schemeId, document)] = []
+        });
+    });
 
     // ─── Database ─────────────────────────────────────────────────────────────
     // YOUR VERSION: EnableRetryOnFailure (kept - production resilience!)
