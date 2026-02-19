@@ -12,7 +12,7 @@ public record MaterialResponse(
     string Description,
     string Type,
     decimal PricePerGram,
-    string AvailableColors,
+    string[]? AvailableColors,
     string? Properties,
     bool IsActive,
     DateTime CreatedAt,

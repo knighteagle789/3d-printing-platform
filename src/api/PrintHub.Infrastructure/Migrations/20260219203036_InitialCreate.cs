@@ -12,26 +12,6 @@ namespace PrintHub.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Materials",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    Type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    PricePerGram = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    AvailableColors = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    Properties = table.Column<string>(type: "jsonb", maxLength: 500, nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Materials", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PrintingTechnologies",
                 columns: table => new
                 {
@@ -73,32 +53,28 @@ namespace PrintHub.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PortfolioItems",
+                name: "Materials",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Title = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    DetailedDescription = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: true),
-                    ImageUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    AdditionalImages = table.Column<string>(type: "jsonb", maxLength: 500, nullable: true),
-                    Tags = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    MaterialId = table.Column<Guid>(type: "uuid", nullable: true),
-                    IsFeatured = table.Column<bool>(type: "boolean", nullable: false),
-                    DisplayOrder = table.Column<int>(type: "integer", nullable: false),
-                    Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    ProjectDetails = table.Column<string>(type: "jsonb", maxLength: 500, nullable: true),
+                    Type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    PricePerGram = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
+                    AvailableColors = table.Column<string[]>(type: "text[]", nullable: true),
+                    Properties = table.Column<string>(type: "jsonb", nullable: true),
+                    PrintingTechnologyId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsPublished = table.Column<bool>(type: "boolean", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PortfolioItems", x => x.Id);
+                    table.PrimaryKey("PK_Materials", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PortfolioItems_Materials_MaterialId",
-                        column: x => x.MaterialId,
-                        principalTable: "Materials",
+                        name: "FK_Materials_PrintingTechnologies_PrintingTechnologyId",
+                        column: x => x.PrintingTechnologyId,
+                        principalTable: "PrintingTechnologies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                 });
@@ -111,11 +87,11 @@ namespace PrintHub.Infrastructure.Migrations
                     Title = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     Slug = table.Column<string>(type: "character varying(350)", maxLength: 350, nullable: false),
                     Summary = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    Content = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Content = table.Column<string>(type: "text", nullable: false),
                     FeaturedImageUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     AuthorId = table.Column<Guid>(type: "uuid", nullable: false),
                     Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Tags = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Tags = table.Column<string[]>(type: "text[]", nullable: true),
                     IsPublished = table.Column<bool>(type: "boolean", nullable: false),
                     PublishedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
@@ -212,6 +188,37 @@ namespace PrintHub.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PortfolioItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Title = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    DetailedDescription = table.Column<string>(type: "character varying(5000)", maxLength: 5000, nullable: true),
+                    ImageUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    AdditionalImages = table.Column<string>(type: "jsonb", nullable: true),
+                    Tags = table.Column<string[]>(type: "text[]", nullable: true),
+                    MaterialId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsFeatured = table.Column<bool>(type: "boolean", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "integer", nullable: false),
+                    Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ProjectDetails = table.Column<string>(type: "jsonb", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsPublished = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PortfolioItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PortfolioItems_Materials_MaterialId",
+                        column: x => x.MaterialId,
+                        principalTable: "Materials",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderStatusHistory",
                 columns: table => new
                 {
@@ -245,20 +252,20 @@ namespace PrintHub.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FileId = table.Column<Guid>(type: "uuid", nullable: false),
-                    VolumeInCubicMm = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    DimensionX = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    DimensionY = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    DimensionZ = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    VolumeInCubicMm = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: true),
+                    DimensionX = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: true),
+                    DimensionY = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: true),
+                    DimensionZ = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: true),
                     TriangleCount = table.Column<int>(type: "integer", nullable: true),
                     VertexCount = table.Column<int>(type: "integer", nullable: true),
-                    SurfaceArea = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    SurfaceArea = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: true),
                     EstimatedPrintTimeHours = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     EstimatedWeightGrams = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     ComplexityScore = table.Column<int>(type: "integer", nullable: true),
                     RequiresSupport = table.Column<bool>(type: "boolean", nullable: true),
                     IsManifold = table.Column<bool>(type: "boolean", nullable: true),
                     ErrorCount = table.Column<int>(type: "integer", nullable: true),
-                    Warnings = table.Column<string>(type: "jsonb", maxLength: 500, nullable: true),
+                    Warnings = table.Column<string>(type: "jsonb", nullable: true),
                     ThumbnailUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     AnalyzedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
@@ -289,7 +296,7 @@ namespace PrintHub.Infrastructure.Migrations
                     EstimatedWeight = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     EstimatedPrintTime = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     Quality = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Infill = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    Infill = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: true),
                     SupportStructures = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
@@ -331,6 +338,7 @@ namespace PrintHub.Infrastructure.Migrations
                     RequiredByDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     SpecialRequirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     Notes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    BudgetRangeOption = table.Column<int>(type: "integer", nullable: true),
                     BudgetMin = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     BudgetMax = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
@@ -429,6 +437,12 @@ namespace PrintHub.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_BlogPosts_Tags",
+                table: "BlogPosts",
+                column: "Tags")
+                .Annotation("Npgsql:IndexMethod", "GIN");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FileAnalyses_FileId",
                 table: "FileAnalyses",
                 column: "FileId",
@@ -443,6 +457,11 @@ namespace PrintHub.Infrastructure.Migrations
                 name: "IX_Materials_Name",
                 table: "Materials",
                 column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Materials_PrintingTechnologyId",
+                table: "Materials",
+                column: "PrintingTechnologyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Materials_Type",
@@ -519,6 +538,12 @@ namespace PrintHub.Infrastructure.Migrations
                 name: "IX_PortfolioItems_MaterialId",
                 table: "PortfolioItems",
                 column: "MaterialId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PortfolioItems_Tags",
+                table: "PortfolioItems",
+                column: "Tags")
+                .Annotation("Npgsql:IndexMethod", "GIN");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PrintingTechnologies_Type",
@@ -623,9 +648,6 @@ namespace PrintHub.Infrastructure.Migrations
                 name: "PortfolioItems");
 
             migrationBuilder.DropTable(
-                name: "PrintingTechnologies");
-
-            migrationBuilder.DropTable(
                 name: "QuoteResponses");
 
             migrationBuilder.DropTable(
@@ -642,6 +664,9 @@ namespace PrintHub.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "UploadedFiles");
+
+            migrationBuilder.DropTable(
+                name: "PrintingTechnologies");
 
             migrationBuilder.DropTable(
                 name: "Users");

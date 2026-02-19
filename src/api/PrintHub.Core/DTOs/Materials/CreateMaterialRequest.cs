@@ -11,7 +11,7 @@ public record CreateMaterialRequest(
     string Description,
     string Type,
     decimal PricePerGram,
-    string AvailableColors,
+    string[]? AvailableColors,
     string? Properties,
     Guid? PrintingTechnologyId)
 {

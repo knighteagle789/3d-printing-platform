@@ -11,7 +11,7 @@ public record UpdateMaterialRequest(
     string? Description,
     string? Type,
     decimal? PricePerGram,
-    string? AvailableColors,
+    string[]? AvailableColors,
     string? Properties,
     Guid? PrintingTechnologyId,
     bool? IsActive)

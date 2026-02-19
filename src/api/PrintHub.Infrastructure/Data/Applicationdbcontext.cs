@@ -59,7 +59,8 @@ namespace PrintHub.Infrastructure.Data
             {
                 foreach (var property in entityType.GetProperties())
                 {
-                    if (property.GetPrecision() == null)
+                    if ((property.ClrType == typeof(decimal) || property.ClrType == typeof(decimal?))
+                        && property.GetPrecision() == null)
                     {
                         property.SetPrecision(18);
                         property.SetScale(2);

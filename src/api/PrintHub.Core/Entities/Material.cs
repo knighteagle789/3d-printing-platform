@@ -24,7 +24,7 @@ namespace PrintHub.Core.Entities
         /// <summary>
         /// Available colors (comma-separated or JSON array)
         /// </summary>
-        public string AvailableColors { get; set; } = string.Empty;
+        public string[]? AvailableColors { get; set; }
         
         /// <summary>
         /// Material properties as JSON (strength, flexibility, temperature resistance, etc.)

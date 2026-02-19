@@ -186,7 +186,7 @@ namespace PrintHub.Infrastructure.Data
                     Description = "Biodegradable, easy to print, great for beginners. Low warping.",
                     Type = MaterialType.PLA,
                     PricePerGram = 0.025m,
-                    AvailableColors = "White,Black,Red,Blue,Green,Yellow,Orange,Purple,Gray,Natural",
+                    AvailableColors = new[] { "White", "Black", "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Gray", "Natural" },
                     Properties = @"{""strength"":""Medium"",""flexibility"":""Low"",""maxTemp"":""60°C"",""biodegradable"":true}",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow.AddMonths(-6)
@@ -198,7 +198,7 @@ namespace PrintHub.Infrastructure.Data
                     Description = "Strong, durable, heat resistant. Ideal for functional parts.",
                     Type = MaterialType.ABS,
                     PricePerGram = 0.030m,
-                    AvailableColors = "White,Black,Red,Blue,Gray",
+                    AvailableColors = new[] { "White", "Black", "Red", "Blue", "Gray" },
                     Properties = @"{""strength"":""High"",""flexibility"":""Low"",""maxTemp"":""98°C"",""biodegradable"":false}",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow.AddMonths(-6)
@@ -210,7 +210,7 @@ namespace PrintHub.Infrastructure.Data
                     Description = "Strong, flexible, chemical resistant. Best of PLA and ABS.",
                     Type = MaterialType.PETG,
                     PricePerGram = 0.035m,
-                    AvailableColors = "Clear,Black,White,Red,Blue,Orange",
+                    AvailableColors = new[] { "Clear", "Black", "White", "Red", "Blue", "Orange" },
                     Properties = @"{""strength"":""High"",""flexibility"":""Medium"",""maxTemp"":""80°C"",""foodSafe"":true}",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow.AddMonths(-5)
@@ -222,7 +222,7 @@ namespace PrintHub.Infrastructure.Data
                     Description = "Rubber-like flexibility, excellent durability and impact resistance.",
                     Type = MaterialType.TPU,
                     PricePerGram = 0.045m,
-                    AvailableColors = "Black,White,Red,Blue,Clear",
+                    AvailableColors = new[] { "Black", "White", "Red", "Blue", "Clear" },
                     Properties = @"{""strength"":""Medium"",""flexibility"":""Very High"",""maxTemp"":""60°C"",""shore"":""95A""}",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow.AddMonths(-5)
@@ -234,7 +234,7 @@ namespace PrintHub.Infrastructure.Data
                     Description = "Extremely strong and durable. Excellent for functional parts.",
                     Type = MaterialType.Nylon,
                     PricePerGram = 0.055m,
-                    AvailableColors = "Natural,Black,White",
+                    AvailableColors = new[] { "Natural", "Black", "White" },
                     Properties = @"{""strength"":""Very High"",""flexibility"":""Medium"",""maxTemp"":""120°C"",""wearResistant"":true}",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow.AddMonths(-4)
@@ -246,7 +246,7 @@ namespace PrintHub.Infrastructure.Data
                     Description = "High detail SLA resin for smooth surface finish.",
                     Type = MaterialType.Resin,
                     PricePerGram = 0.065m,
-                    AvailableColors = "White,Black,Gray,Clear",
+                    AvailableColors = new[] { "White", "Black", "Gray", "Clear" },
                     Properties = @"{""strength"":""Medium"",""detail"":""Very High"",""finish"":""Smooth"",""uv"":true}",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow.AddMonths(-4)
@@ -258,7 +258,7 @@ namespace PrintHub.Infrastructure.Data
                     Description = "Discontinued standard PLA. Replaced by PLA (Standard).",
                     Type = MaterialType.PLA,
                     PricePerGram = 0.020m,
-                    AvailableColors = "White,Black",
+                    AvailableColors = new[] { "White", "Black" },
                     IsActive = false,   // Discontinued - tests IsActive filtering!
                     CreatedAt = DateTime.UtcNow.AddMonths(-12)
                 }
@@ -505,6 +505,38 @@ namespace PrintHub.Infrastructure.Data
             await _context.Orders.AddRangeAsync(order1, order2);
             await _context.SaveChangesAsync();  // Orders must exist before items!
 
+            // Add these dummy files before creating OrderItems
+            var dummyFiles = new List<UploadedFile>
+            {
+                new()
+                {
+                    Id = Guid.Parse("aaaa1111-1111-1111-1111-111111111111"),
+                    UserId = Guid.Parse("33333333-3333-3333-3333-333333333333"), // Emily
+                    OriginalFileName = "drone-frame-v2.stl",
+                    StorageUrl = "/uploads/placeholder/drone-frame-v2.stl",
+                    BlobName = "placeholder_drone-frame-v2.stl",
+                    FileSizeBytes = 2_500_000,
+                    ContentType = "application/sla",
+                    FileType = FileType.STL,
+                    UploadedAt = DateTime.UtcNow.AddMonths(-2)
+                },
+                new()
+                {
+                    Id = Guid.Parse("aaaa2222-2222-2222-2222-222222222222"),
+                    UserId = Guid.Parse("44444444-4444-4444-4444-444444444444"), // James
+                    OriginalFileName = "phone-case-custom.stl",
+                    StorageUrl = "/uploads/placeholder/phone-case-custom.stl",
+                    BlobName = "placeholder_phone-case-custom.stl",
+                    FileSizeBytes = 1_200_000,
+                    ContentType = "application/sla",
+                    FileType = FileType.STL,
+                    UploadedAt = DateTime.UtcNow.AddMonths(-1)
+                }
+            };
+
+            await _context.UploadedFiles.AddRangeAsync(dummyFiles);
+            await _context.SaveChangesAsync();
+
             // ── Order Items ───────────────────────────────────────────────────
             var orderItems = new List<OrderItem>
             {
@@ -518,6 +550,7 @@ namespace PrintHub.Infrastructure.Data
                     TotalPrice = 69.50m,
                     Quality = PrintQuality.Standard,
                     Infill = 20.00m,
+                    FileId = Guid.Parse("aaaa1111-1111-1111-1111-111111111111"), // drone-frame-v2.stl
                     Color = "Black",
                     EstimatedWeight = 45.5m,
                     EstimatedPrintTime = 4.5m,
@@ -537,6 +570,7 @@ namespace PrintHub.Infrastructure.Data
                     EstimatedWeight = 180.5m,
                     EstimatedPrintTime = 12.5m,
                     SpecialInstructions = "No visible layer lines on exterior surfaces",
+                    FileId = Guid.Parse("aaaa2222-2222-2222-2222-222222222222"), // phone-case-custom.stl
                     CreatedAt = DateTime.UtcNow.AddDays(-5)
                 }
             };

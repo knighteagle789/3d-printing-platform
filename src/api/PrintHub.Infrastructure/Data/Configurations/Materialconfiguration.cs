@@ -15,7 +15,11 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.Property(m => m.Description).IsRequired().HasMaxLength(1000);
             builder.Property(m => m.Type).IsRequired().HasConversion<string>().HasMaxLength(50);
             builder.Property(m => m.PricePerGram).IsRequired().HasPrecision(18, 4);
-            builder.Property(m => m.AvailableColors).HasMaxLength(1000);
+            builder.Property(m => m.AvailableColors)
+                .HasColumnType("text[]")
+                .HasConversion<string[]>(
+                    v => v ?? Array.Empty<string>(),
+                    v => v);
             builder.Property(m => m.Properties).HasColumnType("jsonb");
             builder.Property(m => m.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
 
