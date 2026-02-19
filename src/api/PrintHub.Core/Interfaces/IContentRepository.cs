@@ -26,4 +26,6 @@ public interface IContentRepository : IRepository<PortfolioItem>
     void UpdateBlogPost(BlogPost blogPost);
 
     Task<IReadOnlyList<string>> GetAllTagsAsync();
+
+    
 }

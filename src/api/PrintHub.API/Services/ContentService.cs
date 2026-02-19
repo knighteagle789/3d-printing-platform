@@ -141,4 +141,48 @@ public partial class ContentService : IContentService
 
     [GeneratedRegex(@"-{2,}")]
     private static partial Regex SlugConsecutiveHyphens();
+
+    public async Task<PortfolioItemResponse?> CreatePortfolioItemAsync(CreatePortfolioItemRequest request)
+    {
+        var entity = request.ToEntity();
+
+        await _contentRepo.AddAsync(entity);
+        await _unitOfWork.SaveChangesAsync();
+
+        // Reload to get any navigation properties
+        var saved = await _contentRepo.GetByIdAsync(entity.Id);
+        if (saved == null) return null;
+
+        _logger.LogInformation("Created portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
+        return PortfolioItemResponse.FromEntity(saved);
+    }
+
+    public async Task<PortfolioItemResponse?> UpdatePortfolioItemAsync(Guid id, UpdatePortfolioItemRequest request)
+    {
+        var entity = await _contentRepo.GetByIdAsync(id);
+        if (entity == null) return null;
+
+        request.ApplyToEntity(entity);
+
+        _contentRepo.Update(entity);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Updated portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
+        return PortfolioItemResponse.FromEntity(entity);
+    }
+
+    public async Task<bool> DeletePortfolioItemAsync(Guid id)
+    {
+        var entity = await _contentRepo.GetByIdAsync(id);
+        if (entity == null) return false;
+
+        entity.IsPublished = false; // Soft delete — unpublish rather than remove
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _contentRepo.Update(entity);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Unpublished portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
+        return true;
+    }
 }

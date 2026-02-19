@@ -7,6 +7,8 @@ using Serilog;
 using PrintHub.Infrastructure.Data;
 using PrintHub.Infrastructure;
 using PrintHub.API;
+using FluentValidation.AspNetCore;
+using FluentValidation;
 
 // ─── Bootstrap Logger ─────────────────────────────────────────────────────────
 // Set up temporary logger BEFORE builder so startup errors are captured
@@ -33,6 +35,8 @@ try
 
     // ─── Controllers + Swagger ────────────────────────────────────────────────
     builder.Services.AddControllers();
+    builder.Services.AddFluentValidationAutoValidation();
+    builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // Auto-register all validators in this assembly
     builder.Services.AddEndpointsApiExplorer();
 
     // .NET 10 simplified Swagger setup - JWT auth is auto-detected

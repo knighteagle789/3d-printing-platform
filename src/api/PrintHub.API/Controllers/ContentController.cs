@@ -66,6 +66,36 @@ public class ContentController : ControllerBase
         return Ok(items);
     }
 
+    // ─── Portfolio Management ─────────────────────────────────────────────────
+
+    [HttpPost("portfolio")]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<PortfolioItemResponse>> CreatePortfolioItem(
+        CreatePortfolioItemRequest request)
+    {
+        var result = await _contentService.CreatePortfolioItemAsync(request);
+        if (result == null) return BadRequest("Failed to create portfolio item.");
+
+        return CreatedAtAction(nameof(GetPortfolioItem), new { id = result.Id }, result);
+    }
+
+    [HttpPut("portfolio/{id:guid}")]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<PortfolioItemResponse>> UpdatePortfolioItem(
+        Guid id, UpdatePortfolioItemRequest request)
+    {
+        var result = await _contentService.UpdatePortfolioItemAsync(id, request);
+        return result != null ? Ok(result) : NotFound();
+    }
+
+    [HttpDelete("portfolio/{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeletePortfolioItem(Guid id)
+    {
+        var result = await _contentService.DeletePortfolioItemAsync(id);
+        return result ? NoContent() : NotFound();
+    }
+
     // ─── Blog (public) ────────────────────────────────────────────────────
 
     /// <summary>

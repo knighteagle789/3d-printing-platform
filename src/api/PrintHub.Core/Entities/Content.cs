@@ -24,7 +24,7 @@ namespace PrintHub.Core.Entities
         /// <summary>
         /// Additional image URLs (JSON array)
         /// </summary>
-        public string? AdditionalImages { get; set; }
+        public List<PortfolioImage>? AdditionalImages { get; set; }
         
         /// <summary>
         /// Tags for categorization (comma-separated or JSON)
