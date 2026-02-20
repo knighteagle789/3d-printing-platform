@@ -9,6 +9,7 @@ using PrintHub.Infrastructure;
 using PrintHub.API;
 using FluentValidation.AspNetCore;
 using FluentValidation;
+using PrintHub.API.Middleware;
 
 // ─── Bootstrap Logger ─────────────────────────────────────────────────────────
 // Set up temporary logger BEFORE builder so startup errors are captured
@@ -166,6 +167,8 @@ try
 
     // ─── Middleware Pipeline ──────────────────────────────────────────────────
     // ORDER MATTERS - each middleware runs in sequence for every request
+
+    app.UseGlobalExceptionHandling();
 
     if (app.Environment.IsDevelopment())
     {
