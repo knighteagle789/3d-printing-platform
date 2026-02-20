@@ -25,15 +25,8 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
     {
-        try
-        {
-            var response = await _authService.RegisterAsync(request);
-            return Ok(response);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var response = await _authService.RegisterAsync(request);
+        return Ok(response);
     }
 
     /// <summary>
@@ -74,7 +67,6 @@ public class AuthController : ControllerBase
         if (userId == null) return Unauthorized();
 
         var user = await _authService.GetUserByIdAsync(userId.Value);
-        if (user == null) return NotFound();
         return Ok(user);
     }
 
@@ -90,7 +82,6 @@ public class AuthController : ControllerBase
         if (userId == null) return Unauthorized();
 
         var user = await _authService.UpdateUserAsync(userId.Value, request);
-        if (user == null) return NotFound();
         return Ok(user);
     }
 
@@ -104,9 +95,7 @@ public class AuthController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var changed = await _authService.ChangePasswordAsync(userId.Value, request);
-        if (!changed)
-            return BadRequest(new { message = "Current password is incorrect." });
+        await _authService.ChangePasswordAsync(userId.Value, request);
         return Ok(new { message = "Password changed successfully." });
     }
 

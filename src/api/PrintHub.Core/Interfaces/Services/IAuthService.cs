@@ -14,9 +14,9 @@ public interface IAuthService
     Task<AuthResponse?> RefreshTokenAsync(string token);
 
     // --- User management ---
-    Task<UserResponse?> GetUserByIdAsync(Guid id);
-    Task<UserResponse?> GetUserByEmailAsync(string email);
-    Task<UserResponse?> UpdateUserAsync(Guid id, UpdateUserRequest request);
-    Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
-    Task<bool> DeactivateUserAsync(Guid id);
+    Task<UserResponse> GetUserByIdAsync(Guid id);
+    Task<UserResponse> GetUserByEmailAsync(string email);
+    Task<UserResponse> UpdateUserAsync(Guid id, UpdateUserRequest request);
+    Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
+    Task DeactivateUserAsync(Guid id);
 }

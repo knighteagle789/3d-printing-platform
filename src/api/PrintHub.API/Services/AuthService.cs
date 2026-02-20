@@ -139,26 +139,30 @@ public class AuthService : IAuthService
 
     // --- User management ---
 
-    public async Task<UserResponse?> GetUserByIdAsync(Guid id)
+    public async Task<UserResponse> GetUserByIdAsync(Guid id)
     {
         var user = await _userRepo.GetWithRolesAsync(id);
-        return user != null ? UserResponse.FromEntity(user) : null;
+        if (user == null)
+            throw new NotFoundException("User", id);
+        return UserResponse.FromEntity(user);
     }
 
-    public async Task<UserResponse?> GetUserByEmailAsync(string email)
+    public async Task<UserResponse> GetUserByEmailAsync(string email)
     {
         var user = await _userRepo.GetByEmailAsync(email);
-        if (user == null) return null;
+        if (user == null)
+            throw new NotFoundException($"User with email '{email}' was not found.");
 
         // GetByEmailAsync doesn't include roles, so reload
         var userWithRoles = await _userRepo.GetWithRolesAsync(user.Id);
         return UserResponse.FromEntity(userWithRoles!);
     }
 
-    public async Task<UserResponse?> UpdateUserAsync(Guid id, UpdateUserRequest request)
+    public async Task<UserResponse> UpdateUserAsync(Guid id, UpdateUserRequest request)
     {
         var user = await _userRepo.GetByIdAsync(id);
-        if (user == null) return null;
+        if (user == null)
+            throw new NotFoundException("User", id);
 
         if (request.FirstName is not null)
             user.FirstName = request.FirstName.Trim();
@@ -181,17 +185,17 @@ public class AuthService : IAuthService
         return UserResponse.FromEntity(updated!);
     }
 
-    public async Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+    public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
     {
         var user = await _userRepo.GetByIdAsync(userId);
         if (user == null)
-            return false;
+            throw new NotFoundException("User", userId);
 
         // Verify current password
         if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
         {
             _logger.LogWarning("Failed password change attempt for user: {UserId}", userId);
-            return false;
+            throw new BusinessRuleException("Current password is incorrect.");
         }
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
@@ -199,21 +203,19 @@ public class AuthService : IAuthService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Password changed for user: {UserId}", userId);
-        return true;
     }
 
-    public async Task<bool> DeactivateUserAsync(Guid id)
+    public async Task DeactivateUserAsync(Guid id)
     {
         var user = await _userRepo.GetByIdAsync(id);
         if (user == null)
-            return false;
+            throw new NotFoundException("User", id);
 
         user.IsActive = false;
         _userRepo.Update(user);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("User deactivated: {UserId}", id);
-        return true;
     }
 
     // --- Private helpers ---
