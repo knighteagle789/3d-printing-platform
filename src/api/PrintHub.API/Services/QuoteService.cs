@@ -1,6 +1,7 @@
 using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Quotes;
 using PrintHub.Core.Entities;
+using PrintHub.Core.Exceptions;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 
@@ -59,10 +60,12 @@ public class QuoteService : IQuoteService
         return QuoteRequestResponse.FromEntity(created!);
     }
 
-    public async Task<QuoteRequestResponse?> GetQuoteByIdAsync(Guid quoteRequestId)
+    public async Task<QuoteRequestResponse> GetQuoteByIdAsync(Guid quoteRequestId)
     {
         var quote = await _quoteRepo.GetQuoteWithResponsesAsync(quoteRequestId);
-        return quote != null ? QuoteRequestResponse.FromEntity(quote) : null;
+        if (quote == null)
+            throw new NotFoundException("Quote request", quoteRequestId);
+        return QuoteRequestResponse.FromEntity(quote);
     }
 
     public async Task<PagedResponse<QuoteRequestResponse>> GetUserQuotesAsync(
@@ -73,12 +76,12 @@ public class QuoteService : IQuoteService
             quotes, QuoteRequestResponse.FromEntity);
     }
 
-    public async Task<QuoteRequestResponse?> AcceptQuoteResponseAsync(
+    public async Task<QuoteRequestResponse> AcceptQuoteResponseAsync(
         Guid quoteRequestId, Guid quoteResponseId, Guid userId)
     {
         var quote = await _quoteRepo.GetQuoteWithResponsesAsync(quoteRequestId);
         if (quote == null)
-            return null;
+            throw new NotFoundException("Quote request", quoteRequestId);
 
         // Verify the customer owns this quote
         if (quote.UserId != userId)
@@ -86,21 +89,21 @@ public class QuoteService : IQuoteService
             _logger.LogWarning(
                 "User {UserId} attempted to accept quote {QuoteId} owned by {OwnerId}",
                 userId, quoteRequestId, quote.UserId);
-            return null;
+            throw new ForbiddenException("You do not have permission to accept this quote.");
         }
 
         // Find the specific response
         var response = quote.Responses.FirstOrDefault(r => r.Id == quoteResponseId);
         if (response == null)
-            return null;
+            throw new NotFoundException("Quote response", quoteResponseId);
 
         // Check if already accepted
         if (quote.Status == QuoteStatus.Accepted)
-            throw new InvalidOperationException("This quote has already been accepted.");
+            throw new BusinessRuleException("This quote has already been accepted.");
 
         // Check if expired
         if (response.ExpiresAt < DateTime.UtcNow)
-            throw new InvalidOperationException("This quote response has expired.");
+            throw new BusinessRuleException("This quote response has expired.");
 
         // Accept the response
         response.IsAccepted = true;
@@ -128,12 +131,12 @@ public class QuoteService : IQuoteService
             quotes, QuoteRequestResponse.FromEntity);
     }
 
-    public async Task<QuoteRequestResponse?> AddQuoteResponseAsync(
+    public async Task<QuoteRequestResponse> AddQuoteResponseAsync(
         Guid quoteRequestId, CreateQuoteResponseRequest request, Guid adminUserId)
     {
         var quote = await _quoteRepo.GetByIdAsync(quoteRequestId);
         if (quote == null)
-            return null;
+            throw new NotFoundException("Quote request", quoteRequestId);
 
         var response = new QuoteResponse
         {

@@ -31,18 +31,11 @@ public class QuotesController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        try
-        {
-            var quote = await _quoteService.CreateQuoteRequestAsync(userId.Value, request);
-            return CreatedAtAction(
-                nameof(GetQuote),
-                new { id = quote.Id },
-                quote);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var quote = await _quoteService.CreateQuoteRequestAsync(userId.Value, request);
+        return CreatedAtAction(
+            nameof(GetQuote),
+            new { id = quote.Id },
+            quote);
     }
 
     /// <summary>
@@ -52,7 +45,6 @@ public class QuotesController : ControllerBase
     public async Task<ActionResult<QuoteRequestResponse>> GetQuote(Guid id)
     {
         var quote = await _quoteService.GetQuoteByIdAsync(id);
-        if (quote == null) return NotFound();
 
         // Customers can only see their own quotes
         var userId = GetUserId();
@@ -89,17 +81,8 @@ public class QuotesController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        try
-        {
-            var quote = await _quoteService.AcceptQuoteResponseAsync(
-                quoteId, responseId, userId.Value);
-            if (quote == null) return NotFound();
-            return Ok(quote);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var quote = await _quoteService.AcceptQuoteResponseAsync(quoteId, responseId, userId.Value);
+        return Ok(quote);
     }
 
     // ─── Admin endpoints ──────────────────────────────────────────────────
@@ -128,9 +111,7 @@ public class QuotesController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var quote = await _quoteService.AddQuoteResponseAsync(
-            quoteId, request, userId.Value);
-        if (quote == null) return NotFound();
+        var quote = await _quoteService.AddQuoteResponseAsync(quoteId, request, userId.Value);
         return Ok(quote);
     }
 
