@@ -110,10 +110,12 @@ public class OrderService : IOrderService
         return OrderResponse.FromEntity(created!);
     }
 
-    public async Task<OrderResponse?> GetOrderByIdAsync(Guid orderId)
+    public async Task<OrderResponse> GetOrderByIdAsync(Guid orderId)
     {
         var order = await _orderRepo.GetOrderWithDetailsAsync(orderId);
-        return order != null ? OrderResponse.FromEntity(order) : null;
+        if (order == null)
+            throw new NotFoundException("Order", orderId);
+        return OrderResponse.FromEntity(order);
     }
 
     public async Task<PagedResponse<OrderResponse>> GetUserOrdersAsync(
@@ -130,12 +132,7 @@ public class OrderService : IOrderService
         string status, int page = 1, int pageSize = 20)
     {
         if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var orderStatus))
-        {
-            _logger.LogWarning("Invalid order status requested: {Status}", status);
-            return PagedResponse<OrderResponse>.FromPagedResult(
-                new PagedResult<Order>(new List<Order>(), 0, page, pageSize),
-                OrderResponse.FromEntity);
-        }
+            throw new BusinessRuleException($"'{status}' is not a valid order status.");
 
         var orders = await _orderRepo.GetOrdersByStatusAsync(orderStatus, page, pageSize);
         return PagedResponse<OrderResponse>.FromPagedResult(

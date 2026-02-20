@@ -31,18 +31,11 @@ public class OrdersController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        try
-        {
-            var order = await _orderService.CreateOrderAsync(userId.Value, request);
-            return CreatedAtAction(
-                nameof(GetOrder),
-                new { id = order.Id },
-                order);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var order = await _orderService.CreateOrderAsync(userId.Value, request);
+        return CreatedAtAction(
+            nameof(GetOrder),
+            new { id = order.Id },
+            order);
     }
 
     /// <summary>
@@ -52,7 +45,6 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult<OrderResponse>> GetOrder(Guid id)
     {
         var order = await _orderService.GetOrderByIdAsync(id);
-        if (order == null) return NotFound();
 
         // Customers can only see their own orders
         var userId = GetUserId();
@@ -129,17 +121,9 @@ public class OrdersController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        try
-        {
-            var order = await _orderService.UpdateOrderStatusAsync(
-                id, request.Status, userId.Value, request.Notes);
-            if (order == null) return NotFound();
-            return Ok(order);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var order = await _orderService.UpdateOrderStatusAsync(
+            id, request.Status, userId.Value, request.Notes);
+        return Ok(order);
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────

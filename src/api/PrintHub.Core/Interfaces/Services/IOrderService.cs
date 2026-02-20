@@ -11,7 +11,7 @@ public interface IOrderService
 {
     // --- Customer operations ---
     Task<OrderResponse> CreateOrderAsync(Guid userId, CreateOrderRequest request);
-    Task<OrderResponse?> GetOrderByIdAsync(Guid orderId);
+    Task<OrderResponse> GetOrderByIdAsync(Guid orderId);
     Task<PagedResponse<OrderResponse>> GetUserOrdersAsync(
         Guid userId, int page = 1, int pageSize = 20);
 
