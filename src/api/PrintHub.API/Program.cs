@@ -4,6 +4,8 @@ using Microsoft.OpenApi;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Serilog;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using PrintHub.Infrastructure.Data;
 using PrintHub.Infrastructure;
 using PrintHub.API;
@@ -40,15 +42,23 @@ try
     builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // Auto-register all validators in this assembly
     builder.Services.AddEndpointsApiExplorer();
 
+    // ─── API Versioning ────────────────────────────────────────────────
+    builder.Services.AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.ReportApiVersions = true;
+        options.ApiVersionReader = new UrlSegmentApiVersionReader(); // Version in URL path
+    })
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'VVV"; // e.g. v1, v2
+        options.SubstituteApiVersionInUrl = true;
+    });
+
     // .NET 10 simplified Swagger setup - JWT auth is auto-detected
     builder.Services.AddSwaggerGen(options =>
     {
-        options.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Title = "PrintHub API",
-            Version = "v1"
-        });
-
         const string schemeId = "bearer";
 
         options.AddSecurityDefinition(schemeId, new OpenApiSecurityScheme
@@ -172,10 +182,18 @@ try
 
     if (app.Environment.IsDevelopment())
     {
+        var apiVersionDescription = app.Services
+            .GetRequiredService<IApiVersionDescriptionProvider>()
+            .ApiVersionDescriptions;
         app.UseSwagger();
         app.UseSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "PrintHub API V1");
+            foreach (var description in apiVersionDescription)
+            {
+                options.SwaggerEndpoint(
+                    $"/swagger/{description.GroupName}/swagger.json",
+                    $"PrintHub API {description.GroupName.ToUpperInvariant()}");
+            }
             options.RoutePrefix = string.Empty; // Swagger at root URL
         });
     }

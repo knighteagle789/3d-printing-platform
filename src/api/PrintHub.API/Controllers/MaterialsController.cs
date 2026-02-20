@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrintHub.Core.DTOs.Materials;
@@ -6,7 +7,8 @@ using PrintHub.Core.Interfaces.Services;
 namespace PrintHub.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class MaterialsController : ControllerBase
 {
     private readonly IMaterialService _materialService;
