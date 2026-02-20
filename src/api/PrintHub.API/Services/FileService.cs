@@ -1,6 +1,7 @@
 using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Files;
 using PrintHub.Core.Entities;
+using PrintHub.Core.Exceptions;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 
@@ -26,7 +27,7 @@ public class FileService : IFileService
     {
         if (!Enum.TryParse<FileType>(request.FileType, ignoreCase: true, out var fileType))
         {
-            throw new InvalidOperationException(
+            throw new BusinessRuleException(
                 $"Unsupported file type: {request.FileType}");
         }
 
@@ -70,11 +71,11 @@ public class FileService : IFileService
             files, FileResponse.FromEntity);
     }
 
-    public async Task<bool> DeleteFileAsync(Guid fileId, Guid userId)
+    public async Task DeleteFileAsync(Guid fileId, Guid userId)
     {
         var file = await _fileRepo.GetByIdAsync(fileId);
         if (file == null)
-            return false;
+            throw new NotFoundException("File", fileId);
 
         // Verify ownership
         if (file.UserId != userId)
@@ -82,7 +83,7 @@ public class FileService : IFileService
             _logger.LogWarning(
                 "User {UserId} attempted to delete file {FileId} owned by {OwnerId}",
                 userId, fileId, file.UserId);
-            return false;
+            throw new ForbiddenException("You do not have permission to delete this file.");
         }
 
         // Soft delete
@@ -95,7 +96,5 @@ public class FileService : IFileService
 
         // Note: Actual blob deletion would be handled by a cleanup background service
         // that periodically removes blobs for soft-deleted files
-
-        return true;
     }
 }

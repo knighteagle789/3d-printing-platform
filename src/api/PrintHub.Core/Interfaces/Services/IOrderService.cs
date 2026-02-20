@@ -19,7 +19,7 @@ public interface IOrderService
     Task<PagedResponse<OrderResponse>> GetOrdersByStatusAsync(
         string status, int page = 1, int pageSize = 20);
     Task<IReadOnlyList<OrderResponse>> GetRecentOrdersAsync(int count = 10);
-    Task<OrderResponse?> UpdateOrderStatusAsync(
+    Task<OrderResponse> UpdateOrderStatusAsync(
         Guid orderId, string newStatus, Guid changedByUserId, string? notes = null);
 
     // --- Order history ---

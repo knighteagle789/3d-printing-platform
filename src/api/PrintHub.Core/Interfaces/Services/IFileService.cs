@@ -13,5 +13,5 @@ public interface IFileService
     Task<FileResponse?> GetFileByIdAsync(Guid fileId);
     Task<PagedResponse<FileResponse>> GetUserFilesAsync(
         Guid userId, int page = 1, int pageSize = 20);
-    Task<bool> DeleteFileAsync(Guid fileId, Guid userId);
+    Task DeleteFileAsync(Guid fileId, Guid userId);
 }

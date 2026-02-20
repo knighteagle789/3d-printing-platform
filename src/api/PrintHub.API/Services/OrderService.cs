@@ -4,6 +4,7 @@ using PrintHub.Core.Entities;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 using PrintHub.Core.Common;
+using PrintHub.Core.Exceptions;
 
 namespace PrintHub.API.Services;
 
@@ -52,17 +53,15 @@ public class OrderService : IOrderService
         {
             var material = await _materialRepo.GetByIdAsync(itemRequest.MaterialId);
             if (material == null)
-                throw new InvalidOperationException(
-                    $"Material not found: {itemRequest.MaterialId}");
+                throw new NotFoundException("Material", itemRequest.MaterialId);
 
             if (!material.IsActive)
-                throw new InvalidOperationException(
+                throw new BusinessRuleException(
                     $"Material is no longer available: {material.Name}");
 
             var file = await _fileRepo.GetFileWithAnalysisAsync(itemRequest.FileId);
             if (file == null)
-                throw new InvalidOperationException(
-                    $"File not found: {itemRequest.FileId}");
+                throw new NotFoundException("File", itemRequest.FileId);
 
             var unitPrice = CalculateUnitPrice(material, file, itemRequest);
 
@@ -149,25 +148,25 @@ public class OrderService : IOrderService
         return orders.Select(OrderResponse.FromEntity).ToList();
     }
 
-    public async Task<OrderResponse?> UpdateOrderStatusAsync(
+    public async Task<OrderResponse> UpdateOrderStatusAsync(
         Guid orderId, string newStatus, Guid changedByUserId, string? notes = null)
     {
         if (!Enum.TryParse<OrderStatus>(newStatus, ignoreCase: true, out var status))
         {
             _logger.LogWarning("Invalid status for order update: {Status}", newStatus);
-            return null;
+            throw new BusinessRuleException($"Invalid status for order update: {newStatus}");
         }
 
         var order = await _orderRepo.GetByIdAsync(orderId);
         if (order == null)
-            return null;
+            throw new NotFoundException("Order", orderId);
 
         var previousStatus = order.Status;
 
         // Validate the status transition
         if (!IsValidStatusTransition(previousStatus, status))
         {
-            throw new InvalidOperationException(
+            throw new BusinessRuleException(
                 $"Cannot transition from {previousStatus} to {status}");
         }
 

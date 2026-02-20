@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using PrintHub.Core.DTOs.Users;
 using PrintHub.Core.Entities;
+using PrintHub.Core.Exceptions;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 
@@ -35,7 +36,7 @@ public class AuthService : IAuthService
         // Check for existing email
         if (await _userRepo.EmailExistsAsync(request.Email))
         {
-            throw new InvalidOperationException("Email is already registered.");
+            throw new ConflictException("Email is already registered.");
         }
 
         // Create user entity
