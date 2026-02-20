@@ -100,8 +100,7 @@ public class FilesController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var deleted = await _fileService.DeleteFileAsync(id, userId.Value);
-        if (!deleted) return NotFound();
+        await _fileService.DeleteFileAsync(id, userId.Value);
         return NoContent();
     }
 
