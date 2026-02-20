@@ -1,5 +1,6 @@
 using PrintHub.Core.DTOs.Materials;
 using PrintHub.Core.Entities;
+using PrintHub.Core.Exceptions;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 
@@ -32,10 +33,7 @@ public class MaterialService : IMaterialService
     public async Task<IReadOnlyList<MaterialResponse>> GetMaterialsByTypeAsync(string type)
     {
         if (!Enum.TryParse<MaterialType>(type, ignoreCase: true, out var materialType))
-        {
-            _logger.LogWarning("Invalid material type requested: {Type}", type);
-            return new List<MaterialResponse>();
-        }
+            throw new BusinessRuleException($"'{type}' is not a valid material type.");
 
         var materials = await _materialRepo.GetByTypeAsync(materialType);
         return materials.Select(MaterialResponse.FromEntity).ToList();
@@ -56,10 +54,12 @@ public class MaterialService : IMaterialService
         return materials.Select(MaterialResponse.FromEntity).ToList();
     }
 
-    public async Task<MaterialResponse?> GetMaterialByIdAsync(Guid id)
+    public async Task<MaterialResponse> GetMaterialByIdAsync(Guid id)
     {
         var material = await _materialRepo.GetWithTechnologyAsync(id);
-        return material != null ? MaterialResponse.FromEntity(material) : null;
+        if (material == null)
+            throw new NotFoundException("Material", id);
+        return MaterialResponse.FromEntity(material);
     }
 
     // --- Admin management ---
@@ -79,12 +79,12 @@ public class MaterialService : IMaterialService
         return MaterialResponse.FromEntity(created!);
     }
 
-    public async Task<MaterialResponse?> UpdateMaterialAsync(
+    public async Task<MaterialResponse> UpdateMaterialAsync(
         Guid id, UpdateMaterialRequest request)
     {
         var material = await _materialRepo.GetByIdAsync(id);
         if (material == null)
-            return null;
+            throw new NotFoundException("Material", id);
 
         request.ApplyToEntity(material);
         _materialRepo.Update(material);
@@ -98,11 +98,11 @@ public class MaterialService : IMaterialService
         return MaterialResponse.FromEntity(updated!);
     }
 
-    public async Task<bool> DeleteMaterialAsync(Guid id)
+    public async Task DeleteMaterialAsync(Guid id)
     {
         var material = await _materialRepo.GetByIdAsync(id);
         if (material == null)
-            return false;
+            throw new NotFoundException("Material", id);
 
         material.IsActive = false;
         _materialRepo.Update(material);
@@ -110,8 +110,6 @@ public class MaterialService : IMaterialService
 
         _logger.LogInformation("Soft-deleted material {MaterialId}: {MaterialName}",
             material.Id, material.Name);
-
-        return true;
     }
 
     // --- Technologies ---
@@ -122,9 +120,11 @@ public class MaterialService : IMaterialService
         return technologies.Select(PrintingTechnologyResponse.FromEntity).ToList();
     }
 
-    public async Task<PrintingTechnologyResponse?> GetTechnologyByIdAsync(Guid id)
+    public async Task<PrintingTechnologyResponse> GetTechnologyByIdAsync(Guid id)
     {
         var technology = await _materialRepo.GetTechnologyByIdAsync(id);
-        return technology != null ? PrintingTechnologyResponse.FromEntity(technology) : null;
+        if (technology == null)
+            throw new NotFoundException("Printing technology", id);
+        return PrintingTechnologyResponse.FromEntity(technology);
     }
 }

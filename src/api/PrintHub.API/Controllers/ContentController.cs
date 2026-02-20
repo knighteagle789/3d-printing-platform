@@ -51,7 +51,6 @@ public class ContentController : ControllerBase
     public async Task<ActionResult<PortfolioItemResponse>> GetPortfolioItem(Guid id)
     {
         var item = await _contentService.GetPortfolioItemByIdAsync(id);
-        if (item == null) return NotFound();
         return Ok(item);
     }
 
@@ -74,8 +73,6 @@ public class ContentController : ControllerBase
         CreatePortfolioItemRequest request)
     {
         var result = await _contentService.CreatePortfolioItemAsync(request);
-        if (result == null) return BadRequest("Failed to create portfolio item.");
-
         return CreatedAtAction(nameof(GetPortfolioItem), new { id = result.Id }, result);
     }
 
@@ -85,15 +82,15 @@ public class ContentController : ControllerBase
         Guid id, UpdatePortfolioItemRequest request)
     {
         var result = await _contentService.UpdatePortfolioItemAsync(id, request);
-        return result != null ? Ok(result) : NotFound();
+        return Ok(result);
     }
 
     [HttpDelete("portfolio/{id:guid}")]
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> DeletePortfolioItem(Guid id)
     {
-        var result = await _contentService.DeletePortfolioItemAsync(id);
-        return result ? NoContent() : NotFound();
+        await _contentService.DeletePortfolioItemAsync(id);
+        return NoContent();
     }
 
     // ─── Blog (public) ────────────────────────────────────────────────────
@@ -118,7 +115,6 @@ public class ContentController : ControllerBase
     public async Task<ActionResult<BlogPostResponse>> GetBlogPostBySlug(string slug)
     {
         var post = await _contentService.GetBlogPostBySlugAsync(slug);
-        if (post == null) return NotFound();
         return Ok(post);
     }
 
@@ -133,18 +129,11 @@ public class ContentController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        try
-        {
-            var post = await _contentService.CreateBlogPostAsync(userId.Value, request);
-            return CreatedAtAction(
-                nameof(GetBlogPostBySlug),
-                new { slug = post.Slug },
-                post);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var post = await _contentService.CreateBlogPostAsync(userId.Value, request);
+        return CreatedAtAction(
+            nameof(GetBlogPostBySlug),
+            new { slug = post.Slug },
+            post);
     }
 
     // ─── Tags (public) ────────────────────────────────────────────────────

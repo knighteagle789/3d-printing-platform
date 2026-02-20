@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Content;
 using PrintHub.Core.Entities;
+using PrintHub.Core.Exceptions;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 
@@ -49,10 +50,12 @@ public partial class ContentService : IContentService
         return items.Select(PortfolioItemResponse.FromEntity).ToList();
     }
 
-    public async Task<PortfolioItemResponse?> GetPortfolioItemByIdAsync(Guid id)
+    public async Task<PortfolioItemResponse> GetPortfolioItemByIdAsync(Guid id)
     {
         var item = await _contentRepo.GetByIdAsync(id);
-        return item != null ? PortfolioItemResponse.FromEntity(item) : null;
+        if (item == null)
+            throw new NotFoundException("Portfolio item", id);
+        return PortfolioItemResponse.FromEntity(item);
     }
 
     // --- Blog ---
@@ -65,16 +68,20 @@ public partial class ContentService : IContentService
             posts, BlogPostSummaryResponse.FromEntity);
     }
 
-    public async Task<BlogPostResponse?> GetBlogPostBySlugAsync(string slug)
+    public async Task<BlogPostResponse> GetBlogPostBySlugAsync(string slug)
     {
         var post = await _contentRepo.GetBlogPostBySlugAsync(slug);
-        return post != null ? BlogPostResponse.FromEntity(post) : null;
+        if (post == null)
+            throw new NotFoundException($"Blog post with slug '{slug}' was not found.");
+        return BlogPostResponse.FromEntity(post);
     }
 
-    public async Task<BlogPostResponse?> GetBlogPostByIdAsync(Guid id)
+    public async Task<BlogPostResponse> GetBlogPostByIdAsync(Guid id)
     {
         var post = await _contentRepo.GetBlogPostByIdAsync(id);
-        return post != null ? BlogPostResponse.FromEntity(post) : null;
+        if (post == null)
+            throw new NotFoundException("Blog post", id);
+        return BlogPostResponse.FromEntity(post);
     }
 
     public async Task<BlogPostResponse> CreateBlogPostAsync(
@@ -142,25 +149,26 @@ public partial class ContentService : IContentService
     [GeneratedRegex(@"-{2,}")]
     private static partial Regex SlugConsecutiveHyphens();
 
-    public async Task<PortfolioItemResponse?> CreatePortfolioItemAsync(CreatePortfolioItemRequest request)
+    public async Task<PortfolioItemResponse> CreatePortfolioItemAsync(CreatePortfolioItemRequest request)
     {
         var entity = request.ToEntity();
 
         await _contentRepo.AddAsync(entity);
         await _unitOfWork.SaveChangesAsync();
 
-        // Reload to get any navigation properties
         var saved = await _contentRepo.GetByIdAsync(entity.Id);
-        if (saved == null) return null;
+        if (saved == null)
+            throw new BusinessRuleException("Failed to retrieve portfolio item after creation.");
 
         _logger.LogInformation("Created portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
         return PortfolioItemResponse.FromEntity(saved);
     }
 
-    public async Task<PortfolioItemResponse?> UpdatePortfolioItemAsync(Guid id, UpdatePortfolioItemRequest request)
+    public async Task<PortfolioItemResponse> UpdatePortfolioItemAsync(Guid id, UpdatePortfolioItemRequest request)
     {
         var entity = await _contentRepo.GetByIdAsync(id);
-        if (entity == null) return null;
+        if (entity == null)
+            throw new NotFoundException("Portfolio item", id);
 
         request.ApplyToEntity(entity);
 
@@ -171,10 +179,11 @@ public partial class ContentService : IContentService
         return PortfolioItemResponse.FromEntity(entity);
     }
 
-    public async Task<bool> DeletePortfolioItemAsync(Guid id)
+    public async Task DeletePortfolioItemAsync(Guid id)
     {
         var entity = await _contentRepo.GetByIdAsync(id);
-        if (entity == null) return false;
+        if (entity == null)
+            throw new NotFoundException("Portfolio item", id);
 
         entity.IsPublished = false; // Soft delete — unpublish rather than remove
         entity.UpdatedAt = DateTime.UtcNow;
@@ -183,6 +192,5 @@ public partial class ContentService : IContentService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Unpublished portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
-        return true;
     }
 }

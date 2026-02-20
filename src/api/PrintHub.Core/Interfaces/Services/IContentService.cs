@@ -14,18 +14,18 @@ public interface IContentService
     Task<PagedResponse<PortfolioItemResponse>> GetPortfolioItemsAsync(
         int page = 1, int pageSize = 12);
     Task<IReadOnlyList<PortfolioItemResponse>> GetPortfolioByTagAsync(string tag);
-    Task<PortfolioItemResponse?> GetPortfolioItemByIdAsync(Guid id);
+    Task<PortfolioItemResponse> GetPortfolioItemByIdAsync(Guid id);
 
     // Portfolio management (add alongside existing methods)
-    Task<PortfolioItemResponse?> CreatePortfolioItemAsync(CreatePortfolioItemRequest request);
-    Task<PortfolioItemResponse?> UpdatePortfolioItemAsync(Guid id, UpdatePortfolioItemRequest request);
-    Task<bool> DeletePortfolioItemAsync(Guid id);
+    Task<PortfolioItemResponse> CreatePortfolioItemAsync(CreatePortfolioItemRequest request);
+    Task<PortfolioItemResponse> UpdatePortfolioItemAsync(Guid id, UpdatePortfolioItemRequest request);
+    Task DeletePortfolioItemAsync(Guid id);
 
     // --- Blog ---
     Task<PagedResponse<BlogPostSummaryResponse>> GetPublishedBlogPostsAsync(
         int page = 1, int pageSize = 10);
-    Task<BlogPostResponse?> GetBlogPostBySlugAsync(string slug);
-    Task<BlogPostResponse?> GetBlogPostByIdAsync(Guid id);
+    Task<BlogPostResponse> GetBlogPostBySlugAsync(string slug);
+    Task<BlogPostResponse> GetBlogPostByIdAsync(Guid id);
     Task<BlogPostResponse> CreateBlogPostAsync(Guid authorId, CreateBlogPostRequest request);
 
     // --- Tags ---

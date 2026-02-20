@@ -35,7 +35,6 @@ public class MaterialsController : ControllerBase
     public async Task<ActionResult<MaterialResponse>> GetMaterial(Guid id)
     {
         var material = await _materialService.GetMaterialByIdAsync(id);
-        if (material == null) return NotFound();
         return Ok(material);
     }
 
@@ -92,7 +91,6 @@ public class MaterialsController : ControllerBase
     public async Task<ActionResult<PrintingTechnologyResponse>> GetTechnology(Guid id)
     {
         var technology = await _materialService.GetTechnologyByIdAsync(id);
-        if (technology == null) return NotFound();
         return Ok(technology);
     }
 
@@ -122,7 +120,6 @@ public class MaterialsController : ControllerBase
         Guid id, UpdateMaterialRequest request)
     {
         var material = await _materialService.UpdateMaterialAsync(id, request);
-        if (material == null) return NotFound();
         return Ok(material);
     }
 
@@ -133,8 +130,7 @@ public class MaterialsController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> DeleteMaterial(Guid id)
     {
-        var deleted = await _materialService.DeleteMaterialAsync(id);
-        if (!deleted) return NotFound();
+        await _materialService.DeleteMaterialAsync(id);
         return NoContent();
     }
 }
