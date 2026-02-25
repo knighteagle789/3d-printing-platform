@@ -6,13 +6,13 @@ import { useAuthStore } from '@/lib/stores/auth-store';
 
 export function useRequireAuth() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, isInitialized, user } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isInitialized && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isInitialized, router]);
 
-  return { isAuthenticated, user };
+  return { isAuthenticated, isInitialized,user };
 }

@@ -1,7 +1,8 @@
 'use client';
 
+import { useAuthStore } from '@/lib/stores/auth-store';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // useState ensures each browser session gets its own QueryClient
@@ -17,6 +18,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       })
   );
+
+  const initializeFromStorage = useAuthStore(
+    (state) => state.initializeFromStorage
+  );
+
+  useEffect(() => {
+    initializeFromStorage();
+  }, [initializeFromStorage]);
 
   return (
     <QueryClientProvider client={queryClient}>

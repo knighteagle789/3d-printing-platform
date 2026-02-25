@@ -36,7 +36,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function OrdersPage() {
-  const { isAuthenticated } = useRequireAuth();
+  const { isAuthenticated, isInitialized } = useRequireAuth();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['orders'],
@@ -44,6 +44,7 @@ export default function OrdersPage() {
     enabled: isAuthenticated, // don't fetch until we know user is logged in
   });
 
+  if (!isInitialized) return null; // still initializing, render nothing
   if (!isAuthenticated) return null; // redirecting, render nothing
 
   return (
