@@ -48,13 +48,11 @@ public class FilesController : ControllerBase
             OriginalFileName: file.FileName,
             ContentType: file.ContentType,
             FileSizeBytes: file.Length,
-            FileType: fileType);
+            FileType: fileType,
+            FileStream: file.OpenReadStream());
 
         try
         {
-            // TODO: Upload file bytes to Azure Blob Storage here
-            // var storageUrl = await _blobService.UploadAsync(file.OpenReadStream(), ...);
-
             var response = await _fileService.UploadFileAsync(userId.Value, request);
             return CreatedAtAction(
                 nameof(GetFile),

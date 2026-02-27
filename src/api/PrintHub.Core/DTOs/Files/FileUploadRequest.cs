@@ -9,4 +9,5 @@ public record FileUploadRequest(
     string OriginalFileName,
     string ContentType,
     long FileSizeBytes,
-    string FileType);
+    string FileType,
+    Stream FileStream);

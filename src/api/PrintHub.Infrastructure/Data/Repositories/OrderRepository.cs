@@ -37,7 +37,7 @@ public class OrderRepository : Repository<Order>, IOrderRepository
                 .ThenInclude(i => i.Material)
             .Include(o => o.Items)
                 .ThenInclude(i => i.File)
-                    .ThenInclude(f => f!.IsAnalyzed)
+                    //.ThenInclude(f => f!.IsAnalyzed)
             .Include(o => o.StatusHistory.OrderBy(sh => sh.ChangedAt))
                 .ThenInclude(sh => sh.ChangedBy)
             .AsSplitQuery()

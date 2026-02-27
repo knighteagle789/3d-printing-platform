@@ -36,4 +36,20 @@ export const ordersApi = {
 
   getById: (id: string) =>
     apiClient.get<Order>(`/Orders/${id}`),
+
+  create: (data: {
+    notes?: string;
+    shippingAddress?: string;
+    requiredByDate?: string;
+    items: {
+      fileId: string;
+      materialId: string;
+      quantity: number;
+      color?: string;
+      specialInstructions?: string;
+      quality: string;
+      infill?: number;
+      supportStructures: boolean;
+    }[];
+  }) => apiClient.post<Order>('/Orders', data),
 };

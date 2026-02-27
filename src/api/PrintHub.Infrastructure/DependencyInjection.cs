@@ -1,7 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using PrintHub.Core.Interfaces;
+using PrintHub.Core.Interfaces.Services;
 using PrintHub.Infrastructure.Data;
 using PrintHub.Infrastructure.Data.Repositories;
+using PrintHub.Infrastructure.Services;
 
 namespace PrintHub.Infrastructure;
 
@@ -26,6 +28,10 @@ public static class DependencyInjection
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<IFileRepository, FileRepository>();
         services.AddScoped<IContentRepository, ContentRepository>();
+
+        // Infrastructure services
+        services.AddSingleton<IFileStorageService, BlobStorageService>();
+        services.AddScoped<IStlAnalyzerService, StlAnalyzerService>();
 
         // Database Seeder
         services.AddScoped<DatabaseSeeder>();
