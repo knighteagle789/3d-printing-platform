@@ -30,13 +30,13 @@ function formatDate(dateString: string | null) {
   });
 }
 
-function formatDateTime(dateString: string | null) {
-  if (!dateString) return '—';
-  return new Date(dateString).toLocaleString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
-}
+// function formatDateTime(dateString: string | null) {
+//   if (!dateString) return '—';
+//   return new Date(dateString).toLocaleString('en-US', {
+//     year: 'numeric', month: 'short', day: 'numeric',
+//     hour: '2-digit', minute: '2-digit',
+//   });
+// }
 
 export default function OrderDetailPage({
   params,
@@ -135,7 +135,7 @@ export default function OrderDetailPage({
                         <p>Est. weight: {item.estimatedWeight.toFixed(1)}g</p>
                       )}
                       {item.specialInstructions && (
-                        <p className="italic">"{item.specialInstructions}"</p>
+                        <p className="italic">&quot;{item.specialInstructions}&quot;</p>
                       )}
                     </div>
                   </div>

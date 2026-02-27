@@ -3,6 +3,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { ordersApi } from '@/lib/api/orders';
 import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import {
   Table,
@@ -38,6 +41,21 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function OrdersPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const toastShown = useRef(false);
+
+  useEffect(() => {
+    const created = searchParams.get('created');
+    if (created && !toastShown.current) {
+      toastShown.current = true; // prevent showing toast multiple times
+      toast.success('Order created successfully!', {
+        description: 'Your order has been placed and is now being processed.',
+      });
+      // Clean up the URL without triggering a navigation
+      router.replace('/orders');
+    }
+  }, [searchParams, router]);
+
   const { isAuthenticated, isInitialized } = useRequireAuth();
 
   const { data, isLoading, isError } = useQuery({

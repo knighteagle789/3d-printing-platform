@@ -196,7 +196,7 @@ export default function NewQuotePage() {
                   <FormItem>
                     <FormLabel>Required By <span className="text-muted-foreground">(optional)</span></FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -217,7 +217,13 @@ export default function NewQuotePage() {
                     <FormItem>
                       <FormLabel>Minimum ($)</FormLabel>
                       <FormControl>
-                        <Input type="number" min={0} placeholder="0.00" {...field} onChange={e => field.onChange(isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber)} />
+                        <Input 
+                          type="number" 
+                          min={0} 
+                          placeholder="0.00" 
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={e => field.onChange(isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -230,7 +236,13 @@ export default function NewQuotePage() {
                     <FormItem>
                       <FormLabel>Maximum ($)</FormLabel>
                       <FormControl>
-                        <Input type="number" min={0} placeholder="0.00" {...field} onChange={e => field.onChange(isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber)} />
+                        <Input 
+                          type="number" 
+                          min={0} 
+                          placeholder="0.00" 
+                          {...field} 
+                          value={field.value ?? ''}
+                          onChange={e => field.onChange(isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -254,6 +266,7 @@ export default function NewQuotePage() {
                       <Textarea
                         placeholder="Any specific technical requirements..."
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -271,6 +284,7 @@ export default function NewQuotePage() {
                       <Textarea
                         placeholder="Anything else you'd like us to know..."
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />

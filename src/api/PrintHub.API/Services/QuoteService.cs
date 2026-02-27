@@ -38,7 +38,9 @@ public class QuoteService : IQuoteService
             Quantity = request.Quantity,
             PreferredMaterialId = request.PreferredMaterialId,
             PreferredColor = request.PreferredColor,
-            RequiredByDate = request.RequiredByDate,
+            RequiredByDate = request.RequiredByDate.HasValue
+                ? DateTime.SpecifyKind(request.RequiredByDate.Value, DateTimeKind.Utc)
+                : null,
             SpecialRequirements = request.SpecialRequirements,
             Notes = request.Notes,
             BudgetRangeOption = request.BudgetRange != null
