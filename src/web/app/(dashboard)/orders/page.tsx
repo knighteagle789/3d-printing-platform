@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ordersApi } from '@/lib/api/orders';
+import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import {
   Table,
@@ -36,6 +37,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function OrdersPage() {
+  const router = useRouter();
   const { isAuthenticated, isInitialized } = useRequireAuth();
 
   const { data, isLoading, isError } = useQuery({
@@ -92,7 +94,10 @@ export default function OrdersPage() {
               </TableHeader>
               <TableBody>
                 {data.data.items.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow 
+                      key={order.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => router.push(`/orders/${order.id}`)} >
                     <TableCell className="font-medium">
                       {order.orderNumber}
                     </TableCell>

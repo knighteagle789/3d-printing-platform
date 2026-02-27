@@ -1,14 +1,41 @@
 import apiClient from '../api-client';
 
+export interface FileSummary {
+  id: string;
+  originalFileName: string;
+  fileSizeBytes: number;
+  isAnalyzed: boolean;
+}
+
+export interface MaterialSummary {
+  id: string;
+  name: string;
+  type: string;
+  pricePerGram: number;
+}
+
 export interface OrderItem {
   id: string;
-  fileName: string;
-  materialName: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  color: string;
+  color: string | null;
+  specialInstructions: string | null;
+  estimatedWeight: number | null;
+  estimatedPrintTime: number | null;
   quality: string;
+  infill: number | null;
+  supportStructures: boolean;
+  material: MaterialSummary | null;
+  file: FileSummary | null;
+}
+
+export interface OrderStatusHistory {
+  id: string;
+  status: string;
+  notes: string | null;
+  changedAt: string;
+  changedBy: { id: string; email: string; firstName: string; lastName: string } | null;
 }
 
 export interface Order {
@@ -16,8 +43,16 @@ export interface Order {
   orderNumber: string;
   status: string;
   totalPrice: number;
+  shippingCost: number | null;
+  tax: number | null;
+  notes: string | null;
+  shippingAddress: string | null;
+  requiredByDate: string | null;
+  shippedAt: string | null;
+  completedAt: string | null;
   createdAt: string;
   items: OrderItem[];
+  user: { id: string; email: string; firstName: string; lastName: string } | null;
 }
 
 export interface PagedResponse<T> {

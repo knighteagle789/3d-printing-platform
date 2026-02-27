@@ -108,11 +108,26 @@ export function FileAnalysisPanel({ file }: FileAnalysisProps) {
             </div>
 
             {/* Warnings */}
-            {a.warnings && (
-              <p className="text-xs text-amber-600 bg-amber-50 rounded p-2">
-                {a.warnings}
-              </p>
-            )}
+            {a.warnings && (() => {
+              try {
+                const parsed: string[] = JSON.parse(a.warnings);
+                return parsed.length > 0 ? (
+                  <div className="space-y-1">
+                    {parsed.map((w, i) => (
+                      <p key={i} className="text-xs text-amber-600 bg-amber-50 rounded p-2">
+                        {w}
+                      </p>
+                    ))}
+                  </div>
+                ) : null;
+              } catch {
+                return (
+                  <p className="text-xs text-amber-600 bg-amber-50 rounded p-2">
+                    {a.warnings}
+                  </p>
+                );
+              }
+            })()}
           </div>
         )}
       </CardContent>
