@@ -15,7 +15,12 @@ namespace PrintHub.Core.Entities
         public string Description { get; set; } = string.Empty;
         
         public MaterialType Type { get; set; }
-        
+
+        /// <summary>
+        /// Brand/Manufacturer of the material (e.g., "Hatchbox", "Prusament", "Formlabs", "Polymaker", etc.)
+        /// </summary>
+        public string? Brand { get; set; }
+
         /// <summary>
         /// Price per gram in USD
         /// </summary>

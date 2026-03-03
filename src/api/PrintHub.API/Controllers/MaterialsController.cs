@@ -31,6 +31,17 @@ public class MaterialsController : ControllerBase
     }
 
     /// <summary>
+    /// Get all materials, including inactive ones. Admins only.
+    /// </summary>
+    [HttpGet("admin/all")]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<IReadOnlyList<MaterialResponse>>> GetAllMaterials()
+    {
+        var materials = await _materialService.GetAllMaterialsAsync();
+        return Ok(materials);
+    }
+
+    /// <summary>
     /// Get a specific material by ID.
     /// </summary>
     [HttpGet("{id:guid}")]

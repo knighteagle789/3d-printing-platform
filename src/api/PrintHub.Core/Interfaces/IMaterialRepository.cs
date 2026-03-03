@@ -11,6 +11,8 @@ public interface IMaterialRepository : IRepository<Material>
 {
     Task<IReadOnlyList<Material>> GetActiveMaterialsAsync();
 
+    Task<IReadOnlyList<Material>> GetAllWithTechnologyAsync();
+
     Task<IReadOnlyList<Material>> GetByTypeAsync(MaterialType type);
 
     Task<IReadOnlyList<Material>> GetByTechnologyAsync(Guid technologyId);

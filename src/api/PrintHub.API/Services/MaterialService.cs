@@ -30,6 +30,12 @@ public class MaterialService : IMaterialService
         return materials.Select(MaterialResponse.FromEntity).ToList();
     }
 
+    public async Task<IReadOnlyList<MaterialResponse>> GetAllMaterialsAsync()
+    {
+        var materials = await _materialRepo.GetAllWithTechnologyAsync();
+        return materials.Select(MaterialResponse.FromEntity).ToList();
+    }
+
     public async Task<IReadOnlyList<MaterialResponse>> GetMaterialsByTypeAsync(string type)
     {
         if (!Enum.TryParse<MaterialType>(type, ignoreCase: true, out var materialType))

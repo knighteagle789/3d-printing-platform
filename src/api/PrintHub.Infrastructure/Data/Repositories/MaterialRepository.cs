@@ -18,6 +18,15 @@ public class MaterialRepository : Repository<Material>, IMaterialRepository
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<Material>> GetAllWithTechnologyAsync()
+    {
+        return await _dbSet
+            .Include(m => m.PrintingTechnology)
+            .OrderBy(m => m.IsActive ? 0 : 1) // Active materials first
+            .ThenBy(m => m.Name)
+            .ToListAsync();
+    }
+
     public async Task<IReadOnlyList<Material>> GetByTypeAsync(MaterialType type)
     {
         return await _dbSet

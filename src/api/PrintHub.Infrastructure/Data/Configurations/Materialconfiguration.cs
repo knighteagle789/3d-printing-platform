@@ -14,6 +14,7 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.Property(m => m.Name).IsRequired().HasMaxLength(200);
             builder.Property(m => m.Description).IsRequired().HasMaxLength(1000);
             builder.Property(m => m.Type).IsRequired().HasConversion<string>().HasMaxLength(50);
+            builder.Property(m => m.Brand).HasMaxLength(100);
             builder.Property(m => m.PricePerGram).IsRequired().HasPrecision(18, 4);
             builder.Property(m => m.AvailableColors)
                 .HasColumnType("text[]")

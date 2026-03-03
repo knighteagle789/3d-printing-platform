@@ -11,6 +11,7 @@ public interface IMaterialService
 {
     // --- Public catalog ---
     Task<IReadOnlyList<MaterialResponse>> GetActiveMaterialsAsync();
+    Task<IReadOnlyList<MaterialResponse>> GetAllMaterialsAsync();
     Task<IReadOnlyList<MaterialResponse>> GetMaterialsByTypeAsync(string type);
     Task<IReadOnlyList<MaterialResponse>> GetMaterialsByTechnologyAsync(Guid technologyId);
     Task<IReadOnlyList<MaterialResponse>> SearchMaterialsAsync(string searchTerm);

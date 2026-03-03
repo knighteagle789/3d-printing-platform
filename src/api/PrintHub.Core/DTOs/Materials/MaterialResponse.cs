@@ -9,6 +9,7 @@ namespace PrintHub.Core.DTOs.Materials;
 public record MaterialResponse(
     Guid Id,
     string Name,
+    string? Brand,
     string Description,
     string Type,
     decimal PricePerGram,
@@ -24,6 +25,7 @@ public record MaterialResponse(
     public static MaterialResponse FromEntity(Material material) => new(
         Id: material.Id,
         Name: material.Name,
+        Brand: material.Brand,
         Description: material.Description,
         Type: material.Type.ToString(),
         PricePerGram: material.PricePerGram,

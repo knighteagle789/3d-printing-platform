@@ -183,9 +183,10 @@ namespace PrintHub.Infrastructure.Data
                 {
                     Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
                     Name = "PLA (Standard)",
+                    Brand = "Hatchbox",
                     Description = "Biodegradable, easy to print, great for beginners. Low warping.",
                     Type = MaterialType.PLA,
-                    PricePerGram = 0.025m,
+                    PricePerGram = 0.15m,
                     AvailableColors = new[] { "White", "Black", "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Gray", "Natural" },
                     Properties = @"{""strength"":""Medium"",""flexibility"":""Low"",""maxTemp"":""60°C"",""biodegradable"":true}",
                     IsActive = true,
@@ -195,9 +196,10 @@ namespace PrintHub.Infrastructure.Data
                 {
                     Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
                     Name = "ABS (High Strength)",
+                    Brand = "Hatchbox",
                     Description = "Strong, durable, heat resistant. Ideal for functional parts.",
                     Type = MaterialType.ABS,
-                    PricePerGram = 0.030m,
+                    PricePerGram = 0.18m,
                     AvailableColors = new[] { "White", "Black", "Red", "Blue", "Gray" },
                     Properties = @"{""strength"":""High"",""flexibility"":""Low"",""maxTemp"":""98°C"",""biodegradable"":false}",
                     IsActive = true,
@@ -207,9 +209,10 @@ namespace PrintHub.Infrastructure.Data
                 {
                     Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
                     Name = "PETG (Engineering Grade)",
+                    Brand = "Polymaker",
                     Description = "Strong, flexible, chemical resistant. Best of PLA and ABS.",
                     Type = MaterialType.PETG,
-                    PricePerGram = 0.035m,
+                    PricePerGram = 0.20m,
                     AvailableColors = new[] { "Clear", "Black", "White", "Red", "Blue", "Orange" },
                     Properties = @"{""strength"":""High"",""flexibility"":""Medium"",""maxTemp"":""80°C"",""foodSafe"":true}",
                     IsActive = true,
@@ -219,9 +222,10 @@ namespace PrintHub.Infrastructure.Data
                 {
                     Id = new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"),
                     Name = "TPU (Flexible)",
+                    Brand = "Polymaker",
                     Description = "Rubber-like flexibility, excellent durability and impact resistance.",
                     Type = MaterialType.TPU,
-                    PricePerGram = 0.045m,
+                    PricePerGram = 0.28m,
                     AvailableColors = new[] { "Black", "White", "Red", "Blue", "Clear" },
                     Properties = @"{""strength"":""Medium"",""flexibility"":""Very High"",""maxTemp"":""60°C"",""shore"":""95A""}",
                     IsActive = true,
@@ -231,9 +235,10 @@ namespace PrintHub.Infrastructure.Data
                 {
                     Id = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
                     Name = "Nylon (PA12)",
+                    Brand = "Prusament",
                     Description = "Extremely strong and durable. Excellent for functional parts.",
                     Type = MaterialType.Nylon,
-                    PricePerGram = 0.055m,
+                    PricePerGram = 0.35m,
                     AvailableColors = new[] { "Natural", "Black", "White" },
                     Properties = @"{""strength"":""Very High"",""flexibility"":""Medium"",""maxTemp"":""120°C"",""wearResistant"":true}",
                     IsActive = true,
@@ -243,9 +248,10 @@ namespace PrintHub.Infrastructure.Data
                 {
                     Id = new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff"),
                     Name = "Standard Resin",
+                    Brand = "Elegoo",
                     Description = "High detail SLA resin for smooth surface finish.",
                     Type = MaterialType.Resin,
-                    PricePerGram = 0.065m,
+                    PricePerGram = 0.40m,
                     AvailableColors = new[] { "White", "Black", "Gray", "Clear" },
                     Properties = @"{""strength"":""Medium"",""detail"":""Very High"",""finish"":""Smooth"",""uv"":true}",
                     IsActive = true,
@@ -255,9 +261,10 @@ namespace PrintHub.Infrastructure.Data
                 {
                     Id = Guid.NewGuid(),
                     Name = "PLA (Legacy)",
+                    Brand = "Hatchbox",
                     Description = "Discontinued standard PLA. Replaced by PLA (Standard).",
                     Type = MaterialType.PLA,
-                    PricePerGram = 0.020m,
+                    PricePerGram = 0.12m,
                     AvailableColors = new[] { "White", "Black" },
                     IsActive = false,   // Discontinued - tests IsActive filtering!
                     CreatedAt = DateTime.UtcNow.AddMonths(-12)

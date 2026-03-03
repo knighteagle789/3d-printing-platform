@@ -8,6 +8,7 @@ namespace PrintHub.Core.DTOs.Materials;
 /// </summary>
 public record CreateMaterialRequest(
     string Name,
+    string? Brand,
     string Description,
     string Type,
     decimal PricePerGram,
@@ -22,6 +23,7 @@ public record CreateMaterialRequest(
     {
         Id = Guid.NewGuid(),
         Name = Name,
+        Brand = Brand,
         Description = Description,
         Type = Enum.Parse<MaterialType>(Type, ignoreCase: true),
         PricePerGram = PricePerGram,

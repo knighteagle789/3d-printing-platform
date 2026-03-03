@@ -8,6 +8,7 @@ namespace PrintHub.Core.DTOs.Materials;
 /// </summary>
 public record UpdateMaterialRequest(
     string? Name,
+    string? Brand,
     string? Description,
     string? Type,
     decimal? PricePerGram,
@@ -24,6 +25,9 @@ public record UpdateMaterialRequest(
     {
         if (Name is not null)
             material.Name = Name;
+
+        if (Brand is not null)
+            material.Brand = Brand;
 
         if (Description is not null)
             material.Description = Description;

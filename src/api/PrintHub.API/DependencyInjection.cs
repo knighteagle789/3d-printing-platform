@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<IQuoteService, QuoteService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<IContentService, ContentService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
 
         return services;
     }

@@ -19,4 +19,10 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetWithRolesAsync(Guid userId);
 
     Task<PagedResult<User>> GetActiveUsersAsync(int page = 1, int pageSize = 20);
+
+    Task<PagedResult<User>> GetAllUsersAsync(int page = 1, int pageSize = 20);
+
+    Task DeleteUserRolesAsync(Guid userId);
+
+    Task AddUserRoleAsync(UserRole userRole);
 }

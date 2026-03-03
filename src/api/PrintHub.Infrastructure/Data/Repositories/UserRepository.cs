@@ -56,4 +56,36 @@ public class UserRepository : Repository<User>, IUserRepository
 
         return new PagedResult<User>(items, totalCount, page, pageSize);
     }
+
+    public async Task<PagedResult<User>> GetAllUsersAsync(int page = 1, int pageSize = 20)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = _dbSet.Include(u => u.UserRoles);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderBy(u => u.LastName)
+            .ThenBy(u => u.FirstName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PagedResult<User>(items, totalCount, page, pageSize);
+    }
+
+    public async Task DeleteUserRolesAsync(Guid userId)
+    {
+        var roles = await _context.Set<UserRole>()
+            .Where(r => r.UserId == userId)
+            .ToListAsync();
+
+        _context.Set<UserRole>().RemoveRange(roles);
+    }
+
+    public async Task AddUserRoleAsync(UserRole role)
+    {
+        await _context.Set<UserRole>().AddAsync(role);
+    }
 }
