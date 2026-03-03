@@ -31,6 +31,7 @@ export interface QuoteRequest {
   file: { id: string; originalFileName: string; } | null;
   preferredMaterial: { id: string; name: string; } | null;
   responses: QuoteResponseDto[];
+  user: { id: string; firstName: string; lastName: string; } | null;
 }
 
 export interface CreateQuoteRequest {
@@ -43,6 +44,17 @@ export interface CreateQuoteRequest {
   notes?: string;
   budgetMin?: number;
   budgetMax?: number;
+}
+
+export interface CreateQuoteResponseRequest {
+  price: number;
+  shippingCost?: number;
+  estimatedDays: number;
+  recommendedMaterialId?: string;
+  recommendedColor?: string;
+  technicalNotes?: string;
+  alternativeOptions?: string;
+  expiresInDays: number;
 }
 
 export const quotesApi = {
@@ -61,4 +73,17 @@ export const quotesApi = {
     apiClient.post<QuoteRequest>(
       `/Quotes/${quoteId}/responses/${responseId}/accept`
     ),
+
+  getPending: (page = 1, pageSize = 50) =>
+    apiClient.get<PagedResponse<QuoteRequest>>('/Quotes/pending', {
+      params: { page, pageSize },
+    }),
+
+  addResponse: (quoteId: string, data: CreateQuoteResponseRequest) =>
+    apiClient.post<QuoteResponseDto>(`/Quotes/${quoteId}/responses`, data),
+
+  getExpiring: (withinDays = 7) =>
+    apiClient.get<QuoteResponseDto[]>(`/Quotes/responses/expiring`, {
+      params: { withinDays },
+    }),
 };

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Package, Upload, FileText, User, LogOut } from 'lucide-react';
+import { Package, Upload, FileText, User, LogOut, ShieldCheck } from 'lucide-react';
 
 const navLinks = [
   { href: '/orders',  label: 'Orders',  icon: Package  },
@@ -62,7 +62,7 @@ export function Navbar() {
 
         {/* User menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild suppressHydrationWarning>
             <Button variant="ghost" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden md:inline">
@@ -84,6 +84,17 @@ export function Navbar() {
                 Profile
               </Link>
             </DropdownMenuItem>
+            {(user?.roles.includes('Admin') || user?.roles.includes('Staff')) && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/admin">
+                    <ShieldCheck className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </Link>
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleLogout}

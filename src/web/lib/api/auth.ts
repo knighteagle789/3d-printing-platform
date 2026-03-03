@@ -12,6 +12,18 @@ export interface AuthResponse {
   };
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string | null;
+  companyName: string | null;
+  isActive: boolean;
+  roles: string[];
+  createdAt: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -32,5 +44,11 @@ export const authApi = {
     apiClient.post<AuthResponse>('/Auth/register', data),
 
   me: () =>
-    apiClient.get<AuthResponse['user']>('/Auth/me'),
+    apiClient.get<UserProfile>('/Auth/me'),
+
+  updateProfile: (data: { firstName?: string; lastName?: string; phoneNumber?: string; companyName?: string }) =>
+    apiClient.put<UserProfile>('/Auth/me', data),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    apiClient.post('/Auth/change-password', data),
 };

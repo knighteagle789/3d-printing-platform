@@ -1,8 +1,10 @@
 'use client';
 
 import { use } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { CheckCircle } from 'lucide-react';
 import { quotesApi } from '@/lib/api/quotes';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { Badge } from '@/components/ui/badge';
@@ -35,9 +37,21 @@ export default function QuoteDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { isAuthenticated, isInitialized } = useRequireAuth();
+  const queryClient = useQueryClient();
+
+  const acceptMutation = useMutation({
+    mutationFn: (responseId: string) =>
+      quotesApi.acceptResponse(id, responseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes']});
+      toast.success('Quote accepted! You can now proceed to place your order.');
+    },
+    onError: () => toast.error('Failed to accept quote. Please try again.'),
+  });
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['quote', id],
+    queryKey: ['quotes', id],
     queryFn: () => quotesApi.getById(id),
     enabled: isAuthenticated,
   });
@@ -189,7 +203,22 @@ export default function QuoteDetailPage({
                         <span className="text-lg font-semibold">
                           ${response.price.toFixed(2)}
                         </span>
-                        {response.isAccepted && <Badge>Accepted</Badge>}
+                        {response.isAccepted
+                          ? <Badge className="gap-1"><CheckCircle className="h-3 w-3" /> Accepted</Badge>
+                          : quote.status === 'QuoteProvided' && (
+                              <Button
+                                size="sm"
+                                disabled={acceptMutation.isPending}
+                                onClick={() => {
+                                  if (confirm(`Accept this quote for $${response.price.toFixed(2)}?`)) {
+                                    acceptMutation.mutate(response.id);
+                                  }
+                                }}
+                              >
+                                {acceptMutation.isPending ? 'Accepting...' : 'Accept Quote'}
+                              </Button>
+                            )
+                        }
                       </div>
                       {response.shippingCost != null && (
                         <p className="text-muted-foreground">

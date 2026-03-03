@@ -6,6 +6,7 @@ import { filesApi, UploadedFile } from '@/lib/api/files';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { FileDropzone } from './file-dropzone';
 import { FileAnalysisPanel } from './file-analysis';
+import { StlViewer } from '@/components/3d-viewer/StlViewer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, ShoppingCart } from 'lucide-react';
@@ -16,11 +17,20 @@ export default function UploadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const handleFileSelect = async (file: File) => {
     setIsUploading(true);
     setUploadError(null);
     setUploadedFile(null);
+
+    // Show 3D preview immediately using local blob URL
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (file.name.toLocaleLowerCase().endsWith('.stl')) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
 
     try {
       const response = await filesApi.upload(file);
@@ -48,7 +58,7 @@ export default function UploadPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
+    <div className="container mx-auto p-6 max-w-3xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Upload 3D Model</h1>
         <p className="text-muted-foreground mt-1">
@@ -72,6 +82,18 @@ export default function UploadPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* 3D Viewer - shows as soon as file is selected */}
+        {previewUrl && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">3D Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StlViewer url={previewUrl} className="w-full h-[400px] rounded-b-lg overflow-hidden bg-slate-50" />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Analysis results */}
         {uploadedFile && (

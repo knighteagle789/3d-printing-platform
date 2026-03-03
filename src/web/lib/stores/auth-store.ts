@@ -26,21 +26,31 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   setAuth: (user, token) => {
     localStorage.setItem('auth_token', token);
+    localStorage.setItem('auth_user', JSON.stringify(user));
     set({ user, token, isAuthenticated: true });
   },
 
   clearAuth: () => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     set({ user: null, token: null, isAuthenticated: false });
   },
 
   initializeFromStorage: () => {
     if (typeof window === 'undefined') return;
     const token = localStorage.getItem('auth_token');
-    if (token) {
+    const userJson = localStorage.getItem('auth_user');
+    if (token && userJson) {
       // We have a token - mark as authenticated so protected pages don't redirect
       // The actual user data will be fetched by the dashboard layout
-      set({ token, isAuthenticated: true, isInitialized: true });
+      try {
+        const user = JSON.parse(userJson);
+        set({ user, token, isAuthenticated: true, isInitialized: true });
+      } catch (error) {
+        console.error('Failed to parse user from localStorage', error);
+        set({ isInitialized: true });
+      }
+      
     } else {
         set({ isInitialized: true });
     }

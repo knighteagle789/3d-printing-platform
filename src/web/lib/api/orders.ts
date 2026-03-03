@@ -1,3 +1,4 @@
+import { get } from 'http';
 import apiClient from '../api-client';
 
 export interface FileSummary {
@@ -71,6 +72,20 @@ export const ordersApi = {
 
   getById: (id: string) =>
     apiClient.get<Order>(`/Orders/${id}`),
+
+  getByStatus: (status: string, page = 1, pageSize = 50) =>
+    apiClient.get<PagedResponse<Order>>(`/Orders/status/${status}`, {
+      params: { status, page, pageSize },
+    }),
+
+  getRecent: (count = 10) =>
+    apiClient.get<Order[]>(`/Orders/recent?count=${count}`),
+
+  updateStatus: (id: string, status: string, notes?: string) =>
+    apiClient.patch<Order>(`/Orders/${id}/status`, { status, notes }),
+
+  getHistory: (id: string) =>
+    apiClient.get<OrderStatusHistory[]>(`/Orders/${id}/history`),
 
   create: (data: {
     notes?: string;
