@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrintHub.Core.Entities;
 
 namespace PrintHub.Infrastructure.Data.Configurations
@@ -8,6 +10,8 @@ namespace PrintHub.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Material> builder)
         {
+
+
             builder.ToTable("Materials");
             builder.HasKey(m => m.Id);
 
@@ -18,9 +22,11 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.Property(m => m.PricePerGram).IsRequired().HasPrecision(18, 4);
             builder.Property(m => m.AvailableColors)
                 .HasColumnType("text[]")
-                .HasConversion<string[]>(
-                    v => v ?? Array.Empty<string>(),
-                    v => v);
+                .Metadata.SetValueComparer(new ValueComparer<string[]>(
+                    (c1, c2) => c1 != null && c2 != null && c1.SequenceEqual(c2),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToArray()
+                ));
             builder.Property(m => m.Properties).HasColumnType("jsonb");
             builder.Property(m => m.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
 
