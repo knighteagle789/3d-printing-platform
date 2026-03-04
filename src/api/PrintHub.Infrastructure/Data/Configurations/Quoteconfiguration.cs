@@ -24,6 +24,7 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.HasIndex(q => q.UserId);
             builder.HasIndex(q => q.Status);
             builder.HasIndex(q => q.CreatedAt);
+            builder.HasIndex(q => q.OrderId);
 
             builder.HasOne(q => q.File)
                 .WithMany()
@@ -39,6 +40,11 @@ namespace PrintHub.Infrastructure.Data.Configurations
                 .WithOne(r => r.QuoteRequest)
                 .HasForeignKey(r => r.QuoteRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(q => q.Order)
+                .WithMany()
+                .HasForeignKey(q => q.OrderId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 

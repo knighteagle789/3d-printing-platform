@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
 import { quotesApi } from '@/lib/api/quotes';
+import { ordersApi } from '@/lib/api/orders';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,15 @@ export default function QuoteDetailPage({
       toast.success('Quote accepted! You can now proceed to place your order.');
     },
     onError: () => toast.error('Failed to accept quote. Please try again.'),
+  });
+
+  const convertMutation = useMutation({ 
+    mutationFn: () => quotesApi.convertToOrder(id),
+    onSuccess: (res) => {
+      toast.success('Quote converted to order! Redirecting to order details...');
+      router.push(`/orders/${res.data.id}`);
+    },
+    onError: () => toast.error('Failed to convert quote to order. Please try again.'),
   });
 
   const { data, isLoading, isError } = useQuery({
@@ -246,6 +256,52 @@ export default function QuoteDetailPage({
             )}
           </CardContent>
         </Card>
+
+        {quote.status === 'Accepted' && !quote.orderId && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold">Ready to place your order?</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your quote has been accepted. Create an order to begin production.
+                  </p>
+                </div>
+                <Button
+                  disabled={convertMutation.isPending}
+                  onClick={() => {
+                    if (confirm('Create an order from this quote?')) {
+                      convertMutation.mutate();
+                    }
+                  }}
+                >
+                  {convertMutation.isPending ? 'Creating...' : 'Create Order'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {quote.status === 'Accepted' && quote.orderId && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold">Order Created</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This quote has been converted to an order.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/orders/${quote.orderId}`)}
+                >
+                  View Order
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}        
 
         {/* Notes */}
         {quote.notes && (

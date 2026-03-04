@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Quotes;
 using PrintHub.Core.Interfaces.Services;
+using PrintHub.Core.DTOs.Orders;
 
 namespace PrintHub.API.Controllers;
 
@@ -85,6 +86,19 @@ public class QuotesController : ControllerBase
 
         var quote = await _quoteService.AcceptQuoteResponseAsync(quoteId, responseId, userId.Value);
         return Ok(quote);
+    }
+
+    /// <summary>
+    /// Convert an accepted quote to an order.
+    /// </summary>
+    [HttpPost("{id:guid}/convert-to-order")]
+    public async Task<ActionResult<OrderResponse>> ConvertToOrder(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var order = await _quoteService.ConvertQuoteToOrderAsync(id, userId.Value);
+        return CreatedAtAction("GetOrder", "Orders", new { id = order.Id }, order);
     }
 
     // ─── Admin endpoints ──────────────────────────────────────────────────

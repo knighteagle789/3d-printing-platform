@@ -1,4 +1,5 @@
 using PrintHub.Core.DTOs.Common;
+using PrintHub.Core.DTOs.Orders;
 using PrintHub.Core.DTOs.Quotes;
 
 namespace PrintHub.Core.Interfaces.Services;
@@ -24,4 +25,6 @@ public interface IQuoteService
     Task<QuoteRequestResponse> AddQuoteResponseAsync(
         Guid quoteRequestId, CreateQuoteResponseRequest request, Guid adminUserId);
     Task<IReadOnlyList<QuoteRequestResponse>> GetExpiringQuotesAsync(int withinDays = 7);
+
+    Task<OrderResponse> ConvertQuoteToOrderAsync(Guid quoteRequestId, Guid userId);
 }

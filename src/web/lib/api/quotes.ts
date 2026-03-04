@@ -1,5 +1,6 @@
+import { convert } from 'three/src/nodes/tsl/TSLCore.js';
 import apiClient from '../api-client';
-import { PagedResponse } from './orders';
+import { Order, PagedResponse } from './orders';
 
 export interface QuoteResponseDto {
   id: string;
@@ -32,6 +33,7 @@ export interface QuoteRequest {
   preferredMaterial: { id: string; name: string; } | null;
   responses: QuoteResponseDto[];
   user: { id: string; firstName: string; lastName: string; } | null;
+  orderId: string | null;
 }
 
 export interface CreateQuoteRequest {
@@ -86,4 +88,7 @@ export const quotesApi = {
     apiClient.get<QuoteResponseDto[]>(`/Quotes/responses/expiring`, {
       params: { withinDays },
     }),
+
+  convertToOrder: (quoteId: string) =>
+    apiClient.post<Order>(`/Quotes/${quoteId}/convert-to-order`),
 };

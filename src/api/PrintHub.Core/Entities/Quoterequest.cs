@@ -119,6 +119,13 @@ namespace PrintHub.Core.Entities
         public DateTime CreatedAt { get; set; }
         
         public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// The order created from this quote, if converted
+        /// </summary>
+        public Guid? OrderId { get; set; }
+
+        public virtual Order? Order { get; set; }
         
         // Navigation properties
         public virtual User User { get; set; } = null!;
