@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrintHub.Core.DTOs.Users;
 using PrintHub.Core.Interfaces.Services;
+using PrintHub.API.Extensions;
 
 namespace PrintHub.API.Controllers;
 
@@ -65,10 +66,8 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<ActionResult<UserResponse>> GetCurrentUser()
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var user = await _authService.GetUserByIdAsync(userId.Value);
+        var userId = User.GetUserId();
+        var user = await _authService.GetUserByIdAsync(userId);
         return Ok(user);
     }
 
@@ -80,10 +79,8 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<UserResponse>> UpdateProfile(
         UpdateUserRequest request)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var user = await _authService.UpdateUserAsync(userId.Value, request);
+        var userId = User.GetUserId();
+        var user = await _authService.UpdateUserAsync(userId, request);
         return Ok(user);
     }
 
@@ -94,20 +91,11 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        await _authService.ChangePasswordAsync(userId.Value, request);
+        var userId = User.GetUserId();
+        await _authService.ChangePasswordAsync(userId, request);
         return Ok(new { message = "Password changed successfully." });
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────
 
-    private Guid? GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-            return null;
-        return userId;
-    }
 }

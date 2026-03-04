@@ -102,4 +102,7 @@ export const ordersApi = {
       supportStructures: boolean;
     }[];
   }) => apiClient.post<Order>('/Orders', data),
+
+  createPaymentSession: (orderId: string) =>
+    apiClient.post<{ url: string }>(`/Payments/create-session/${orderId}`),
 };

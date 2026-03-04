@@ -30,6 +30,9 @@ namespace PrintHub.Infrastructure.Data
         public DbSet<QuoteRequest> QuoteRequests { get; set; } = null!;
         public DbSet<QuoteResponse> QuoteResponses { get; set; } = null!;
 
+        // Payments
+        public DbSet<Payment> Payments { get; set; }
+
         // Files
         public DbSet<UploadedFile> UploadedFiles { get; set; } = null!;
         public DbSet<FileAnalysis> FileAnalyses { get; set; } = null!;

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Files;
 using PrintHub.Core.Interfaces.Services;
+using PrintHub.API.Extensions;
 
 namespace PrintHub.API.Controllers;
 
@@ -28,9 +29,8 @@ public class FilesController : ControllerBase
     [RequestSizeLimit(104_857_600)] // 100 MB
     public async Task<ActionResult<FileResponse>> UploadFile(IFormFile file)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
+        var userId = User.GetUserId();
+        
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "No file provided." });
 
@@ -53,7 +53,7 @@ public class FilesController : ControllerBase
 
         try
         {
-            var response = await _fileService.UploadFileAsync(userId.Value, request);
+            var response = await _fileService.UploadFileAsync(userId, request);
             return CreatedAtAction(
                 nameof(GetFile),
                 new { id = response.Id },
@@ -84,10 +84,8 @@ public class FilesController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var files = await _fileService.GetUserFilesAsync(userId.Value, page, pageSize);
+        var userId = User.GetUserId();
+        var files = await _fileService.GetUserFilesAsync(userId, page, pageSize);
         return Ok(files);
     }
 
@@ -97,20 +95,11 @@ public class FilesController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteFile(Guid id)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        await _fileService.DeleteFileAsync(id, userId.Value);
+        var userId = User.GetUserId();
+        await _fileService.DeleteFileAsync(id, userId);
         return NoContent();
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────
 
-    private Guid? GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-            return null;
-        return userId;
-    }
 }

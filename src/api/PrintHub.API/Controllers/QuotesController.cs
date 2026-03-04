@@ -6,6 +6,7 @@ using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Quotes;
 using PrintHub.Core.Interfaces.Services;
 using PrintHub.Core.DTOs.Orders;
+using PrintHub.API.Extensions;
 
 namespace PrintHub.API.Controllers;
 
@@ -31,10 +32,8 @@ public class QuotesController : ControllerBase
     public async Task<ActionResult<QuoteRequestResponse>> CreateQuoteRequest(
         CreateQuoteRequest request)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var quote = await _quoteService.CreateQuoteRequestAsync(userId.Value, request);
+        var userId = User.GetUserId();
+        var quote = await _quoteService.CreateQuoteRequestAsync(userId, request);
         return CreatedAtAction(
             nameof(GetQuote),
             new { id = quote.Id },
@@ -50,10 +49,8 @@ public class QuotesController : ControllerBase
         var quote = await _quoteService.GetQuoteByIdAsync(id);
 
         // Customers can only see their own quotes
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        if (quote.User?.Id != userId.Value && !User.IsInRole("Admin") && !User.IsInRole("Staff"))
+        var userId = User.GetUserId();
+        if (quote.User?.Id != userId && !User.IsInRole("Admin") && !User.IsInRole("Staff"))
             return NotFound();
 
         return Ok(quote);
@@ -67,10 +64,8 @@ public class QuotesController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var quotes = await _quoteService.GetUserQuotesAsync(userId.Value, page, pageSize);
+        var userId = User.GetUserId();
+        var quotes = await _quoteService.GetUserQuotesAsync(userId, page, pageSize);
         return Ok(quotes);
     }
 
@@ -81,10 +76,8 @@ public class QuotesController : ControllerBase
     public async Task<ActionResult<QuoteRequestResponse>> AcceptQuoteResponse(
         Guid quoteId, Guid responseId)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var quote = await _quoteService.AcceptQuoteResponseAsync(quoteId, responseId, userId.Value);
+        var userId = User.GetUserId();
+        var quote = await _quoteService.AcceptQuoteResponseAsync(quoteId, responseId, userId);
         return Ok(quote);
     }
 
@@ -94,10 +87,8 @@ public class QuotesController : ControllerBase
     [HttpPost("{id:guid}/convert-to-order")]
     public async Task<ActionResult<OrderResponse>> ConvertToOrder(Guid id)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var order = await _quoteService.ConvertQuoteToOrderAsync(id, userId.Value);
+        var userId = User.GetUserId();
+        var order = await _quoteService.ConvertQuoteToOrderAsync(id, userId);
         return CreatedAtAction("GetOrder", "Orders", new { id = order.Id }, order);
     }
 
@@ -124,10 +115,8 @@ public class QuotesController : ControllerBase
     public async Task<ActionResult<QuoteRequestResponse>> AddQuoteResponse(
         Guid quoteId, CreateQuoteResponseRequest request)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var quote = await _quoteService.AddQuoteResponseAsync(quoteId, request, userId.Value);
+        var userId = User.GetUserId();
+        var quote = await _quoteService.AddQuoteResponseAsync(quoteId, request, userId);
         return Ok(quote);
     }
 
@@ -145,11 +134,4 @@ public class QuotesController : ControllerBase
 
     // ─── Private helpers ──────────────────────────────────────────────────
 
-    private Guid? GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-            return null;
-        return userId;
-    }
 }

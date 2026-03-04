@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Content;
 using PrintHub.Core.Interfaces.Services;
+using PrintHub.API.Extensions;
 
 namespace PrintHub.API.Controllers;
 
@@ -128,10 +129,8 @@ public class ContentController : ControllerBase
     public async Task<ActionResult<BlogPostResponse>> CreateBlogPost(
         CreateBlogPostRequest request)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var post = await _contentService.CreateBlogPostAsync(userId.Value, request);
+        var userId = User.GetUserId();
+        var post = await _contentService.CreateBlogPostAsync(userId, request);
         return CreatedAtAction(
             nameof(GetBlogPostBySlug),
             new { slug = post.Slug },
@@ -152,11 +151,4 @@ public class ContentController : ControllerBase
 
     // ─── Private helpers ──────────────────────────────────────────────────
 
-    private Guid? GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-            return null;
-        return userId;
-    }
 }

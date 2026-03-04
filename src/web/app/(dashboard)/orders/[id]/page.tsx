@@ -1,15 +1,16 @@
 'use client';
 
-import { use } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { use, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ordersApi } from '@/lib/api/orders';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Package, MapPin, Calendar, FileText } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard } from 'lucide-react';
+import { toast } from 'sonner';
 
 const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   Draft:        'outline',
@@ -51,6 +52,25 @@ export default function OrderDetailPage({
     queryKey: ['order', id],
     queryFn: () => ordersApi.getById(id),
     enabled: isAuthenticated,
+  });
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    if (payment === 'success') {
+      toast.success('Payment successful! Your order has been approved.');
+    } else if (payment === 'cancelled') {
+      toast.info('Payment cancelled. You can try again when ready.');
+    }
+  }, [searchParams]);
+
+  const payMutation = useMutation({
+    mutationFn: () => ordersApi.createPaymentSession(id),
+    onSuccess: (res) => {
+      window.location.href = res.data.url;
+    },
+    onError: () => toast.error('Failed to start checkout. Please try again.'),
   });
 
   if (!isInitialized) return null;
@@ -109,6 +129,39 @@ export default function OrderDetailPage({
       </div>
 
       <div className="space-y-6">
+        {/* Payment Section */}
+        {order.status === 'Submitted' && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold">Payment Required</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Complete your payment to approve this order and begin production.
+                  </p>
+                  <p className="text-lg font-bold mt-2">${order.totalPrice.toFixed(2)}</p>
+                </div>
+                <Button
+                  onClick={() => payMutation.mutate()}
+                  disabled={payMutation.isPending}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  {payMutation.isPending ? 'Redirecting...' : 'Pay Now'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {order.status === 'Approved' && (
+          <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
+            <CardContent className="pt-6">
+              <p className="font-semibold text-green-700 dark:text-green-400">
+                ✓ Payment confirmed — your order is approved and entering production
+              </p>
+            </CardContent>
+          </Card>
+        )}        
         {/* Order Items */}
         <Card>
           <CardHeader>

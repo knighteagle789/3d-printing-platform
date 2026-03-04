@@ -110,6 +110,13 @@ public class SendGridEmailService : IEmailService
                    <p>Great news — your order <strong>{orderNumber}</strong> is now on the printer.</p>
                    <p>We'll let you know when it ships.</p>"
             ),
+            "Approved" => (
+                $"Payment Confirmed — {orderNumber}",
+                $@"<h2>Payment confirmed!</h2>
+                <p>Hi {firstName},</p>
+                <p>We've received your payment for order <strong>{orderNumber}</strong>. 
+                Your order has been approved and will enter production shortly.</p>"
+            ),
             "Shipped" => (
                 $"Your Order Has Shipped — {orderNumber}",
                 $@"<h2>Your order is on its way!</h2>

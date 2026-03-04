@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Orders;
 using PrintHub.Core.Interfaces.Services;
+using PrintHub.API.Extensions;
 
 namespace PrintHub.API.Controllers;
 
@@ -30,10 +31,8 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult<OrderResponse>> CreateOrder(
         CreateOrderRequest request)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var order = await _orderService.CreateOrderAsync(userId.Value, request);
+        var userId = User.GetUserId();
+        var order = await _orderService.CreateOrderAsync(userId, request);
         return CreatedAtAction(
             nameof(GetOrder),
             new { id = order.Id },
@@ -49,10 +48,8 @@ public class OrdersController : ControllerBase
         var order = await _orderService.GetOrderByIdAsync(id);
 
         // Customers can only see their own orders
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        if (order.User?.Id != userId.Value && !User.IsInRole("Admin") && !User.IsInRole("Staff"))
+        var userId = User.GetUserId();
+        if (order.User?.Id != userId && !User.IsInRole("Admin") && !User.IsInRole("Staff"))
             return NotFound();
 
         return Ok(order);
@@ -66,10 +63,8 @@ public class OrdersController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var orders = await _orderService.GetUserOrdersAsync(userId.Value, page, pageSize);
+        var userId = User.GetUserId();
+        var orders = await _orderService.GetUserOrdersAsync(userId, page, pageSize);
         return Ok(orders);
     }
 
@@ -120,21 +115,12 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult<OrderResponse>> UpdateOrderStatus(
         Guid id, [FromBody] UpdateOrderStatusRequest request)
     {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
+        var userId = User.GetUserId();
         var order = await _orderService.UpdateOrderStatusAsync(
-            id, request.Status, userId.Value, request.Notes);
+            id, request.Status, userId, request.Notes);
         return Ok(order);
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────
 
-    private Guid? GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-            return null;
-        return userId;
-    }
 }
