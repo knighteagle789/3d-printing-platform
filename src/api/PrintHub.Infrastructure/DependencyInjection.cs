@@ -32,6 +32,7 @@ public static class DependencyInjection
         // Infrastructure services
         services.AddSingleton<IFileStorageService, BlobStorageService>();
         services.AddScoped<IStlAnalyzerService, StlAnalyzerService>();
+        services.AddScoped<IEmailService, SendGridEmailService>();
 
         // Database Seeder
         services.AddScoped<DatabaseSeeder>();

@@ -13,6 +13,8 @@ public class OrderService : IOrderService
     private readonly IOrderRepository _orderRepo;
     private readonly IMaterialRepository _materialRepo;
     private readonly IFileRepository _fileRepo;
+    private readonly IEmailService _emailService;
+    private readonly IUserRepository _userRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<OrderService> _logger;
 
@@ -20,12 +22,16 @@ public class OrderService : IOrderService
         IOrderRepository orderRepo,
         IMaterialRepository materialRepo,
         IFileRepository fileRepo,
+        IEmailService emailService,
+        IUserRepository userRepo,
         IUnitOfWork unitOfWork,
         ILogger<OrderService> logger)
     {
         _orderRepo = orderRepo;
         _materialRepo = materialRepo;
         _fileRepo = fileRepo;
+        _emailService = emailService;
+        _userRepo = userRepo;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -103,7 +109,7 @@ public class OrderService : IOrderService
 
         _logger.LogInformation(
             "Order created: {OrderNumber} by user {UserId}, total: {TotalPrice:C}",
-            order.OrderNumber, userId, totalPrice);
+            order.OrderNumber, userId, totalPrice);        
 
         // Reload with all relationships for the response
         var created = await _orderRepo.GetOrderWithDetailsAsync(order.Id);
@@ -190,6 +196,24 @@ public class OrderService : IOrderService
         });
 
         await _unitOfWork.SaveChangesAsync();
+
+        var milestones = new[] { "Printing", "Shipped", "Completed" };
+        if (milestones.Contains(status.ToString()))
+        {
+            _ = Task.Run(async () =>
+            {
+                var updated = await _orderRepo.GetOrderWithDetailsAsync(orderId);
+                if (updated?.User != null)
+                {
+                    await _emailService.SendOrderStatusUpdateAsync(
+                        updated.User.Email,
+                        updated.User.FirstName,
+                        updated.OrderNumber,
+                        status.ToString(),
+                        notes);
+                }
+            });
+        }
 
         _logger.LogInformation(
             "Order {OrderNumber} status changed: {PreviousStatus} → {NewStatus} by {UserId}",
@@ -296,5 +320,11 @@ public class OrderService : IOrderService
             return false;
 
         return allowed.Contains(next);
+    }
+
+    private async Task<User?> GetUserEmailInfoAsync(Guid userId)
+    {
+        try { return await _userRepo.GetByIdAsync(userId); }
+        catch { return null; }
     }
 }

@@ -14,8 +14,11 @@ public class QuoteService : IQuoteService
     private readonly IOrderRepository _orderRepo;
     private readonly IMaterialRepository _materialRepo;
     private readonly IFileRepository _fileRepo;
+    private readonly IEmailService _emailService;
+    private readonly IUserRepository _userRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<QuoteService> _logger;
+
 
     public QuoteService(
         IQuoteRepository quoteRepo,
@@ -23,7 +26,9 @@ public class QuoteService : IQuoteService
         IMaterialRepository materialRepo,
         IFileRepository fileRepo,
         IUnitOfWork unitOfWork,
-        ILogger<QuoteService> logger)
+        ILogger<QuoteService> logger,
+        IEmailService emailService,
+        IUserRepository userRepo)
     {
         _quoteRepo = quoteRepo;
         _orderRepo = orderRepo;
@@ -31,6 +36,8 @@ public class QuoteService : IQuoteService
         _fileRepo = fileRepo;
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _emailService = emailService;
+        _userRepo = userRepo;
     }
 
     // --- Customer operations ---
@@ -63,6 +70,18 @@ public class QuoteService : IQuoteService
 
         await _quoteRepo.AddAsync(quote);
         await _unitOfWork.SaveChangesAsync();
+
+        _ = Task.Run(async () =>
+        {
+           var user = await _userRepo.GetByIdAsync(userId);
+           if (user == null) return;
+           await _emailService.SendQuoteRequestReceivedAsync(
+               user.Email, user.FirstName, quote.RequestNumber);
+           await _emailService.SendNewQuoteRequestAdminAsync(
+               quote.RequestNumber, 
+               $"{user.FirstName} {user.LastName}",
+               request.FileId.HasValue ? "Attached" : null);
+        });
 
         _logger.LogInformation(
             "Quote request created: {RequestNumber} by user {UserId}",
@@ -124,6 +143,12 @@ public class QuoteService : IQuoteService
 
         _quoteRepo.Update(quote);
         await _unitOfWork.SaveChangesAsync();
+    
+        _ = Task.Run(async () =>
+        {
+            await _emailService.SendQuoteAcceptedConfirmationAsync(
+                quote.User.Email, quote.User.FirstName, quote.RequestNumber);
+        });
 
         _logger.LogInformation(
             "Quote {RequestNumber} accepted by user {UserId}, price: {Price:C}",
@@ -227,6 +252,19 @@ public class QuoteService : IQuoteService
 
         await _unitOfWork.SaveChangesAsync();
 
+        // After _unitOfWork.SaveChangesAsync() in ConvertToOrderAsync
+        _ = Task.Run(async () =>
+        {
+            var user = await _userRepo.GetByIdAsync(userId);
+            if (user == null) return;
+            await _emailService.SendOrderStatusUpdateAsync(
+                user.Email, user.FirstName, order.OrderNumber, "Submitted");
+            await _emailService.SendNewOrderAdminAsync(
+                order.OrderNumber,
+                $"{user.FirstName} {user.LastName}",
+                order.TotalPrice);
+        });        
+
         _logger.LogInformation(
             "Quote {RequestNumber} converted to order {OrderNumber} by user {UserId}",
             quote.RequestNumber, order.OrderNumber, userId);
@@ -274,6 +312,20 @@ public class QuoteService : IQuoteService
 
         await _quoteRepo.AddQuoteResponseAsync(response);
         await _unitOfWork.SaveChangesAsync();
+
+        _ = Task.Run(async () =>
+        {
+            var fullQuote = await _quoteRepo.GetQuoteWithResponsesAsync(quoteRequestId);
+            if (fullQuote?.User != null)
+            {
+                await _emailService.SendQuoteResponseProvidedAsync(
+                    fullQuote.User.Email,
+                    fullQuote.User.FirstName,
+                    fullQuote.RequestNumber,
+                    response.Price,
+                    response.EstimatedDays);
+            }
+        });
 
         _logger.LogInformation(
             "Quote response added to {RequestNumber} by admin {AdminId}, price: {Price:C}",

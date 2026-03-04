@@ -13,6 +13,7 @@ namespace PrintHub.API.Services;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepo;
+    private readonly IEmailService _emailService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
@@ -21,11 +22,13 @@ public class AuthService : IAuthService
         IUserRepository userRepo,
         IUnitOfWork unitOfWork,
         IConfiguration configuration,
+        IEmailService emailService,
         ILogger<AuthService> logger)
     {
         _userRepo = userRepo;
         _unitOfWork = unitOfWork;
         _configuration = configuration;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -55,6 +58,12 @@ public class AuthService : IAuthService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("New user registered: {Email}", user.Email);
+
+        // Send welcome email
+        _ = Task.Run(async () =>
+        {
+            await _emailService.SendWelcomeEmailAsync(user.Email, user.FirstName);
+        });
 
         // Generate token and return
         var token = GenerateJwtToken(user);
