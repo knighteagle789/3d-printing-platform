@@ -29,7 +29,7 @@ export const contentApi = {
   deleteBlogPost: (id: string) =>
     apiClient.delete(`/Content/blog/${id}`),
   getAllBlogPosts: (page = 1, pageSize = 50) =>
-    apiClient.get(`/Content/admin/blog?page=${page}&pageSize=${pageSize}`),
+    apiClient.get(`/Content/blog/all?page=${page}&pageSize=${pageSize}`),
 };
 
 export interface CreatePortfolioItemRequest {

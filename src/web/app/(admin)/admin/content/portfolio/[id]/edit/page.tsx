@@ -32,7 +32,7 @@ const schema = z.object({
   imageUrl: z.string().url('Must be a valid URL'),
   tags: z.string().optional(),
   projectDetails: z.string().optional(),
-  displayOrder: z.coerce.number().int().min(0),
+  displayOrder: z.number().int().min(0),
   isFeatured: z.boolean(),
   isPublished: z.boolean(),
 });
@@ -129,7 +129,10 @@ export default function EditPortfolioItemPage({
 
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <Select value={watch('category')} onValueChange={(v) => setValue('category', v)}>
+          <Select 
+            key={watch('category')} // Reset select when category changes
+            value={watch('category')} 
+            onValueChange={(v) => setValue('category', v)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

@@ -114,7 +114,7 @@ public class ContentController : ControllerBase
     /// <summary>
     /// Get a specific blog post by its URL slug.
     /// </summary>
-    [HttpGet("blog/{slug}")]
+    [HttpGet("blog/{slug:regex(^(?!all$|id$).+$)}")]
     public async Task<ActionResult<BlogPostResponse>> GetBlogPostBySlug(string slug)
     {
         var post = await _contentService.GetBlogPostBySlugAsync(slug);

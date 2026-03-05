@@ -31,7 +31,7 @@ const schema = z.object({
   imageUrl: z.string().url('Must be a valid URL'),
   tags: z.string().optional(),
   projectDetails: z.string().optional(),
-  displayOrder: z.coerce.number().int().min(0),
+  displayOrder: z.number().int().min(0),
   isFeatured: z.boolean(),
   isPublished: z.boolean(),
 });
@@ -94,7 +94,9 @@ export default function NewPortfolioItemPage() {
 
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <Select onValueChange={(v) => setValue('category', v)}>
+          <Select 
+            key={watch('category')} // Reset select when category changes
+            onValueChange={(v) => setValue('category', v)}>
             <SelectTrigger>
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
@@ -139,7 +141,7 @@ export default function NewPortfolioItemPage() {
 
         <div className="space-y-2">
           <Label htmlFor="displayOrder">Display Order</Label>
-          <Input id="displayOrder" type="number" {...register('displayOrder')} />
+          <Input id="displayOrder" type="number" {...register('displayOrder', { valueAsNumber: true })} />
         </div>
 
         <div className="flex items-center justify-between border rounded-lg p-4">
