@@ -26,5 +26,5 @@ public interface IQuoteService
         Guid quoteRequestId, CreateQuoteResponseRequest request, Guid adminUserId);
     Task<IReadOnlyList<QuoteRequestResponse>> GetExpiringQuotesAsync(int withinDays = 7);
 
-    Task<OrderResponse> ConvertQuoteToOrderAsync(Guid quoteRequestId, Guid userId);
+    Task<OrderResponse> ConvertToOrderAsync(Guid quoteRequestId, Guid userId);
 }

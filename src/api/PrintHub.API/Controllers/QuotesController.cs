@@ -88,7 +88,7 @@ public class QuotesController : ControllerBase
     public async Task<ActionResult<OrderResponse>> ConvertToOrder(Guid id)
     {
         var userId = User.GetUserId();
-        var order = await _quoteService.ConvertQuoteToOrderAsync(id, userId);
+        var order = await _quoteService.ConvertToOrderAsync(id, userId);
         return CreatedAtAction("GetOrder", "Orders", new { id = order.Id }, order);
     }
 

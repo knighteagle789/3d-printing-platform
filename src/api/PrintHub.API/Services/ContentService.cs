@@ -5,6 +5,7 @@ using PrintHub.Core.Entities;
 using PrintHub.Core.Exceptions;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
+using PrintHub.Core.Common;
 
 namespace PrintHub.API.Services;
 
@@ -84,6 +85,18 @@ public partial class ContentService : IContentService
         return BlogPostResponse.FromEntity(post);
     }
 
+    public async Task<PagedResponse<BlogPostSummaryResponse>> GetAllBlogPostsAsync(
+        int page = 1, int pageSize = 50)
+    {
+        var result = await _contentRepo.GetAllBlogPostsAsync(page, pageSize);
+        var mapped = new PagedResult<BlogPostSummaryResponse>(
+            result.Items.Select(BlogPostSummaryResponse.FromEntity).ToList(),
+            result.TotalCount,
+            page,
+            pageSize);
+        return PagedResponse<BlogPostSummaryResponse>.FromPagedResult(mapped);
+    }
+
     public async Task<BlogPostResponse> CreateBlogPostAsync(
         Guid authorId, CreateBlogPostRequest request)
     {
@@ -113,6 +126,50 @@ public partial class ContentService : IContentService
 
         var created = await _contentRepo.GetBlogPostByIdAsync(post.Id);
         return BlogPostResponse.FromEntity(created!);
+    }
+
+    public async Task<BlogPostResponse> UpdateBlogPostAsync(Guid id, UpdateBlogPostRequest request)
+    {
+        var post = await _contentRepo.GetBlogPostByIdAsync(id);
+        if (post == null)
+            throw new NotFoundException("Blog post", id);
+
+        if (request.Title != null)
+        {
+            post.Title = request.Title.Trim();
+            post.Slug = GenerateSlug(request.Title);
+        }
+        if (request.Summary != null) post.Summary = request.Summary.Trim();
+        if (request.Content != null) post.Content = request.Content;
+        if (request.FeaturedImageUrl != null) post.FeaturedImageUrl = request.FeaturedImageUrl;
+        if (request.Category != null)
+            post.Category = Enum.Parse<BlogCategory>(request.Category, ignoreCase: true);
+        if (request.Tags != null) post.Tags = request.Tags;
+        if (request.IsPublished.HasValue)
+        {
+            post.IsPublished = request.IsPublished.Value;
+            if (request.IsPublished.Value && post.PublishedAt == null)
+                post.PublishedAt = DateTime.UtcNow;
+        }
+        if (request.PublishedAt.HasValue) post.PublishedAt = request.PublishedAt.Value;
+        post.UpdatedAt = DateTime.UtcNow;
+
+        _contentRepo.UpdateBlogPost(post);
+        await _unitOfWork.SaveChangesAsync();
+
+        var updated = await _contentRepo.GetBlogPostByIdAsync(post.Id);
+        return BlogPostResponse.FromEntity(updated!);
+    }
+
+    public async Task DeleteBlogPostAsync(Guid id)
+    {
+        var post = await _contentRepo.GetBlogPostByIdAsync(id);
+        if (post == null)
+            throw new NotFoundException("Blog post", id);
+
+        _contentRepo.DeleteBlogPost(post);
+        await _unitOfWork.SaveChangesAsync();
+        _logger.LogInformation("Blog post deleted: {Id}", id);
     }
 
     // --- Tags ---

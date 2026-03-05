@@ -215,6 +215,34 @@ public class SendGridEmailService : IEmailService
         }
     }
 
+    public async Task SendContactFormAsync(
+        string fromName, string fromEmail, string subject, string message)
+    {
+        await SendAsync(
+            _adminEmail,
+            "Admin",
+            $"Contact Form: {subject}",
+            $@"<h2>New contact form submission</h2>
+            <p><strong>Name:</strong> {fromName}</p>
+            <p><strong>Email:</strong> {fromEmail}</p>
+            <p><strong>Subject:</strong> {subject}</p>
+            <p><strong>Message:</strong></p>
+            <p>{message.Replace("\n", "<br>")}</p>"
+        );
+
+        // Send confirmation to the person who contacted
+        await SendAsync(
+            fromEmail,
+            fromName,
+            "We received your message — PrintHub",
+            $@"<h2>Thanks for reaching out, {fromName}!</h2>
+            <p>We've received your message and will get back to you within 1-2 business days.</p>
+            <p><strong>Your message:</strong></p>
+            <p>{message.Replace("\n", "<br>")}</p>
+            <p>— The PrintHub Team</p>"
+        );
+    }
+
     private static string WrapInTemplate(string title, string content) => $@"
         <!DOCTYPE html>
         <html>

@@ -137,6 +137,52 @@ public class ContentController : ControllerBase
             post);
     }
 
+    /// <summary>
+    /// Get a blog post by ID (admin use).
+    /// </summary>
+    [HttpGet("blog/id/{id:guid}")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<BlogPostResponse>> GetBlogPostById(Guid id)
+    {
+        var post = await _contentService.GetBlogPostByIdAsync(id);
+        return Ok(post);
+    }
+
+    /// <summary>
+    /// Get all blog posts including drafts (admin only).
+    /// </summary>
+    [HttpGet("blog/all")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<PagedResponse<BlogPostSummaryResponse>>> GetAllBlogPosts(
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        var posts = await _contentService.GetAllBlogPostsAsync(page, pageSize);
+        return Ok(posts);
+    }
+
+    /// <summary>
+    /// Update a blog post.
+    /// </summary>
+    [HttpPut("blog/{id:guid}")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<BlogPostResponse>> UpdateBlogPost(
+        Guid id, UpdateBlogPostRequest request)
+    {
+        var post = await _contentService.UpdateBlogPostAsync(id, request);
+        return Ok(post);
+    }
+
+    /// <summary>
+    /// Delete a blog post.
+    /// </summary>
+    [HttpDelete("blog/{id:guid}")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IActionResult> DeleteBlogPost(Guid id)
+    {
+        await _contentService.DeleteBlogPostAsync(id);
+        return NoContent();
+    }
+
     // ─── Tags (public) ────────────────────────────────────────────────────
 
     /// <summary>

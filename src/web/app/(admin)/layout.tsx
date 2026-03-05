@@ -4,13 +4,14 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import { Package, FileText, Layers, LayoutDashboard, Users } from 'lucide-react';
+import { Package, FileText, Layers, LayoutDashboard, Users, Image } from 'lucide-react';
 
 const navLinks = [
   { href: '/admin/orders',    label: 'Orders',    icon: Package       },
   { href: '/admin/quotes',    label: 'Quotes',    icon: FileText      },
   { href: '/admin/materials', label: 'Materials', icon: Layers        },
   { href: '/admin/users',     label: 'Users',     icon: Users         },
+  { href: '/admin/content',   label: 'Content',   icon: LayoutDashboard },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

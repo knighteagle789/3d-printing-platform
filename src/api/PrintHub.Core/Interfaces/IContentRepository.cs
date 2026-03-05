@@ -27,5 +27,7 @@ public interface IContentRepository : IRepository<PortfolioItem>
 
     Task<IReadOnlyList<string>> GetAllTagsAsync();
 
-    
+    void DeleteBlogPost(BlogPost blogPost);    
+
+    Task<PagedResult<BlogPost>> GetAllBlogPostsAsync(int page = 1, int pageSize = 50);
 }

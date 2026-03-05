@@ -25,19 +25,19 @@ public class QuoteService : IQuoteService
         IOrderRepository orderRepo,
         IMaterialRepository materialRepo,
         IFileRepository fileRepo,
-        IUnitOfWork unitOfWork,
-        ILogger<QuoteService> logger,
         IEmailService emailService,
-        IUserRepository userRepo)
+        IUserRepository userRepo,
+        IUnitOfWork unitOfWork,
+        ILogger<QuoteService> logger)
     {
         _quoteRepo = quoteRepo;
         _orderRepo = orderRepo;
         _materialRepo = materialRepo;
         _fileRepo = fileRepo;
-        _unitOfWork = unitOfWork;
-        _logger = logger;
         _emailService = emailService;
         _userRepo = userRepo;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     // --- Customer operations ---
@@ -158,7 +158,7 @@ public class QuoteService : IQuoteService
         return QuoteRequestResponse.FromEntity(updated!);
     }
 
-    public async Task<OrderResponse> ConvertQuoteToOrderAsync(Guid quoteRequestId, Guid userId)
+    public async Task<OrderResponse> ConvertToOrderAsync(Guid quoteRequestId, Guid userId)
     {
         var quote = await _quoteRepo.GetQuoteWithResponsesAsync(quoteRequestId);
         if (quote == null)

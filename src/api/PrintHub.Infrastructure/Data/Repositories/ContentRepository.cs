@@ -69,6 +69,22 @@ public class ContentRepository : Repository<PortfolioItem>, IContentRepository
         return new PagedResult<BlogPost>(items, totalCount, page, pageSize);
     }
 
+    public async Task<PagedResult<BlogPost>> GetAllBlogPostsAsync(
+    int page = 1, int pageSize = 50)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+        var query = _context.BlogPosts.AsQueryable();
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Include(b => b.Author)
+            .OrderByDescending(b => b.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return new PagedResult<BlogPost>(items, totalCount, page, pageSize);
+    }
+
     public async Task<BlogPost?> GetBlogPostBySlugAsync(string slug)
     {
         return await _context.BlogPosts
@@ -92,6 +108,11 @@ public class ContentRepository : Repository<PortfolioItem>, IContentRepository
     public void UpdateBlogPost(BlogPost blogPost)
     {
         _context.BlogPosts.Update(blogPost);
+    }
+
+    public void DeleteBlogPost(BlogPost blogPost)
+    {
+        _context.BlogPosts.Remove(blogPost);
     }
 
     public async Task<IReadOnlyList<string>> GetAllTagsAsync()

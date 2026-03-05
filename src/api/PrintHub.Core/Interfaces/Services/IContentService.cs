@@ -24,9 +24,12 @@ public interface IContentService
     // --- Blog ---
     Task<PagedResponse<BlogPostSummaryResponse>> GetPublishedBlogPostsAsync(
         int page = 1, int pageSize = 10);
+    Task<PagedResponse<BlogPostSummaryResponse>> GetAllBlogPostsAsync(int page = 1, int pageSize = 50);
     Task<BlogPostResponse> GetBlogPostBySlugAsync(string slug);
     Task<BlogPostResponse> GetBlogPostByIdAsync(Guid id);
     Task<BlogPostResponse> CreateBlogPostAsync(Guid authorId, CreateBlogPostRequest request);
+    Task<BlogPostResponse> UpdateBlogPostAsync(Guid id, UpdateBlogPostRequest request);
+    Task DeleteBlogPostAsync(Guid id);
 
     // --- Tags ---
     Task<IReadOnlyList<string>> GetAllTagsAsync();

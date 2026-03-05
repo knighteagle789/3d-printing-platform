@@ -9,4 +9,5 @@ public interface IEmailService
     Task SendOrderStatusUpdateAsync(string toEmail, string firstName, string orderNumber, string status, string? notes = null);
     Task SendNewQuoteRequestAdminAsync(string requestNumber, string customerName, string? fileName);
     Task SendNewOrderAdminAsync(string orderNumber, string customerName, decimal totalPrice);
+    Task SendContactFormAsync(string fromName, string fromEmail, string subject, string message);
 }
