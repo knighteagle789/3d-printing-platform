@@ -28,7 +28,8 @@ public class FilesController : ControllerBase
     /// Upload a 3D model file.
     /// </summary>
     [HttpPost("upload")]
-    [RequestSizeLimit(104_857_600)] // 100 MB
+    [RequestSizeLimit(209_715_200)]                              // 200MB
+    [RequestFormLimits(MultipartBodyLengthLimit = 209_715_200)]  // 200MB
     public async Task<ActionResult<FileResponse>> UploadFile(IFormFile file)
     {
         var userId = User.GetUserId();
@@ -120,6 +121,8 @@ public class FilesController : ControllerBase
     /// </summary>
     [HttpPost("upload-image")]
     [Authorize(Roles = "Admin,Staff")]
+    [RequestSizeLimit(10 * 1024 * 1024)] // 10 MB
+    [RequestFormLimits(MultipartBodyLengthLimit = 10 * 1024 * 1024)] // 10 MB
     public async Task<ActionResult<object>> UploadImage(IFormFile file)
     {
         var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
@@ -145,8 +148,13 @@ public class FilesController : ControllerBase
     /// </summary>
     [HttpPost("upload-video")]
     [Authorize(Roles = "Admin,Staff")]
+    [RequestSizeLimit(524_288_000)] // 500 MB
+    [RequestFormLimits(MultipartBodyLengthLimit = 524_288_000)] // 500 MB
     public async Task<ActionResult<object>> UploadVideo(IFormFile file)
     {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file provided." });
+
         var ext = Path.GetExtension(file.FileName).ToLower();
         if (ext != ".mp4")
             return BadRequest(new { message = "Only MP4 videos are allowed." });

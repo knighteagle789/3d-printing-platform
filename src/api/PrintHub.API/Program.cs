@@ -200,7 +200,10 @@ try
 
     app.UseSerilogRequestLogging(); // Log all requests
 
-    app.UseHttpsRedirection();      // HTTP → HTTPS
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();      // HTTP → HTTPS    
+    }
 
     app.UseCors("AllowWebApp");     // CORS headers (must be before auth!)
 
