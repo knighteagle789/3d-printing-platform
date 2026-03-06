@@ -1,8 +1,20 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Syne, DM_Sans } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
+
+const syne = Syne({
+  variable: "--font-syne",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +40,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        className={`${syne.variable} ${dmSans.variable} ${geistSans.variable} ${geistMono.variable} font-(family-name:--font-dm-sans) antialiased`}>
         <Providers>
           {children}
         </Providers>

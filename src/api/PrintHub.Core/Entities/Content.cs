@@ -49,6 +49,11 @@ namespace PrintHub.Core.Entities
         /// Allows customers to start an order based on this design.
         /// </summary>
         public string? ModelFileUrl { get; set; }
+
+        /// <summary>
+        /// URL to an MP4 timelapse video showcasing the printing process (if applicable).
+        /// </summary>
+        public string? TimelapseVideoUrl { get; set; }
         
         public DateTime CreatedAt { get; set; }
         

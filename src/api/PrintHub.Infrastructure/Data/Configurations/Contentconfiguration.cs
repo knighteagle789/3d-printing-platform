@@ -20,6 +20,7 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.Property(p => p.Category).IsRequired().HasConversion<string>().HasMaxLength(50);
             builder.Property(p => p.ProjectDetails).HasColumnType("jsonb");
             builder.Property(p => p.ModelFileUrl).HasMaxLength(1000);
+            builder.Property(p => p.TimelapseVideoUrl).HasMaxLength(1000);
             builder.Property(p => p.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.HasIndex(p => p.IsFeatured);

@@ -21,6 +21,7 @@ public record PortfolioItemResponse(
     bool IsPublished,
     string? ProjectDetails,
     string? ModelFileUrl,
+    string? TimelapseVideoUrl,
     DateTime CreatedAt,
     MaterialSummaryResponse? Material)
 {
@@ -38,6 +39,7 @@ public record PortfolioItemResponse(
         IsPublished: item.IsPublished,
         ProjectDetails: item.ProjectDetails,
         ModelFileUrl: item.ModelFileUrl,
+        TimelapseVideoUrl: item.TimelapseVideoUrl,
         CreatedAt: item.CreatedAt,
         Material: item.Material != null
             ? MaterialSummaryResponse.FromEntity(item.Material)

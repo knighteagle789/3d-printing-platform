@@ -24,12 +24,21 @@ A full-stack web application for managing 3D printing services.
 
 1. Clone repository
 2. Start database: `docker-compose up -d`
-3. Navigate to API: `cd src/api`
-4. Run migrations: `dotnet ef database update`
-5. Start API: `dotnet run`
-6. Navigate to Web: `cd src/web`
-7. Install dependencies: `npm install`
-8. Start dev server: `npm run dev`
+3. ## After starting Docker services, run once:
+    az storage cors add \
+    --methods GET HEAD OPTIONS \
+    --origins "http://localhost:3000" \
+    --allowed-headers "*" \
+    --exposed-headers "*" \
+    --max-age 3600 \
+    --services b \
+    --connection-string "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+4. Navigate to API: `cd src/api`
+5. Run migrations: `dotnet ef database update`
+6. Start API: `dotnet run`
+7. Navigate to Web: `cd src/web`
+8. Install dependencies: `npm install`
+9. Start dev server: `npm run dev`
 
 ## Project Structure
 3d-printing-platform/

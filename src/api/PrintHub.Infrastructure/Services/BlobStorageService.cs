@@ -10,21 +10,37 @@ public class BlobStorageService : IFileStorageService
 {
     private readonly BlobContainerClient _containerClient;
     private readonly ILogger<BlobStorageService> _logger;
+    private readonly bool _isDevelopment;
 
-    public BlobStorageService(IConfiguration configuration, ILogger<BlobStorageService> logger)
+    public BlobStorageService(
+        IConfiguration configuration, 
+        ILogger<BlobStorageService> logger)
     {
         _logger = logger;
+        _isDevelopment = configuration["ASPNETCORE_ENVIRONMENT"] == "Development";
         var connectionString = configuration["BlobStorage:ConnectionString"]
             ?? throw new InvalidOperationException("BlobStorage:ConnectionString is not configured.");
         var containerName = configuration["BlobStorage:ContainerName"] ?? "3d-models";
 
         var serviceClient = new BlobServiceClient(connectionString);
         _containerClient = serviceClient.GetBlobContainerClient(containerName);
-        _containerClient.CreateIfNotExists(PublicAccessType.None);
+        _containerClient.CreateIfNotExists(PublicAccessType.Blob);
+
+        if (_isDevelopment)
+        {
+            _logger.LogInformation("Blob storage initialized in development mode. Container: {ContainerName}", containerName);
+            _containerClient.SetAccessPolicy(PublicAccessType.Blob);
+        }
     }
 
     public async Task<string> UploadFileAsync(Stream fileStream, string blobName, string contentType)
     {
+        if (_isDevelopment)
+        {
+            _logger.LogInformation("Uploading blob (development mode): {BlobName}", blobName);
+            _containerClient.SetAccessPolicy(PublicAccessType.Blob);
+        }
+        
         var blobClient = _containerClient.GetBlobClient(blobName);
 
         await blobClient.UploadAsync(fileStream, new BlobHttpHeaders
@@ -33,6 +49,7 @@ public class BlobStorageService : IFileStorageService
         });
 
         _logger.LogInformation("Uploaded blob: {BlobName}", blobName);
+
         return blobClient.Uri.ToString();
     }
 

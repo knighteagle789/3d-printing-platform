@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { MediaUploadField } from '@/components/admin/MediaUploadField';
 
 const BLOG_CATEGORIES = [
   'News', 'Tutorial', 'CaseStudy', 'Technology',
@@ -167,7 +168,14 @@ export default function EditBlogPostPage({
             Featured Image URL{' '}
             <span className="text-muted-foreground">(optional)</span>
           </Label>
-          <Input id="featuredImageUrl" {...register('featuredImageUrl')} placeholder="https://..." />
+          <MediaUploadField
+            label="Featured Image"
+            value={watch('featuredImageUrl') ?? ''}
+            onChange={(url) => setValue('featuredImageUrl', url)}
+            mode="image"
+            optional
+            error={errors.featuredImageUrl?.message}
+          />
           {errors.featuredImageUrl && (
             <p className="text-destructive text-sm">{errors.featuredImageUrl.message}</p>
           )}

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { MediaUploadField } from '@/components/admin/MediaUploadField';
 
 const PORTFOLIO_CATEGORIES = [
   'Prototyping', 'Automotive', 'Aerospace', 'Medical', 'Architecture',
@@ -31,6 +32,8 @@ const schema = z.object({
   imageUrl: z.string().url('Must be a valid URL'),
   tags: z.string().optional(),
   projectDetails: z.string().optional(),
+  modelFileUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  timelapseVideoUrl: z.string().optional(),
   displayOrder: z.number().int().min(0),
   isFeatured: z.boolean(),
   isPublished: z.boolean(),
@@ -66,6 +69,8 @@ export default function NewPortfolioItemPage() {
       detailedDescription: data.detailedDescription || undefined,
       category: data.category,
       imageUrl: data.imageUrl,
+      modelFileUrl: data.modelFileUrl || undefined,
+      timelapseVideoUrl: data.timelapseVideoUrl || undefined,
       tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
       projectDetails: data.projectDetails || undefined,
       displayOrder: data.displayOrder,
@@ -111,8 +116,42 @@ export default function NewPortfolioItemPage() {
 
         <div className="space-y-2">
           <Label htmlFor="imageUrl">Image URL</Label>
-          <Input id="imageUrl" {...register('imageUrl')} placeholder="https://..." />
+          <MediaUploadField
+            label="Main Image"
+            value={watch('imageUrl') ?? ''}
+            onChange={(url) => setValue('imageUrl', url)}
+            mode="image"
+            error={errors.imageUrl?.message}
+          />
           {errors.imageUrl && <p className="text-destructive text-sm">{errors.imageUrl.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="modelFileUrl">
+            Model File URL <span className="text-muted-foreground">(optional — STL/OBJ for 3D viewer)</span>
+          </Label>
+          <MediaUploadField
+            label="Model File"
+            value={watch('modelFileUrl') ?? ''}
+            onChange={(url) => setValue('modelFileUrl', url)}
+            mode="model"
+            error={errors.modelFileUrl?.message}
+          />
+          {errors.modelFileUrl && <p className="text-destructive text-sm">{errors.modelFileUrl.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="timelapseVideoUrl">
+            Timelapse Video URL <span className="text-muted-foreground">(optional — MP4 for video preview)</span>
+          </Label>
+          <MediaUploadField
+            label="Timelapse Video"
+            value={watch('timelapseVideoUrl') ?? ''}
+            onChange={(url) => setValue('timelapseVideoUrl', url)}
+            mode="video"
+            error={errors.timelapseVideoUrl?.message}
+          />
+          {errors.timelapseVideoUrl && <p className="text-destructive text-sm">{errors.timelapseVideoUrl.message}</p>}
         </div>
 
         <div className="space-y-2">

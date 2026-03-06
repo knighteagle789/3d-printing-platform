@@ -1,0 +1,28 @@
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  const { path } = await params;
+  const encodedPath = path.map(segment => encodeURIComponent(segment)).join('/');
+  const AZURITE_HOST = process.env.AZURITE_HOST ?? '127.0.0.1';
+  const url = `http://${AZURITE_HOST}:10000/${encodedPath}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return new Response(`Upstream error: ${response.status}`, { status: response.status });
+    }
+    const buffer = await response.arrayBuffer();
+
+    return new Response(buffer, {
+      status: 200,
+      headers: {
+        'Content-Type': response.headers.get('Content-Type') ?? 'application/octet-stream',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
+  } catch (e) {
+    console.error('Blob proxy error:', e);
+    return new Response('Blob fetch failed', { status: 502 });
+  }
+}

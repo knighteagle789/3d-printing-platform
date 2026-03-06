@@ -43,6 +43,9 @@ export const filesApi = {
   getById: (id: string) =>
     apiClient.get<UploadedFile>(`/Files/${id}`),
 
+  clonePortfolioFile: (portfolioItemId: string) =>
+    apiClient.post<UploadedFile>(`/Files/clone-portfolio/${portfolioItemId}`),
+
   delete: (id: string) =>
     apiClient.delete(`/Files/${id}`),
 };

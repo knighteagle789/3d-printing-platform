@@ -13,6 +13,7 @@ public record CreatePortfolioItemRequest(
     Guid? MaterialId,
     string? ProjectDetails,
     string? ModelFileUrl,
+    string? TimelapseVideoUrl,
     int DisplayOrder,
     bool IsFeatured,
     bool IsPublished)
@@ -36,6 +37,7 @@ public record CreatePortfolioItemRequest(
         MaterialId = MaterialId,
         ProjectDetails = ProjectDetails,
         ModelFileUrl = ModelFileUrl,
+        TimelapseVideoUrl = TimelapseVideoUrl,
         DisplayOrder = DisplayOrder,
         IsFeatured = IsFeatured,
         IsPublished = IsPublished,

@@ -38,6 +38,8 @@ export interface CreatePortfolioItemRequest {
   detailedDescription?: string;
   category: string;
   imageUrl: string;
+  modelFileUrl?: string;
+  timelapseVideoUrl?: string;
   tags?: string[];
   materialId?: string;
   projectDetails?: string;
@@ -52,6 +54,8 @@ export interface UpdatePortfolioItemRequest {
   detailedDescription?: string;
   category?: string;
   imageUrl?: string;
+  modelFileUrl?: string;
+  timelapseVideoUrl?: string;
   tags?: string[];
   materialId?: string;
   projectDetails?: string;

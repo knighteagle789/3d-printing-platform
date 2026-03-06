@@ -16,10 +16,12 @@ namespace PrintHub.API.Controllers;
 public class FilesController : ControllerBase
 {
     private readonly IFileService _fileService;
+    private readonly IFileStorageService _storageService;
 
-    public FilesController(IFileService fileService)
+    public FilesController(IFileService fileService, IFileStorageService storageService)
     {
         _fileService = fileService;
+        _storageService = storageService;
     }
 
     /// <summary>
@@ -110,6 +112,55 @@ public class FilesController : ControllerBase
         var userId = User.GetUserId();
         await _fileService.DeleteFileAsync(id, userId);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Upload an image for use in portfolio or blog content (admin only).
+    /// Returns the public URL — no DB record is created.
+    /// </summary>
+    [HttpPost("upload-image")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<object>> UploadImage(IFormFile file)
+    {
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+            return BadRequest(new { message = "Only JPEG, PNG, WebP and GIF images are allowed." });
+
+        const long maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.Length > maxSize)
+            return BadRequest(new { message = "Image must be under 10MB." });
+
+        var ext = Path.GetExtension(file.FileName).ToLower();
+        var blobName = $"images/{Guid.NewGuid()}{ext}";
+
+        using var stream = file.OpenReadStream();
+        var url = await _storageService.UploadFileAsync(stream, blobName, file.ContentType);
+
+        return Ok(new { url });
+    }
+
+    /// <summary>
+    /// Upload a timelapse video for portfolio items (admin only).
+    /// Returns the public URL — no DB record is created.
+    /// </summary>
+    [HttpPost("upload-video")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<object>> UploadVideo(IFormFile file)
+    {
+        var ext = Path.GetExtension(file.FileName).ToLower();
+        if (ext != ".mp4")
+            return BadRequest(new { message = "Only MP4 videos are allowed." });
+
+        const long maxSize = 500 * 1024 * 1024; // 500MB
+        if (file.Length > maxSize)
+            return BadRequest(new { message = "Video must be under 500MB." });
+
+        var blobName = $"videos/{Guid.NewGuid()}.mp4";
+
+        using var stream = file.OpenReadStream();
+        var url = await _storageService.UploadFileAsync(stream, blobName, "video/mp4");
+
+        return Ok(new { url });
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────
