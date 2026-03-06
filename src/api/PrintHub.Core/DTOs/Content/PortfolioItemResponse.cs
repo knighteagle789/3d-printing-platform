@@ -20,6 +20,7 @@ public record PortfolioItemResponse(
     int DisplayOrder,
     bool IsPublished,
     string? ProjectDetails,
+    string? ModelFileUrl,
     DateTime CreatedAt,
     MaterialSummaryResponse? Material)
 {
@@ -36,6 +37,7 @@ public record PortfolioItemResponse(
         DisplayOrder: item.DisplayOrder,
         IsPublished: item.IsPublished,
         ProjectDetails: item.ProjectDetails,
+        ModelFileUrl: item.ModelFileUrl,
         CreatedAt: item.CreatedAt,
         Material: item.Material != null
             ? MaterialSummaryResponse.FromEntity(item.Material)

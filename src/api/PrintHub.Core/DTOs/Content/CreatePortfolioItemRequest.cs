@@ -12,6 +12,7 @@ public record CreatePortfolioItemRequest(
     string[]? Tags,
     Guid? MaterialId,
     string? ProjectDetails,
+    string? ModelFileUrl,
     int DisplayOrder,
     bool IsFeatured,
     bool IsPublished)
@@ -34,6 +35,7 @@ public record CreatePortfolioItemRequest(
         Tags = Tags,
         MaterialId = MaterialId,
         ProjectDetails = ProjectDetails,
+        ModelFileUrl = ModelFileUrl,
         DisplayOrder = DisplayOrder,
         IsFeatured = IsFeatured,
         IsPublished = IsPublished,

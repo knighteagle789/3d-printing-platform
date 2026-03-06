@@ -15,6 +15,7 @@ public class FileService : IFileService
     private readonly IStlAnalyzerService _analyzerService;
     private readonly ILogger<FileService> _logger;
     private readonly IRepository<FileAnalysis> _analysisRepo;
+    private readonly IContentRepository _contentRepo;
 
     public FileService(
         IFileRepository fileRepo,
@@ -22,6 +23,7 @@ public class FileService : IFileService
         IFileStorageService storageService,
         IStlAnalyzerService analyzerService,
         IRepository<FileAnalysis> analysisRepo,
+        IContentRepository contentRepo,
         ILogger<FileService> logger)
     {
         _fileRepo = fileRepo;
@@ -29,6 +31,7 @@ public class FileService : IFileService
         _storageService = storageService;
         _analyzerService = analyzerService;
         _analysisRepo = analysisRepo;
+        _contentRepo = contentRepo;
         _logger = logger;
     }
 
@@ -119,6 +122,37 @@ public class FileService : IFileService
         return PagedResponse<FileResponse>.FromPagedResult(files, FileResponse.FromEntity);
     }
 
+    public async Task<FileResponse> ClonePortfolioFileAsync(Guid portfolioItemId, Guid userId)
+    {
+        var item = await _contentRepo.GetByIdAsync(portfolioItemId);
+        if (item == null)
+            throw new NotFoundException("Portfolio item", portfolioItemId);
+        if (string.IsNullOrEmpty(item.ModelFileUrl))
+            throw new BusinessRuleException("This portfolio item has no model file attached.");
+
+        // Register the URL as a file record for this user — no re-upload needed
+        var fileName = Path.GetFileName(new Uri(item.ModelFileUrl).LocalPath);
+        if (string.IsNullOrEmpty(fileName)) fileName = $"{item.Title}.stl";
+
+        var file = new UploadedFile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            OriginalFileName = fileName,
+            StorageUrl = item.ModelFileUrl,
+            BlobName = fileName,
+            FileType = FileType.STL,
+            FileSizeBytes = 0,
+            ContentType = "application/octet-stream",
+            IsAnalyzed = false,
+            UploadedAt = DateTime.UtcNow
+        };
+
+        await _fileRepo.AddAsync(file);
+        await _unitOfWork.SaveChangesAsync();
+
+        return FileResponse.FromEntity(file);
+    }
     public async Task DeleteFileAsync(Guid fileId, Guid userId)
     {
         var file = await _fileRepo.GetByIdAsync(fileId);

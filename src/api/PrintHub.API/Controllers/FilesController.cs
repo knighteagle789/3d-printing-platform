@@ -77,6 +77,18 @@ public class FilesController : ControllerBase
     }
 
     /// <summary>
+    /// Clone a portfolio item's model file into the current user's files.
+    /// </summary>
+    [HttpPost("clone-portfolio/{portfolioItemId:guid}")]
+    [Authorize]
+    public async Task<ActionResult<FileResponse>> ClonePortfolioFile(Guid portfolioItemId)
+    {
+        var userId = User.GetUserId();
+        var file = await _fileService.ClonePortfolioFileAsync(portfolioItemId, userId);
+        return Ok(file);
+    }
+
+    /// <summary>
     /// Get the current user's uploaded files.
     /// </summary>
     [HttpGet("my")]

@@ -12,6 +12,7 @@ public record UpdatePortfolioItemRequest(
     string[]? Tags,
     Guid? MaterialId,
     string? ProjectDetails,
+    string? ModelFileUrl,
     int? DisplayOrder,
     bool? IsFeatured,
     bool? IsPublished)
@@ -33,6 +34,7 @@ public record UpdatePortfolioItemRequest(
         if (Tags != null) entity.Tags = Tags;
         if (MaterialId != null) entity.MaterialId = MaterialId;
         if (ProjectDetails != null) entity.ProjectDetails = ProjectDetails;
+        if (ModelFileUrl != null) entity.ModelFileUrl = ModelFileUrl;
         if (DisplayOrder != null) entity.DisplayOrder = DisplayOrder.Value;
         if (IsFeatured != null) entity.IsFeatured = IsFeatured.Value;
         if (IsPublished != null) entity.IsPublished = IsPublished.Value;

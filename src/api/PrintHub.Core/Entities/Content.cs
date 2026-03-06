@@ -43,6 +43,12 @@ namespace PrintHub.Core.Entities
         /// Estimated project details (JSON)
         /// </summary>
         public string? ProjectDetails { get; set; }
+
+        /// <summary>
+        /// URL to the STL/OBJ file used for this portfolio item (if applicable).
+        /// Allows customers to start an order based on this design.
+        /// </summary>
+        public string? ModelFileUrl { get; set; }
         
         public DateTime CreatedAt { get; set; }
         

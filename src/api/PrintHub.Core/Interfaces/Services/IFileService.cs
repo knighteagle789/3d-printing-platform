@@ -11,6 +11,7 @@ public interface IFileService
 {
     Task<FileResponse> UploadFileAsync(Guid userId, FileUploadRequest request);
     Task<FileResponse?> GetFileByIdAsync(Guid fileId);
+    Task<FileResponse> ClonePortfolioFileAsync(Guid portfolioItemId, Guid userId);
     Task<PagedResponse<FileResponse>> GetUserFilesAsync(
         Guid userId, int page = 1, int pageSize = 20);
     Task DeleteFileAsync(Guid fileId, Guid userId);
