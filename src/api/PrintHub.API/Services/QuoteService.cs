@@ -79,7 +79,7 @@ public class QuoteService : IQuoteService
                user.Email, user.FirstName, quote.RequestNumber);
            await _emailService.SendNewQuoteRequestAdminAsync(
                quote.RequestNumber, 
-               $"{user.FirstName} {user.LastName}",
+               $"{user.FullName}",
                request.FileId.HasValue ? "Attached" : null);
         });
 
@@ -261,7 +261,7 @@ public class QuoteService : IQuoteService
                 user.Email, user.FirstName, order.OrderNumber, "Submitted");
             await _emailService.SendNewOrderAdminAsync(
                 order.OrderNumber,
-                $"{user.FirstName} {user.LastName}",
+                $"{user.FullName}",
                 order.TotalPrice);
         });        
 

@@ -17,6 +17,8 @@ namespace PrintHub.Core.Entities
         public string FirstName { get; set; } = string.Empty;
         
         public string LastName { get; set; } = string.Empty;
+
+        public string FullName => $"{FirstName} {LastName}".Trim();
         
         public string? PhoneNumber { get; set; }
         
