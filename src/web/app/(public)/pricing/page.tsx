@@ -1,20 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { materialsApi } from '@/lib/api/materials';
+import { materialsApi, type Material } from '@/lib/api/materials';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 
-interface Material {
-    id: string;
-    name: string;
-    brand?: string;
-    description?: string;
-    pricePerGram: number;
-    availableColors: string[] | null | undefined;
-    isActive: boolean;
-}
 
 export default function PricingPage() {
   const { data, isLoading } = useQuery({
@@ -22,7 +13,7 @@ export default function PricingPage() {
     queryFn: () => materialsApi.getAll(),
   });
 
-  const materials = (data?.data as Material[] | undefined)?.filter((m) => m.isActive) ?? [];
+  const materials = data?.data.filter((m) => m.isActive) ?? [];
 
   return (
     <div className="pt-16">
@@ -110,9 +101,9 @@ export default function PricingPage() {
                   className="border border-white/10 rounded-xl p-6 hover:border-amber-400/30 transition-colors">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-bold text-lg">{material.name}</h3>
-                      {material.brand && (
-                        <p className="text-white/30 text-xs">{material.brand}</p>
+                      <h3 className="font-bold text-lg">{material.type} - {material.color}</h3>
+                      {material.technology && (
+                        <p className="text-white/30 text-xs">{material.technology.name}</p>
                       )}
                     </div>
                     <div className="text-right">
@@ -128,27 +119,18 @@ export default function PricingPage() {
                       {material.description}
                     </p>
                   )}
-
-                  {(material.availableColors?.length ?? 0) > 0 && (
-                    <div>
-                      <p className="text-white/30 text-xs uppercase tracking-widest mb-2">
-                        Available colors
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {material.availableColors!.slice(0, 6).map((color: string) => (
-                          <span key={color}
-                            className="text-xs border border-white/10 rounded-full px-2.5 py-0.5 text-white/40">
-                            {color}
-                          </span>
-                        ))}
-                        {material.availableColors!.length > 6 && (
-                          <span className="text-xs text-white/30">
-                            +{material.availableColors!.length - 6} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {material.finish && (
+                      <span className="text-xs border border-white/10 rounded-full px-2.5 py-0.5 text-white/40">
+                        Finish - {material.finish}
+                      </span>
+                    )}
+                    {material.grade && (
+                      <span className="text-xs border border-white/10 rounded-full px-2.5 py-0.5 text-white/40">
+                        Grade - {material.grade}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

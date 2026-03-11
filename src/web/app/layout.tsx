@@ -27,7 +27,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PrintHub",
+  title: "NoCo Make Lab",
   description: "Professional 3D printing services",
 };
 

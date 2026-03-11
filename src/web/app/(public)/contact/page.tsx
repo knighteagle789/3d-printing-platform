@@ -65,14 +65,14 @@ export default function ContactPage() {
                   {
                     icon: Mail,
                     label: 'Email',
-                    value: 'hello@printhub.com',
+                    value: 'hello@noco3dworks.com',
                     sub: 'We reply within 1-2 business days'
                   },
                   {
                     icon: Clock,
                     label: 'Hours',
-                    value: 'Mon–Fri, 8am–6pm MST',
-                    sub: 'Closed weekends and holidays'
+                    value: 'Mon–Fri, evenings and weekends',
+                    sub: 'Closed holidays'
                   },
                   {
                     icon: MapPin,

@@ -76,7 +76,7 @@ export default function RegisterPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
           <CardDescription>
-            Start your PrintHub journey today
+            Start your NoCo Make Lab journey today
           </CardDescription>
         </CardHeader>
 

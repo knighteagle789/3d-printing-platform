@@ -40,7 +40,7 @@ function PublicNav() {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0f0f0f]/90 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/home" className="text-xl font-bold tracking-tight font-[family-name:var(--font-syne)]">
-          Print<span className="text-amber-400">Hub</span>
+          Noco Make<span className="text-amber-400">Lab</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8 text-sm text-white/70">
@@ -138,11 +138,11 @@ function PublicFooter() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="md:col-span-2">
           <div className="text-xl font-bold mb-3 font-[family-name:var(--font-syne)]">
-            Print<span className="text-amber-400">Hub</span>
+            Noco Make<span className="text-amber-400">Lab</span>
           </div>
           <p className="text-white/50 text-sm leading-relaxed max-w-xs">
-            Professional 3D printing services. From prototype to production —
-            precision in every layer.
+            Your local NoCo 3D printing shop. From first prototype to finished product — 
+            crafted with care, layer by layer.
           </p>
         </div>
         <div>
@@ -165,7 +165,7 @@ function PublicFooter() {
         </div>
       </div>
       <div className="max-w-7xl mx-auto mt-10 pt-6 border-t border-white/10 text-white/20 text-xs">
-        © {new Date().getFullYear()} PrintHub. All rights reserved.
+        © {new Date().getFullYear()} Noco Make Lab. All rights reserved.
       </div>
     </footer>
   );

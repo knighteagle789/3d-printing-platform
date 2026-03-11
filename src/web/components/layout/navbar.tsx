@@ -36,7 +36,7 @@ export function Navbar() {
 
         {/* Logo */}
         <Link href="/orders" className="font-bold text-xl tracking-tight">
-          Print<span className="text-primary">Hub</span>
+          Noco Make<span className="text-primary">Lab</span>
         </Link>
 
         {/* Nav links */}

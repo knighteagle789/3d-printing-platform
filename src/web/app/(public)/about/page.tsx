@@ -14,10 +14,10 @@ export default function AboutPage() {
               <span className="text-amber-400">tangible.</span>
             </h1>
             <p className="text-white/60 text-lg leading-relaxed">
-              PrintHub started as a passion for turning digital designs into physical 
-              objects. What began as a single printer in a garage has grown into a 
-              full-service 3D printing operation serving engineers, designers, 
-              architects, and makers.
+              NoCo Make Lab started as a passion for turning digital designs into physical 
+              objects. What began as a single printer in a garage is now a dedicated
+              one-person shop serving engineers, designers, hobbyists, and makers
+              right here in Northern Colorado.
             </p>
           </div>
           {/* Decorative element */}
@@ -58,7 +58,7 @@ export default function AboutPage() {
               },
               {
                 title: 'Your success is ours',
-                desc: 'We\'re not just a print shop. We\'re your manufacturing partner. When your prototype succeeds or your product launches, we take pride in that too.'
+                desc: 'We\'re not just a print shop. When your prototype succeeds or your project comes to life, we take pride in that too.'
               },
             ].map((value) => (
               <div key={value.title} className="border-l-2 border-amber-400/50 pl-6">
@@ -80,10 +80,10 @@ export default function AboutPage() {
               'FDM printing up to 300×300×400mm build volume',
               'Layer heights from 0.1mm to 0.3mm',
               'PLA, PETG, ABS, ASA, TPU, Nylon materials',
-              'Multi-color and multi-material prints',
+              'Detailed prototypes and functional parts',
               'Post-processing: sanding, priming, painting',
               'Rush orders with 24-hour turnaround',
-              'Production runs up to 500 units',
+              'Small batch production runs',
               'File repair and optimization services',
             ].map((cap) => (
               <div key={cap} className="flex items-start gap-3 border border-white/10 rounded-lg p-4">
