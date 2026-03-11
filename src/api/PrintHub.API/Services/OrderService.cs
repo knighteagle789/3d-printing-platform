@@ -63,7 +63,7 @@ public class OrderService : IOrderService
 
             if (!material.IsActive)
                 throw new BusinessRuleException(
-                    $"Material is no longer available: {material.Name}");
+                    $"Material is no longer available: {material.Type} {material.Color}");
 
             var file = await _fileRepo.GetFileWithAnalysisAsync(itemRequest.FileId);
             if (file == null)

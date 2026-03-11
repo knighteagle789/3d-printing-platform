@@ -10,8 +10,10 @@ export interface FileSummary {
 
 export interface MaterialSummary {
   id: string;
-  name: string;
   type: string;
+  color: string;
+  finish?: string;
+  grade?: string;
   pricePerGram: number;
 }
 

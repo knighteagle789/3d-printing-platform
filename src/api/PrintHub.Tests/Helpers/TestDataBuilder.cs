@@ -35,17 +35,20 @@ public static class TestDataBuilder
 
     public static Material CreateMaterial(
         Guid? id = null,
-        string name = "PLA",
+        string color = "Black",
         decimal pricePerGram = 0.05m,
         bool isActive = true)
     {
         return new Material
         {
             Id = id ?? Guid.NewGuid(),
-            Name = name,
+            Type = MaterialType.PLA,
+            Color = color,
+            Finish = MaterialFinish.Standard,
+            Grade = MaterialGrade.Standard,
             PricePerGram = pricePerGram,
+            StockGrams = 1000m,
             IsActive = isActive,
-            AvailableColors = new[] { "Black", "White" },
             CreatedAt = DateTime.UtcNow
         };
     }

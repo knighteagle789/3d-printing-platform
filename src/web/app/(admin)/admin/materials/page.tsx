@@ -14,6 +14,11 @@ const usd = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 4,
 });
 
+const grams = (value: number) =>
+  value >= 1000
+    ? `${(value / 1000).toFixed(1)} kg`
+    : `${value} g`;
+
 export default function AdminMaterialsPage() {
   const router = useRouter();
 
@@ -54,11 +59,12 @@ export default function AdminMaterialsPage() {
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Name</th>
-                  <th className="text-left px-4 py-3 font-medium">Brand</th>
                   <th className="text-left px-4 py-3 font-medium">Type</th>
+                  <th className="text-left px-4 py-3 font-medium">Color</th>
+                  <th className="text-left px-4 py-3 font-medium">Finish</th>
+                  <th className="text-left px-4 py-3 font-medium">Grade</th>
                   <th className="text-left px-4 py-3 font-medium">Price/g</th>
-                  <th className="text-left px-4 py-3 font-medium">Colors</th>
+                  <th className="text-left px-4 py-3 font-medium">Stock</th>
                   <th className="text-left px-4 py-3 font-medium">Technology</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                 </tr>
@@ -70,28 +76,22 @@ export default function AdminMaterialsPage() {
                     className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
                     onClick={() => router.push(`/admin/materials/${material.id}`)}
                   >
-                    <td className="px-4 py-3 font-medium">{material.name}</td>
+                    <td className="px-4 py-3 font-medium">{material.type}</td>
+                    <td className="px-4 py-3">{material.color}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {material.brand ?? '—'}
+                      {material.finish ?? '—'}
                     </td>
-                    <td className="px-4 py-3">{material.type}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {material.grade ?? '—'}
+                    </td>
                     <td className="px-4 py-3">{usd.format(material.pricePerGram)}</td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {material.availableColors?.slice(0, 4).map((c) => (
-                          <span
-                            key={c}
-                            className="text-xs bg-muted px-1.5 py-0.5 rounded"
-                          >
-                            {c}
-                          </span>
-                        ))}
-                        {(material.availableColors?.length ?? 0) > 4 && (
-                          <span className="text-xs text-muted-foreground">
-                            +{material.availableColors!.length - 4} more
-                          </span>
-                        )}
-                      </div>
+                      <span className={material.isLowStock ? 'text-destructive font-medium' : ''}>
+                        {grams(material.stockGrams)}
+                      </span>
+                      {material.isLowStock && (
+                        <span className="ml-1.5 text-xs text-destructive">Low</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {material.technology?.name ?? '—'}

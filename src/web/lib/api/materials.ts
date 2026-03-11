@@ -1,72 +1,93 @@
 import apiClient from '../api-client';
+import type { PrintingTechnology } from './technologies';
 
-export interface PrintingTechnology {
-  id: string;
-  name: string;
-  description: string;
-  type: string;
-  maxDimensions: string;
-  layerHeightRange: string;
-  typicalSpeed: number;
-}
 
+// Public-facing material (customer view)
 export interface Material {
   id: string;
-  name: string;
-  brand: string | null;
-  description: string;
   type: string;
+  color: string;
+  finish: MaterialFinish | null;
+  grade: MaterialGrade | null;
+  description: string | null;
   pricePerGram: number;
-  availableColors: string[] | null;
-  properties: string | null;
   isActive: boolean;
   technology: PrintingTechnology | null;
 }
 
+// Admin material (includes stock, internal fields)
+export interface AdminMaterial extends Material {
+  brand: string | null;
+  stockGrams: number;
+  lowStockThresholdGrams: number | null;
+  isLowStock: boolean;
+  notes: string | null;
+  printSettings: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
 export interface CreateMaterialRequest {
-  name: string;
-  brand?: string;
-  description: string;
   type: string;
+  color: string;
+  finish?: MaterialFinish;
+  grade?: MaterialGrade;
+  description?: string;
+  brand?: string;
   pricePerGram: number;
-  availableColors?: string[];
-  properties?: string;
+  stockGrams: number;
+  lowStockThresholdGrams?: number;
+  notes?: string;
+  printSettings?: string;
   printingTechnologyId?: string;
 }
 
 export interface UpdateMaterialRequest {
-  name?: string;
-  brand?: string;
-  description?: string;
   type?: string;
+  color?: string;
+  finish?: MaterialFinish;
+  grade?: MaterialGrade;
+  description?: string;
+  brand?: string;
   pricePerGram?: number;
-  availableColors?: string[];
-  properties?: string;
+  stockGrams?: number;
+  lowStockThresholdGrams?: number;
+  notes?: string;
+  printSettings?: string;
   printingTechnologyId?: string;
   isActive?: boolean;
 }
 
+export type MaterialFinish = 'Standard' | 'Matte' | 'Silk' | 'Glossy';
+export type MaterialGrade = 'Economy' | 'Standard' | 'Premium';
+
 export const MATERIAL_TYPES = [
-  'PLA', 'ABS', 'PETG', 'TPU', 'Nylon', 
-  'Resin', 'Metal', 'Ceramic', 'Wood', 'Carbon'
-]
+  'PLA', 'ABS', 'PETG', 'TPU', 'Nylon',
+  'Resin', 'ASA', 'PolyCarbonate', 'Metal', 'Carbon', 'Wood', 'Ceramic', 'Other'
+];
+
+export const MATERIAL_FINISHES: MaterialFinish[] = ['Standard', 'Matte', 'Silk', 'Glossy'];
+export const MATERIAL_GRADES: MaterialGrade[] = ['Economy', 'Standard', 'Premium'];
 
 export const materialsApi = {
   getAll: () =>
     apiClient.get<Material[]>('/Materials'),
 
   getAllAdmin: () =>
-    apiClient.get<Material[]>('/Materials/admin/all'),
+    apiClient.get<AdminMaterial[]>('/Materials/admin/all'),
 
   getById: (id: string) =>
     apiClient.get<Material>(`/Materials/${id}`),
 
+  getByIdAdmin: (id: string) =>
+    apiClient.get<AdminMaterial>(`/Materials/admin/${id}`),
+
   create: (data: CreateMaterialRequest) =>
-    apiClient.post<Material>('/Materials', data),
+    apiClient.post<AdminMaterial>('/Materials', data),
 
   update: (id: string, data: UpdateMaterialRequest) =>
-    apiClient.put<Material>(`/Materials/${id}`, data),
+    apiClient.put<AdminMaterial>(`/Materials/${id}`, data),
 
   delete: (id: string) =>
-    apiClient.delete(`/Materials/${id}`)
+    apiClient.delete(`/Materials/${id}`),
 };

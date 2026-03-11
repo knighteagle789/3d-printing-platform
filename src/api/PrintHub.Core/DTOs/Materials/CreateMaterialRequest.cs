@@ -3,32 +3,36 @@ using PrintHub.Core.Entities;
 namespace PrintHub.Core.DTOs.Materials;
 
 /// <summary>
-/// Data required to create a new material.
-/// Sent by admin when adding a material to the catalog.
+/// Data required to create a new material stock item.
 /// </summary>
 public record CreateMaterialRequest(
-    string Name,
-    string? Brand,
-    string Description,
     string Type,
+    string Color,
+    string? Finish,
+    string? Grade,
+    string? Description,
+    string? Brand,
     decimal PricePerGram,
-    string[]? AvailableColors,
-    string? Properties,
+    decimal StockGrams,
+    decimal? LowStockThresholdGrams,
+    string? Notes,
+    string? PrintSettings,
     Guid? PrintingTechnologyId)
 {
-    /// <summary>
-    /// Maps this request to a new Material entity.
-    /// </summary>
     public Material ToEntity() => new()
     {
         Id = Guid.NewGuid(),
-        Name = Name,
-        Brand = Brand,
-        Description = Description,
         Type = Enum.Parse<MaterialType>(Type, ignoreCase: true),
+        Color = Color,
+        Finish = Finish != null ? Enum.Parse<MaterialFinish>(Finish, ignoreCase: true) : null,
+        Grade = Grade != null ? Enum.Parse<MaterialGrade>(Grade, ignoreCase: true) : null,
+        Description = Description,
+        Brand = Brand,
         PricePerGram = PricePerGram,
-        AvailableColors = AvailableColors,
-        Properties = Properties,
+        StockGrams = StockGrams,
+        LowStockThresholdGrams = LowStockThresholdGrams,
+        Notes = Notes,
+        PrintSettings = PrintSettings,
         PrintingTechnologyId = PrintingTechnologyId,
         IsActive = true,
         CreatedAt = DateTime.UtcNow

@@ -1,4 +1,3 @@
-import { convert } from 'three/src/nodes/tsl/TSLCore.js';
 import apiClient from '../api-client';
 import { Order, PagedResponse } from './orders';
 
@@ -14,7 +13,7 @@ export interface QuoteResponseDto {
   isAccepted: boolean;
   acceptedAt: string | null;
   createdAt: string;
-  recommendedMaterial: { id: string; name: string; } | null;
+  recommendedMaterial: { id: string; type: string; color: string; finish?: string; grade?: string; pricePerGram: number; } | null;
   createdBy: { id: string; firstName: string; lastName: string; } | null;
 }
 
@@ -30,7 +29,7 @@ export interface QuoteRequest {
   budgetDisplay: string | null;
   createdAt: string;
   file: { id: string; originalFileName: string; } | null;
-  preferredMaterial: { id: string; name: string; } | null;
+  preferredMaterial: { id: string; type: string; color: string; finish?: string; grade?: string; pricePerGram: number; } | null;
   responses: QuoteResponseDto[];
   user: { id: string; firstName: string; lastName: string; } | null;
   orderId: string | null;

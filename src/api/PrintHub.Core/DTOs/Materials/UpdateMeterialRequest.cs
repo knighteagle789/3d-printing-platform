@@ -3,51 +3,64 @@ using PrintHub.Core.Entities;
 namespace PrintHub.Core.DTOs.Materials;
 
 /// <summary>
-/// Data for updating an existing material.
-/// All fields are nullable — only provided fields get updated.
+/// Data for updating an existing material. All fields nullable — only provided fields are updated.
 /// </summary>
 public record UpdateMaterialRequest(
-    string? Name,
-    string? Brand,
-    string? Description,
     string? Type,
+    string? Color,
+    string? Finish,
+    string? Grade,
+    string? Description,
+    string? Brand,
     decimal? PricePerGram,
-    string[]? AvailableColors,
-    string? Properties,
+    decimal? StockGrams,
+    decimal? LowStockThresholdGrams,
+    string? Notes,
+    string? PrintSettings,
     Guid? PrintingTechnologyId,
     bool? IsActive)
 {
-    /// <summary>
-    /// Applies changes from this request onto an existing Material entity.
-    /// Only updates fields that were provided (non-null).
-    /// </summary>
-    public void ApplyToEntity(Material material)
+    public void ApplyToEntity(Material m)
     {
-        if (Name is not null)
-            material.Name = Name;
+        if (Type is not null)
+            m.Type = Enum.Parse<MaterialType>(Type, ignoreCase: true);
 
-        if (Brand is not null)
-            material.Brand = Brand;
+        if (Color is not null)
+            m.Color = Color;
+
+        if (Finish is not null)
+            m.Finish = Enum.Parse<MaterialFinish>(Finish, ignoreCase: true);
+
+        if (Grade is not null)
+            m.Grade = Enum.Parse<MaterialGrade>(Grade, ignoreCase: true);
 
         if (Description is not null)
-            material.Description = Description;
+            m.Description = Description;
 
-        if (Type is not null)
-            material.Type = Enum.Parse<MaterialType>(Type, ignoreCase: true);
+        if (Brand is not null)
+            m.Brand = Brand;
 
         if (PricePerGram.HasValue)
-            material.PricePerGram = PricePerGram.Value;
+            m.PricePerGram = PricePerGram.Value;
 
-        if (AvailableColors is not null)
-            material.AvailableColors = AvailableColors;
+        if (StockGrams.HasValue)
+            m.StockGrams = StockGrams.Value;
 
-        if (Properties is not null)
-            material.Properties = Properties;
+        if (LowStockThresholdGrams.HasValue)
+            m.LowStockThresholdGrams = LowStockThresholdGrams.Value;
+
+        if (Notes is not null)
+            m.Notes = Notes;
+
+        if (PrintSettings is not null)
+            m.PrintSettings = PrintSettings;
 
         if (PrintingTechnologyId.HasValue)
-            material.PrintingTechnologyId = PrintingTechnologyId.Value;
+            m.PrintingTechnologyId = PrintingTechnologyId.Value;
 
         if (IsActive.HasValue)
-            material.IsActive = IsActive.Value;
+            m.IsActive = IsActive.Value;
+
+        m.UpdatedAt = DateTime.UtcNow;
     }
 }

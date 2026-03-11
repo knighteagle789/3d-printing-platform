@@ -26,12 +26,22 @@ namespace PrintHub.Infrastructure.Data
                 await _context.Database.EnsureCreatedAsync();
 
                 // Seed in dependency order - each group saved before next begins
+                // Seed in dependency order
                 if (!await _context.Users.AnyAsync())
                 {
                     _logger.LogInformation("Seeding users...");
                     await SeedUsersAsync();
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("Users seeded successfully.");
+                    _logger.LogInformation("Users seeded.");
+                }
+
+                // PrintingTechnologies BEFORE Materials (FK dependency)
+                if (!await _context.PrintingTechnologies.AnyAsync())
+                {
+                    _logger.LogInformation("Seeding printing technologies...");
+                    await SeedPrintingTechnologiesAsync();
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Printing technologies seeded.");
                 }
 
                 if (!await _context.Materials.AnyAsync())
@@ -39,15 +49,7 @@ namespace PrintHub.Infrastructure.Data
                     _logger.LogInformation("Seeding materials...");
                     await SeedMaterialsAsync();
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("Materials seeded successfully.");
-                }
-
-                if (!await _context.PrintingTechnologies.AnyAsync())
-                {
-                    _logger.LogInformation("Seeding printing technologies...");
-                    await SeedPrintingTechnologiesAsync();
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation("Printing technologies seeded successfully.");
+                    _logger.LogInformation("Materials seeded.");
                 }
 
                 if (!await _context.PortfolioItems.AnyAsync())
@@ -174,99 +176,328 @@ namespace PrintHub.Infrastructure.Data
         }
 
         // ─── Materials ────────────────────────────────────────────────────────
-
         private async Task SeedMaterialsAsync()
         {
+            var fdmStandard = new Guid("cccccccc-cccc-cccc-cccc-cccccccccc01");
+            var fdmHighRes  = new Guid("cccccccc-cccc-cccc-cccc-cccccccccc02");
+            var slaUltra    = new Guid("cccccccc-cccc-cccc-cccc-cccccccccc03");
+
             var materials = new List<Material>
             {
+                // ── PLA - Standard grade ───────────────────────────────────────────
                 new Material
                 {
                     Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                    Name = "PLA (Standard)",
-                    Brand = "Hatchbox",
-                    Description = "Biodegradable, easy to print, great for beginners. Low warping.",
                     Type = MaterialType.PLA,
-                    PricePerGram = 0.15m,
-                    AvailableColors = new[] { "White", "Black", "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Gray", "Natural" },
-                    Properties = @"{""strength"":""Medium"",""flexibility"":""Low"",""maxTemp"":""60°C"",""biodegradable"":true}",
+                    Color = "Black",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Our most popular choice. Easy to print, low warping, great for prototypes and general use.",
+                    Brand = "Hatchbox",
+                    PricePerGram = 0.10m,
+                    StockGrams = 5000m,
+                    LowStockThresholdGrams = 500m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":210,""printSpeed"":60,""coolingFan"":true,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow.AddMonths(-6)
+                },
+                new Material
+                {
+                    Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab"),
+                    Type = MaterialType.PLA,
+                    Color = "White",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Clean white finish. Popular for display models, cosplay props, and painted parts.",
+                    Brand = "Hatchbox",
+                    PricePerGram = 0.10m,
+                    StockGrams = 4500m,
+                    LowStockThresholdGrams = 500m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":210,""printSpeed"":60,""coolingFan"":true,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-6)
+                },
+                new Material
+                {
+                    Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaac"),
+                    Type = MaterialType.PLA,
+                    Color = "Red",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Vivid red. Great for visual prototypes and decorative prints.",
+                    Brand = "Hatchbox",
+                    PricePerGram = 0.10m,
+                    StockGrams = 2000m,
+                    LowStockThresholdGrams = 500m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":210,""printSpeed"":60,""coolingFan"":true,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-5)
+                },
+                // ── PLA - Premium grade ────────────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaad"),
+                    Type = MaterialType.PLA,
+                    Color = "Black",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Premium,
+                    Description = "Premium Prusament PLA. Tight diameter tolerance, consistent extrusion, excellent layer adhesion.",
+                    Brand = "Prusament",
+                    PricePerGram = 0.20m,
+                    StockGrams = 3000m,
+                    LowStockThresholdGrams = 500m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":215,""printSpeed"":50,""coolingFan"":true,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmHighRes,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-4)
+                },
+                // ── PLA - Specialty finishes ───────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaae"),
+                    Type = MaterialType.PLA,
+                    Color = "Galaxy Black",
+                    Finish = MaterialFinish.Silk,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Shimmering silk finish with a metallic galaxy effect. No painting required — stunning straight off the printer.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.15m,
+                    StockGrams = 1500m,
+                    LowStockThresholdGrams = 300m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":220,""printSpeed"":45,""coolingFan"":true,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-3)
+                },
+                new Material
+                {
+                    Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaf"),
+                    Type = MaterialType.PLA,
+                    Color = "Rainbow",
+                    Finish = MaterialFinish.Silk,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Colour-shifting silk filament. Each print is unique — colour depends on orientation and layer height.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.15m,
+                    StockGrams = 1000m,
+                    LowStockThresholdGrams = 300m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":220,""printSpeed"":45,""coolingFan"":true,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-3)
+                },
+                new Material
+                {
+                    Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa7"),
+                    Type = MaterialType.PLA,
+                    Color = "Matte Black",
+                    Finish = MaterialFinish.Matte,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Flat matte finish with no sheen. Hides layer lines better than standard PLA. Great for display pieces.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.13m,
+                    StockGrams = 2000m,
+                    LowStockThresholdGrams = 400m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":215,""printSpeed"":55,""coolingFan"":true,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-2)
+                },
+                // ── PETG ───────────────────────────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbba"),
+                    Type = MaterialType.PETG,
+                    Color = "Black",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Tougher and more heat-resistant than PLA. Good chemical resistance. Ideal for functional parts and enclosures.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.12m,
+                    StockGrams = 3000m,
+                    LowStockThresholdGrams = 500m,
+                    PrintSettings = @"{""bedTemp"":80,""hotendTemp"":235,""printSpeed"":50,""coolingFan"":false,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-5)
                 },
                 new Material
                 {
                     Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                    Name = "ABS (High Strength)",
-                    Brand = "Hatchbox",
-                    Description = "Strong, durable, heat resistant. Ideal for functional parts.",
-                    Type = MaterialType.ABS,
-                    PricePerGram = 0.18m,
-                    AvailableColors = new[] { "White", "Black", "Red", "Blue", "Gray" },
-                    Properties = @"{""strength"":""High"",""flexibility"":""Low"",""maxTemp"":""98°C"",""biodegradable"":false}",
+                    Type = MaterialType.PETG,
+                    Color = "Clear",
+                    Finish = MaterialFinish.Glossy,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Semi-transparent glossy PETG. Popular for light pipes, display cases, and parts where visibility matters.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.13m,
+                    StockGrams = 1500m,
+                    LowStockThresholdGrams = 300m,
+                    PrintSettings = @"{""bedTemp"":80,""hotendTemp"":235,""printSpeed"":45,""coolingFan"":false,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow.AddMonths(-6)
+                    CreatedAt = DateTime.UtcNow.AddMonths(-4)
+                },
+                // ── ABS ────────────────────────────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbc"),
+                    Type = MaterialType.ABS,
+                    Color = "Black",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Strong, impact-resistant, and heat-tolerant up to 100°C. Requires enclosure. Best for automotive and industrial parts.",
+                    Brand = "Hatchbox",
+                    PricePerGram = 0.11m,
+                    StockGrams = 2500m,
+                    LowStockThresholdGrams = 500m,
+                    PrintSettings = @"{""bedTemp"":110,""hotendTemp"":240,""printSpeed"":50,""coolingFan"":false,""enclosureRequired"":true}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-5)
+                },
+                // ── ASA ────────────────────────────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbd"),
+                    Type = MaterialType.ASA,
+                    Color = "Gray",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "UV and weather resistant. Similar to ABS but won't yellow or degrade outdoors. Perfect for exterior parts.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.14m,
+                    StockGrams = 1500m,
+                    LowStockThresholdGrams = 300m,
+                    PrintSettings = @"{""bedTemp"":100,""hotendTemp"":245,""printSpeed"":45,""coolingFan"":false,""enclosureRequired"":true}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-3)
+                },
+                // ── TPU (Flexible) ────────────────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbe"),
+                    Type = MaterialType.TPU,
+                    Color = "Black",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Flexible and rubber-like. Great for phone cases, gaskets, seals, and any part that needs to bend or absorb impact.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.18m,
+                    StockGrams = 1000m,
+                    LowStockThresholdGrams = 200m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":225,""printSpeed"":30,""coolingFan"":true,""enclosureRequired"":false}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-3)
+                },
+                // ── Nylon ─────────────────────────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbf0"),
+                    Type = MaterialType.Nylon,
+                    Color = "Natural",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "High strength, fatigue-resistant, and slightly flexible. Excellent for gears, hinges, and load-bearing mechanical parts. Requires dry storage.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.25m,
+                    StockGrams = 800m,
+                    LowStockThresholdGrams = 200m,
+                    PrintSettings = @"{""bedTemp"":90,""hotendTemp"":250,""printSpeed"":40,""coolingFan"":false,""enclosureRequired"":true,""dryingRequired"":true}",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-2)
+                },
+                // ── Carbon Fibre ──────────────────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbf1"),
+                    Type = MaterialType.Carbon,
+                    Color = "Black",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Premium,
+                    Description = "Carbon fibre reinforced PLA. Exceptional stiffness-to-weight ratio. Produces a matte, textured finish. Ideal for structural and aerospace-adjacent parts.",
+                    Brand = "Polymaker",
+                    PricePerGram = 0.35m,
+                    StockGrams = 600m,
+                    LowStockThresholdGrams = 150m,
+                    PrintSettings = @"{""bedTemp"":60,""hotendTemp"":220,""printSpeed"":40,""coolingFan"":true,""enclosureRequired"":false,""hardenedNozzleRequired"":true}",
+                    PrintingTechnologyId = fdmHighRes,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-2)
+                },
+                // ── Resin (SLA) ───────────────────────────────────────────────────
+                new Material
+                {
+                    Id = new Guid("cccccccc-cccc-cccc-cccc-ccccccccccca"),
+                    Type = MaterialType.Resin,
+                    Color = "Gray",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Standard grey resin. Excellent detail resolution. Popular for miniatures, tabletop gaming pieces, and dental/medical models.",
+                    Brand = "Elegoo",
+                    PricePerGram = 0.35m,
+                    StockGrams = 2000m,
+                    LowStockThresholdGrams = 400m,
+                    PrintSettings = @"{""layerExposureTime"":2.5,""bottomExposureTime"":35,""liftSpeed"":65,""uvWavelength"":405,""washTime"":120,""cureTime"":300}",
+                    PrintingTechnologyId = slaUltra,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-4)
+                },
+                new Material
+                {
+                    Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccb"),
+                    Type = MaterialType.Resin,
+                    Color = "White",
+                    Finish = MaterialFinish.Glossy,
+                    Grade = MaterialGrade.Standard,
+                    Description = "Bright white resin with glossy finish. Ideal for display models, jewellery casting patterns, and parts requiring a clean aesthetic.",
+                    Brand = "Elegoo",
+                    PricePerGram = 0.40m,
+                    StockGrams = 1500m,
+                    LowStockThresholdGrams = 300m,
+                    PrintSettings = @"{""layerExposureTime"":2.8,""bottomExposureTime"":40,""liftSpeed"":60,""uvWavelength"":405,""washTime"":120,""cureTime"":300}",
+                    PrintingTechnologyId = slaUltra,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow.AddMonths(-3)
                 },
                 new Material
                 {
                     Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-                    Name = "PETG (Engineering Grade)",
-                    Brand = "Polymaker",
-                    Description = "Strong, flexible, chemical resistant. Best of PLA and ABS.",
-                    Type = MaterialType.PETG,
-                    PricePerGram = 0.20m,
-                    AvailableColors = new[] { "Clear", "Black", "White", "Red", "Blue", "Orange" },
-                    Properties = @"{""strength"":""High"",""flexibility"":""Medium"",""maxTemp"":""80°C"",""foodSafe"":true}",
+                    Type = MaterialType.Resin,
+                    Color = "Clear",
+                    Finish = MaterialFinish.Glossy,
+                    Grade = MaterialGrade.Premium,
+                    Description = "Water-clear premium resin. Produces optically transparent parts after post-processing. Used for lenses, light guides, and display items.",
+                    Brand = "Siraya Tech",
+                    PricePerGram = 0.55m,
+                    StockGrams = 500m,
+                    LowStockThresholdGrams = 150m,
+                    PrintSettings = @"{""layerExposureTime"":3.0,""bottomExposureTime"":45,""liftSpeed"":55,""uvWavelength"":405,""washTime"":180,""cureTime"":360}",
+                    PrintingTechnologyId = slaUltra,
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow.AddMonths(-5)
+                    CreatedAt = DateTime.UtcNow.AddMonths(-2)
                 },
+                // ── Discontinued (tests IsActive filtering) ───────────────────────
                 new Material
                 {
                     Id = new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"),
-                    Name = "TPU (Flexible)",
-                    Brand = "Polymaker",
-                    Description = "Rubber-like flexibility, excellent durability and impact resistance.",
-                    Type = MaterialType.TPU,
-                    PricePerGram = 0.28m,
-                    AvailableColors = new[] { "Black", "White", "Red", "Blue", "Clear" },
-                    Properties = @"{""strength"":""Medium"",""flexibility"":""Very High"",""maxTemp"":""60°C"",""shore"":""95A""}",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow.AddMonths(-5)
-                },
-                new Material
-                {
-                    Id = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-                    Name = "Nylon (PA12)",
-                    Brand = "Prusament",
-                    Description = "Extremely strong and durable. Excellent for functional parts.",
-                    Type = MaterialType.Nylon,
-                    PricePerGram = 0.35m,
-                    AvailableColors = new[] { "Natural", "Black", "White" },
-                    Properties = @"{""strength"":""Very High"",""flexibility"":""Medium"",""maxTemp"":""120°C"",""wearResistant"":true}",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow.AddMonths(-4)
-                },
-                new Material
-                {
-                    Id = new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff"),
-                    Name = "Standard Resin",
-                    Brand = "Elegoo",
-                    Description = "High detail SLA resin for smooth surface finish.",
-                    Type = MaterialType.Resin,
-                    PricePerGram = 0.40m,
-                    AvailableColors = new[] { "White", "Black", "Gray", "Clear" },
-                    Properties = @"{""strength"":""Medium"",""detail"":""Very High"",""finish"":""Smooth"",""uv"":true}",
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow.AddMonths(-4)
-                },
-                new Material
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "PLA (Legacy)",
-                    Brand = "Hatchbox",
-                    Description = "Discontinued standard PLA. Replaced by PLA (Standard).",
                     Type = MaterialType.PLA,
-                    PricePerGram = 0.12m,
-                    AvailableColors = new[] { "White", "Black" },
-                    IsActive = false,   // Discontinued - tests IsActive filtering!
+                    Color = "Blue",
+                    Finish = MaterialFinish.Standard,
+                    Grade = MaterialGrade.Economy,
+                    Description = "Discontinued economy PLA. Replaced by standard Hatchbox line.",
+                    Brand = "Generic",
+                    PricePerGram = 0.07m,
+                    StockGrams = 0m,
+                    Notes = "Discontinued — do not reorder. Last roll consumed 2025-12.",
+                    PrintingTechnologyId = fdmStandard,
+                    IsActive = false,
                     CreatedAt = DateTime.UtcNow.AddMonths(-12)
                 }
             };
@@ -275,16 +506,15 @@ namespace PrintHub.Infrastructure.Data
         }
 
         // ─── Printing Technologies ────────────────────────────────────────────
-
         private async Task SeedPrintingTechnologiesAsync()
         {
             var technologies = new List<PrintingTechnology>
             {
                 new PrintingTechnology
                 {
-                    Id = Guid.NewGuid(),
+                    Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccc01"),
                     Name = "FDM - Standard Resolution",
-                    Description = "Fused Deposition Modeling with 0.2mm layer height",
+                    Description = "Fused Deposition Modeling with 0.2mm layer height. Best for functional parts, prototypes, and general use prints.",
                     Type = TechnologyType.FDM,
                     MaxDimensions = "300x300x400",
                     LayerHeightRange = "0.1-0.4",
@@ -294,9 +524,9 @@ namespace PrintHub.Infrastructure.Data
                 },
                 new PrintingTechnology
                 {
-                    Id = Guid.NewGuid(),
+                    Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccc02"),
                     Name = "FDM - High Resolution",
-                    Description = "FDM with 0.1mm layer height for detailed prints",
+                    Description = "FDM with 0.1mm layer height for detailed prints. Slower but produces finer surface finish.",
                     Type = TechnologyType.FDM,
                     MaxDimensions = "300x300x400",
                     LayerHeightRange = "0.05-0.2",
@@ -306,9 +536,9 @@ namespace PrintHub.Infrastructure.Data
                 },
                 new PrintingTechnology
                 {
-                    Id = Guid.NewGuid(),
+                    Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccc03"),
                     Name = "SLA - Ultra Detail",
-                    Description = "Stereolithography for ultra-high detail and smooth finish",
+                    Description = "Stereolithography resin printing for ultra-high detail and smooth surface finish. Ideal for miniatures, jewelry, and dental models.",
                     Type = TechnologyType.SLA,
                     MaxDimensions = "145x145x175",
                     LayerHeightRange = "0.025-0.1",
@@ -320,7 +550,7 @@ namespace PrintHub.Infrastructure.Data
 
             await _context.PrintingTechnologies.AddRangeAsync(technologies);
         }
-
+       
         // ─── Portfolio Items ──────────────────────────────────────────────────
 
         private async Task SeedPortfolioItemsAsync()
@@ -336,7 +566,7 @@ namespace PrintHub.Infrastructure.Data
                     ImageUrl = "/portfolio/drone-frame.jpg",
                     Tags = new[] { "drone", "racing", "carbon", "lightweight" },
                     Category = PortfolioCategory.Prototyping,
-                    MaterialId = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"), // Nylon
+                    MaterialId = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbf1"), // Nylon
                     IsFeatured = true,
                     DisplayOrder = 1,
                     IsPublished = true,
@@ -351,7 +581,7 @@ namespace PrintHub.Infrastructure.Data
                     ImageUrl = "/portfolio/arch-model.jpg",
                     Tags = new[] { "architecture", "model", "resin", "detailed" },
                     Category = PortfolioCategory.Architecture,
-                    MaterialId = new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff"), // Resin
+                    MaterialId = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccb"), // Resin
                     IsFeatured = true,
                     DisplayOrder = 2,
                     IsPublished = true,

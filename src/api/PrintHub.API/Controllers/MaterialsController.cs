@@ -18,11 +18,9 @@ public class MaterialsController : ControllerBase
         _materialService = materialService;
     }
 
-    // ─── Public endpoints (no auth required) ──────────────────────────────
+    // ─── Public endpoints ─────────────────────────────────────────────────
 
-    /// <summary>
-    /// Get all active materials in the catalog.
-    /// </summary>
+    /// <summary>Get all active materials. Safe for anonymous/customer use.</summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<MaterialResponse>>> GetMaterials()
     {
@@ -30,20 +28,7 @@ public class MaterialsController : ControllerBase
         return Ok(materials);
     }
 
-    /// <summary>
-    /// Get all materials, including inactive ones. Admins only.
-    /// </summary>
-    [HttpGet("admin/all")]
-    [Authorize(Policy = "StaffOrAdmin")]
-    public async Task<ActionResult<IReadOnlyList<MaterialResponse>>> GetAllMaterials()
-    {
-        var materials = await _materialService.GetAllMaterialsAsync();
-        return Ok(materials);
-    }
-
-    /// <summary>
-    /// Get a specific material by ID.
-    /// </summary>
+    /// <summary>Get a single material by ID. Public — returns only safe fields.</summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<MaterialResponse>> GetMaterial(Guid id)
     {
@@ -51,31 +36,16 @@ public class MaterialsController : ControllerBase
         return Ok(material);
     }
 
-    /// <summary>
-    /// Get materials filtered by type (e.g., PLA, ABS, PETG).
-    /// </summary>
+    /// <summary>Get active materials filtered by type (e.g. PLA, ABS, PETG).</summary>
     [HttpGet("type/{type}")]
-    public async Task<ActionResult<IReadOnlyList<MaterialResponse>>> GetMaterialsByType(
-        string type)
+    public async Task<ActionResult<IReadOnlyList<MaterialResponse>>> GetMaterialsByType(string type)
     {
         var materials = await _materialService.GetMaterialsByTypeAsync(type);
         return Ok(materials);
     }
 
-    /// <summary>
-    /// Get materials compatible with a specific printing technology.
-    /// </summary>
-    [HttpGet("technology/{technologyId:guid}")]
-    public async Task<ActionResult<IReadOnlyList<MaterialResponse>>> GetMaterialsByTechnology(
-        Guid technologyId)
-    {
-        var materials = await _materialService.GetMaterialsByTechnologyAsync(technologyId);
-        return Ok(materials);
-    }
-
-    /// <summary>
-    /// Search materials by name or description.
-    /// </summary>
+    
+    /// <summary>Search active materials by type, color, or description.</summary>
     [HttpGet("search")]
     public async Task<ActionResult<IReadOnlyList<MaterialResponse>>> SearchMaterials(
         [FromQuery] string q)
@@ -84,66 +54,58 @@ public class MaterialsController : ControllerBase
         return Ok(materials);
     }
 
-    // ─── Technologies ─────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Get all printing technologies.
-    /// </summary>
-    [HttpGet("technologies")]
-    public async Task<ActionResult<IReadOnlyList<PrintingTechnologyResponse>>>
-        GetTechnologies()
-    {
-        var technologies = await _materialService.GetAllTechnologiesAsync();
-        return Ok(technologies);
-    }
-
-    /// <summary>
-    /// Get a specific printing technology by ID.
-    /// </summary>
-    [HttpGet("technologies/{id:guid}")]
-    public async Task<ActionResult<PrintingTechnologyResponse>> GetTechnology(Guid id)
-    {
-        var technology = await _materialService.GetTechnologyByIdAsync(id);
-        return Ok(technology);
-    }
-
     // ─── Admin endpoints ──────────────────────────────────────────────────
 
     /// <summary>
-    /// Create a new material. Requires Admin or Staff role.
+    /// Get all materials including inactive. Returns full admin fields.
     /// </summary>
-    [HttpPost]
+    [HttpGet("admin/all")]
     [Authorize(Policy = "StaffOrAdmin")]
-    public async Task<ActionResult<MaterialResponse>> CreateMaterial(
-        CreateMaterialRequest request)
+    public async Task<ActionResult<IReadOnlyList<AdminMaterialResponse>>> GetAllMaterialsAdmin()
     {
-        var material = await _materialService.CreateMaterialAsync(request);
-        return CreatedAtAction(
-            nameof(GetMaterial),
-            new { id = material.Id },
-            material);
+        var materials = await _materialService.GetAllMaterialsAdminAsync();
+        return Ok(materials);
     }
 
     /// <summary>
-    /// Update an existing material. Requires Admin or Staff role.
+    /// Get a single material by ID with full admin fields.
     /// </summary>
+    [HttpGet("admin/{id:guid}")]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<AdminMaterialResponse>> GetMaterialAdmin(Guid id)
+    {
+        var material = await _materialService.GetMaterialByIdAdminAsync(id);
+        return Ok(material);
+    }
+
+    /// <summary>Create a new material stock item.</summary>
+    [HttpPost]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<AdminMaterialResponse>> CreateMaterial(
+        [FromBody] CreateMaterialRequest request)
+    {
+        var material = await _materialService.CreateMaterialAsync(request);
+        return CreatedAtAction(nameof(GetMaterialAdmin), new { id = material.Id }, material);
+    }
+
+    /// <summary>Update an existing material.</summary>
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "StaffOrAdmin")]
-    public async Task<ActionResult<MaterialResponse>> UpdateMaterial(
-        Guid id, UpdateMaterialRequest request)
+    public async Task<ActionResult<AdminMaterialResponse>> UpdateMaterial(
+        Guid id, [FromBody] UpdateMaterialRequest request)
     {
         var material = await _materialService.UpdateMaterialAsync(id, request);
         return Ok(material);
     }
 
-    /// <summary>
-    /// Soft-delete a material. Requires Admin role.
-    /// </summary>
+    /// <summary>Deactivate a material (soft delete).</summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "StaffOrAdmin")]
     public async Task<IActionResult> DeleteMaterial(Guid id)
     {
         await _materialService.DeleteMaterialAsync(id);
         return NoContent();
     }
+
+
 }

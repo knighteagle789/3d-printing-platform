@@ -180,7 +180,7 @@ export default function OrderDetailPage({
                       {item.file?.originalFileName ?? 'Unknown file'}
                     </p>
                     <div className="text-sm text-muted-foreground space-y-0.5">
-                      <p>Material: {item.material?.name ?? '—'}</p>
+                      <p>Material: {item.material ? `${item.material.type} — ${item.material.color}` : '—'}</p>
                       <p>Quality: {item.quality} · Infill: {item.infill ?? '—'}%</p>
                       {item.color && <p>Color: {item.color}</p>}
                       {item.supportStructures && <p>Support structures included</p>}

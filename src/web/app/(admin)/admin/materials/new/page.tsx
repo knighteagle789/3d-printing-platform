@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { materialsApi } from '@/lib/api/materials';
+import { materialsApi, type MaterialFinish, type MaterialGrade } from '@/lib/api/materials';
 import { MaterialForm, MaterialFormValues } from '../_components/material-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,21 +16,22 @@ export default function NewMaterialPage() {
   const mutation = useMutation({
     mutationFn: (values: MaterialFormValues) =>
       materialsApi.create({
-        name:            values.name,
-        brand:           values.brand || undefined,
-        description:     values.description,
-        type:            values.type,
-        pricePerGram:    values.pricePerGram,
-        availableColors: values.availableColors.map((c) => c.value).filter(Boolean),
-        properties:      values.properties.length > 0
-            ? JSON.stringify(
-                Object.fromEntries(values.properties.map((p) => [p.key, p.value]))
-            )
-            : undefined,
+        type:                   values.type,
+        color:                  values.color,
+        finish:                 values.finish as MaterialFinish | undefined || undefined,
+        grade:                  values.grade as MaterialGrade | undefined || undefined,
+        description:            values.description || undefined,
+        brand:                  values.brand || undefined,
+        pricePerGram:           values.pricePerGram,
+        stockGrams:             values.stockGrams,
+        lowStockThresholdGrams: values.lowStockThresholdGrams,
+        notes:                  values.notes || undefined,
+        printSettings:          values.printSettings || undefined,
+        printingTechnologyId:   values.printingTechnologyId || undefined,
       }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'materials'] });
-      toast.success(`${res.data.name} created successfully.`);
+      toast.success(`${res.data.type} - ${res.data.color} created successfully.`);
       router.push('/admin/materials');
     },
     onError: () => toast.error('Failed to create material.'),

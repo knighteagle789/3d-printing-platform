@@ -22,17 +22,11 @@ public class MaterialService : IMaterialService
         _logger = logger;
     }
 
-    // --- Public catalog ---
+    // ─── Public catalog ───────────────────────────────────────────────────
 
     public async Task<IReadOnlyList<MaterialResponse>> GetActiveMaterialsAsync()
     {
         var materials = await _materialRepo.GetActiveMaterialsAsync();
-        return materials.Select(MaterialResponse.FromEntity).ToList();
-    }
-
-    public async Task<IReadOnlyList<MaterialResponse>> GetAllMaterialsAsync()
-    {
-        var materials = await _materialRepo.GetAllWithTechnologyAsync();
         return materials.Select(MaterialResponse.FromEntity).ToList();
     }
 
@@ -41,96 +35,105 @@ public class MaterialService : IMaterialService
         if (!Enum.TryParse<MaterialType>(type, ignoreCase: true, out var materialType))
             throw new BusinessRuleException($"'{type}' is not a valid material type.");
 
-        var materials = await _materialRepo.GetByTypeAsync(materialType);
-        return materials.Select(MaterialResponse.FromEntity).ToList();
+        var materials = await _materialRepo.GetActiveMaterialsAsync();
+        return materials
+            .Where(m => m.Type == materialType)
+            .Select(MaterialResponse.FromEntity)
+            .ToList();
     }
 
     public async Task<IReadOnlyList<MaterialResponse>> GetMaterialsByTechnologyAsync(Guid technologyId)
     {
-        var materials = await _materialRepo.GetByTechnologyAsync(technologyId);
-        return materials.Select(MaterialResponse.FromEntity).ToList();
+        var materials = await _materialRepo.GetActiveMaterialsAsync();
+        return materials
+            .Where(m => m.PrintingTechnologyId == technologyId)
+            .Select(MaterialResponse.FromEntity)
+            .ToList();
     }
 
     public async Task<IReadOnlyList<MaterialResponse>> SearchMaterialsAsync(string searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
-            return new List<MaterialResponse>();
+            return await GetActiveMaterialsAsync();
 
-        var materials = await _materialRepo.SearchAsync(searchTerm.Trim());
-        return materials.Select(MaterialResponse.FromEntity).ToList();
+        var term = searchTerm.Trim().ToLower();
+        var materials = await _materialRepo.GetActiveMaterialsAsync();
+
+        return materials
+            .Where(m =>
+                m.Type.ToString().ToLower().Contains(term) ||
+                m.Color.ToLower().Contains(term) ||
+                (m.Description != null && m.Description.ToLower().Contains(term)))
+            .Select(MaterialResponse.FromEntity)
+            .ToList();
     }
 
     public async Task<MaterialResponse> GetMaterialByIdAsync(Guid id)
     {
-        var material = await _materialRepo.GetWithTechnologyAsync(id);
-        if (material == null)
-            throw new NotFoundException("Material", id);
+        var material = await _materialRepo.GetWithTechnologyAsync(id)
+            ?? throw new NotFoundException(nameof(Material), id);
+
         return MaterialResponse.FromEntity(material);
     }
 
-    // --- Admin management ---
+    // ─── Admin management ─────────────────────────────────────────────────
 
-    public async Task<MaterialResponse> CreateMaterialAsync(CreateMaterialRequest request)
+    public async Task<IReadOnlyList<AdminMaterialResponse>> GetAllMaterialsAdminAsync()
+    {
+        var materials = await _materialRepo.GetAllWithTechnologyAsync();
+        return materials.Select(AdminMaterialResponse.FromEntity).ToList();
+    }
+
+    public async Task<AdminMaterialResponse> GetMaterialByIdAdminAsync(Guid id)
+    {
+        var material = await _materialRepo.GetWithTechnologyAsync(id)
+            ?? throw new NotFoundException(nameof(Material), id);
+
+        return AdminMaterialResponse.FromEntity(material);
+    }
+
+    public async Task<AdminMaterialResponse> CreateMaterialAsync(CreateMaterialRequest request)
     {
         var material = request.ToEntity();
-
         await _materialRepo.AddAsync(material);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Created material {MaterialId}: {MaterialName}",
-            material.Id, material.Name);
+        // Reload with technology navigation property populated
+        var created = await _materialRepo.GetWithTechnologyAsync(material.Id)
+            ?? throw new NotFoundException(nameof(Material), material.Id);
 
-        // Reload with technology to populate the response
-        var created = await _materialRepo.GetWithTechnologyAsync(material.Id);
-        return MaterialResponse.FromEntity(created!);
+        _logger.LogInformation("Material created: {Type} {Color} (Id: {Id})",
+            created.Type, created.Color, created.Id);
+
+        return AdminMaterialResponse.FromEntity(created);
     }
 
-    public async Task<MaterialResponse> UpdateMaterialAsync(
-        Guid id, UpdateMaterialRequest request)
+    public async Task<AdminMaterialResponse> UpdateMaterialAsync(Guid id, UpdateMaterialRequest request)
     {
-        var material = await _materialRepo.GetByIdAsync(id);
-        if (material == null)
-            throw new NotFoundException("Material", id);
+        var material = await _materialRepo.GetWithTechnologyAsync(id)
+            ?? throw new NotFoundException(nameof(Material), id);
 
         request.ApplyToEntity(material);
         _materialRepo.Update(material);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Updated material {MaterialId}: {MaterialName}",
-            material.Id, material.Name);
+        _logger.LogInformation("Material updated: {Type} {Color} (Id: {Id})",
+            material.Type, material.Color, material.Id);
 
-        // Reload with technology to populate the response
-        var updated = await _materialRepo.GetWithTechnologyAsync(material.Id);
-        return MaterialResponse.FromEntity(updated!);
+        return AdminMaterialResponse.FromEntity(material);
     }
 
     public async Task DeleteMaterialAsync(Guid id)
     {
-        var material = await _materialRepo.GetByIdAsync(id);
-        if (material == null)
-            throw new NotFoundException("Material", id);
+        var material = await _materialRepo.GetByIdAsync(id)
+            ?? throw new NotFoundException(nameof(Material), id);
 
+        // Soft delete — never hard delete materials since OrderItems reference them
         material.IsActive = false;
+        material.UpdatedAt = DateTime.UtcNow;
         _materialRepo.Update(material);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Soft-deleted material {MaterialId}: {MaterialName}",
-            material.Id, material.Name);
-    }
-
-    // --- Technologies ---
-
-    public async Task<IReadOnlyList<PrintingTechnologyResponse>> GetAllTechnologiesAsync()
-    {
-        var technologies = await _materialRepo.GetAllTechnologiesAsync();
-        return technologies.Select(PrintingTechnologyResponse.FromEntity).ToList();
-    }
-
-    public async Task<PrintingTechnologyResponse> GetTechnologyByIdAsync(Guid id)
-    {
-        var technology = await _materialRepo.GetTechnologyByIdAsync(id);
-        if (technology == null)
-            throw new NotFoundException("Printing technology", id);
-        return PrintingTechnologyResponse.FromEntity(technology);
+        _logger.LogInformation("Material deactivated: {Id}", id);
     }
 }

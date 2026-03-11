@@ -24,6 +24,7 @@ public static class DependencyInjection
         // Specialized repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IMaterialRepository, MaterialRepository>();
+        services.AddScoped<IPrintingTechnologyRepository, PrintingTechnologyRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<IFileRepository, FileRepository>();

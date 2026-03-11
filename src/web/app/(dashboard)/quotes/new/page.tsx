@@ -154,7 +154,7 @@ export default function NewQuotePage() {
                       <SelectContent>
                         {materialsData?.data.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
-                            {m.name}
+                            {m.type} — {m.color}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -163,31 +163,6 @@ export default function NewQuotePage() {
                   </FormItem>
                 )}
               />
-
-              {selectedMaterial?.availableColors && (
-                <FormField
-                  control={form.control}
-                  name="preferredColor"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preferred Color <span className="text-muted-foreground">(optional)</span></FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="No preference" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {selectedMaterial.availableColors!.map((c) => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
 
               <FormField
                 control={form.control}

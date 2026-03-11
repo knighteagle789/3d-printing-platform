@@ -14,7 +14,8 @@ public class MaterialRepository : Repository<Material>, IMaterialRepository
         return await _dbSet
             .Where(m => m.IsActive)
             .Include(m => m.PrintingTechnology)
-            .OrderBy(m => m.Name)
+            .OrderBy(m => m.Type)
+            .ThenBy(m => m.Color)
             .ToListAsync();
     }
 
@@ -22,8 +23,9 @@ public class MaterialRepository : Repository<Material>, IMaterialRepository
     {
         return await _dbSet
             .Include(m => m.PrintingTechnology)
-            .OrderBy(m => m.IsActive ? 0 : 1) // Active materials first
-            .ThenBy(m => m.Name)
+            .OrderBy(m => m.IsActive ? 0 : 1)
+            .ThenBy(m => m.Type)
+            .ThenBy(m => m.Color)
             .ToListAsync();
     }
 
@@ -32,7 +34,7 @@ public class MaterialRepository : Repository<Material>, IMaterialRepository
         return await _dbSet
             .Where(m => m.Type == type && m.IsActive)
             .Include(m => m.PrintingTechnology)
-            .OrderBy(m => m.Name)
+            .OrderBy(m => m.Color)
             .ToListAsync();
     }
 
@@ -40,7 +42,9 @@ public class MaterialRepository : Repository<Material>, IMaterialRepository
     {
         return await _dbSet
             .Where(m => m.PrintingTechnologyId == technologyId && m.IsActive)
-            .OrderBy(m => m.Name)
+            .Include(m => m.PrintingTechnology)
+            .OrderBy(m => m.Type)
+            .ThenBy(m => m.Color)
             .ToListAsync();
     }
 
@@ -50,10 +54,12 @@ public class MaterialRepository : Repository<Material>, IMaterialRepository
 
         return await _dbSet
             .Where(m => m.IsActive &&
-                (m.Name.ToLower().Contains(term) ||
+                (m.Type.ToString().ToLower().Contains(term) ||
+                 m.Color.ToLower().Contains(term) ||
                  (m.Description != null && m.Description.ToLower().Contains(term))))
             .Include(m => m.PrintingTechnology)
-            .OrderBy(m => m.Name)
+            .OrderBy(m => m.Type)
+            .ThenBy(m => m.Color)
             .ToListAsync();
     }
 

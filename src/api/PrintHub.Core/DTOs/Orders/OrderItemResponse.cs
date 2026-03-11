@@ -49,14 +49,18 @@ public record OrderItemResponse(
 /// </summary>
 public record MaterialSummaryResponse(
     Guid Id,
-    string Name,
     string Type,
+    string Color,
+    string? Finish,
+    string? Grade,
     decimal PricePerGram)
 {
     public static MaterialSummaryResponse FromEntity(Material material) => new(
         Id: material.Id,
-        Name: material.Name,
         Type: material.Type.ToString(),
+        Color: material.Color,
+        Finish: material.Finish?.ToString(),
+        Grade: material.Grade?.ToString(),
         PricePerGram: material.PricePerGram
     );
 }

@@ -3,7 +3,7 @@
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { materialsApi } from '@/lib/api/materials';
+import { materialsApi, type MaterialFinish, type MaterialGrade } from '@/lib/api/materials';
 import { MaterialForm, MaterialFormValues } from '../_components/material-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,29 +22,30 @@ export default function EditMaterialPage({
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'material', id],
-    queryFn: () => materialsApi.getById(id),
+    queryFn: () => materialsApi.getByIdAdmin(id),
   });
 
   const updateMutation = useMutation({
     mutationFn: (values: MaterialFormValues) =>
       materialsApi.update(id, {
-        name:            values.name,
-        brand:           values.brand || undefined,
-        description:     values.description,
-        type:            values.type,
-        pricePerGram:    values.pricePerGram,
-        availableColors: values.availableColors.map((c) => c.value).filter(Boolean),
-        properties:      values.properties.length > 0
-            ? JSON.stringify(
-                Object.fromEntries(values.properties.map((p) => [p.key, p.value]))
-            )
-            : undefined,
-        isActive:        values.isActive,
+        type:                   values.type,
+        color:                  values.color,
+        finish:                 values.finish as MaterialFinish || undefined,
+        grade:                  values.grade as MaterialGrade || undefined,
+        description:            values.description || undefined,
+        brand:                  values.brand || undefined,
+        pricePerGram:           values.pricePerGram,
+        stockGrams:             values.stockGrams,
+        lowStockThresholdGrams: values.lowStockThresholdGrams,
+        notes:                  values.notes || undefined,
+        printSettings:          values.printSettings || undefined,
+        printingTechnologyId:   values.printingTechnologyId || undefined,
+        isActive:               values.isActive,
       }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'materials'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'material', id] });
-      toast.success(`${res.data.name} updated successfully.`);
+      toast.success(`${res.data.type} - ${res.data.color} updated successfully.`);
     },
     onError: () => toast.error('Failed to update material.'),
   });
@@ -53,10 +54,10 @@ export default function EditMaterialPage({
     mutationFn: () => materialsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'materials'] });
-      toast.success('Material deleted.');
+      toast.success('Material deactivated.');
       router.push('/admin/materials');
     },
-    onError: () => toast.error('Failed to delete material.'),
+    onError: () => toast.error('Failed to deactivate material.'),
   });
 
   if (isLoading) {
@@ -85,7 +86,7 @@ export default function EditMaterialPage({
 
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{material.name}</h1>
+          <h1 className="text-2xl font-bold">{material.type} — {material.color}</h1>
           {material.brand && (
             <p className="text-muted-foreground text-sm mt-1">{material.brand}</p>
           )}
@@ -99,7 +100,7 @@ export default function EditMaterialPage({
             size="sm"
             disabled={!material.isActive || deleteMutation.isPending}
             onClick={() => {
-              if (confirm(`Deactivate ${material.name}?`)) {
+              if (confirm(`Deactivate ${material.type} - ${material.color}?`)) {
                 deleteMutation.mutate();
               }
             }}
@@ -117,19 +118,19 @@ export default function EditMaterialPage({
         <CardContent>
           <MaterialForm
             defaultValues={{
-              name:            material.name,
-              brand:           material.brand ?? '',
-              description:     material.description,
-              type:            material.type,
-              pricePerGram:    material.pricePerGram,
-              availableColors: material.availableColors?.map((c) => ({ value: c })) ?? [],
-              properties: material.properties
-                ? Object.entries(JSON.parse(material.properties)).map(([key, value]) => ({
-                    key,
-                    value: String(value),
-                }))
-                : [],
-              isActive:        material.isActive,
+              type:                   material.type,
+              color:                  material.color,
+              finish:                 material.finish ?? undefined,
+              grade:                  material.grade ?? undefined,
+              description:            material.description ?? '',
+              brand:                  material.brand ?? '',
+              pricePerGram:           material.pricePerGram,
+              stockGrams:             material.stockGrams,
+              lowStockThresholdGrams: material.lowStockThresholdGrams ?? undefined,
+              notes:                  material.notes ?? '',
+              printSettings:          material.printSettings ?? '',
+              printingTechnologyId:   material.technology?.id ?? undefined,
+              isActive:               material.isActive,
             }}
             onSubmit={(values) => updateMutation.mutate(values)}
             isSubmitting={updateMutation.isPending}

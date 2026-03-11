@@ -31,7 +31,6 @@ import {
 
 const orderSchema = z.object({
   materialId:           z.string().min(1, 'Please select a material'),
-  color:                z.string().min(1, 'Please select a color'),
   quantity:             z.number().int().min(1, 'Quantity must be at least 1'),
   quality:              z.string().min(1, 'Please select a quality'),
   infill:               z.number().min(5).max(100).optional(),
@@ -94,7 +93,7 @@ export default function NewOrderPage() {
           fileId,
           materialId: values.materialId,
           quantity: values.quantity,
-          color: values.color,
+          color: selectedMaterial?.color ?? '',
           specialInstructions: values.specialInstructions,
           quality: values.quality,
           infill: values.infill,
@@ -157,7 +156,7 @@ export default function NewOrderPage() {
                       <SelectContent>
                         {materialsData?.data.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
-                            {m.name} — ${m.pricePerGram.toFixed(3)}/g
+                            {m.type} — {m.color} - ${m.pricePerGram.toFixed(3)}/g
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -166,32 +165,6 @@ export default function NewOrderPage() {
                   </FormItem>
                 )}
               />
-
-              {/* Color — only shown after material selected */}
-              {selectedMaterial?.availableColors && (
-                <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Color</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a color" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {selectedMaterial.availableColors!.map((c) => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </CardContent>
           </Card>
 

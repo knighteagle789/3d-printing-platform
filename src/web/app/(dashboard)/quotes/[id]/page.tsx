@@ -144,7 +144,7 @@ export default function QuoteDetailPage({
             {quote.preferredMaterial && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Preferred material</span>
-                <span>{quote.preferredMaterial.name}</span>
+                <span>{quote.preferredMaterial.type} - {quote.preferredMaterial.color}</span>
               </div>
             )}
             {quote.preferredColor && (
@@ -240,7 +240,7 @@ export default function QuoteDetailPage({
                       </p>
                       {response.recommendedMaterial && (
                         <p className="text-muted-foreground">
-                          Recommended material: {response.recommendedMaterial.name}
+                          Recommended material: {response.recommendedMaterial.type} - {response.recommendedMaterial.color }
                         </p>
                       )}
                       {response.technicalNotes && (
