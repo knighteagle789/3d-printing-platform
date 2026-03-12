@@ -1,4 +1,4 @@
-import apiClient from '../api-client';
+import apiClient, { publicApiClient } from '../api-client';
 import type { PrintingTechnology } from './technologies';
 
 
@@ -71,7 +71,7 @@ export const MATERIAL_GRADES: MaterialGrade[] = ['Economy', 'Standard', 'Premium
 
 export const materialsApi = {
   getAll: () =>
-    apiClient.get<Material[]>('/Materials'),
+    publicApiClient.get<Material[]>('/Materials'),
 
   getAllAdmin: () =>
     apiClient.get<AdminMaterial[]>('/Materials/admin/all'),

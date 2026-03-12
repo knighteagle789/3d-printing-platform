@@ -1,24 +1,23 @@
 import axios from 'axios';
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5267/api/v1';
+
+// ─── Authenticated client ──────────────────────────────────────────────────
+// Used for all protected endpoints (orders, quotes, admin, etc.)
+// Attaches JWT token and redirects to /login on 401.
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5267/api/v1',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT token to every request if one exists
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Handle auth errors globally
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -31,5 +30,13 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ─── Public client ────────────────────────────────────────────────────────
+// Used for public endpoints (materials list, portfolio, etc.)
+// No auth token, no redirect — safe to use on unauthenticated pages.
+export const publicApiClient = axios.create({
+  baseURL: BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
 
 export default apiClient;

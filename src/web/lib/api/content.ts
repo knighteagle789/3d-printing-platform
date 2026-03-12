@@ -1,13 +1,15 @@
-import apiClient from '../api-client';
+import apiClient, { publicApiClient } from '../api-client';
 
 export const contentApi = {
-  // Public
+  // Public — uses publicApiClient (no auth, no 401 redirect)
+  getFeaturedPortfolio: (count = 3) =>
+    publicApiClient.get<PortfolioItemResponse[]>(`/Content/portfolio/featured?count=${count}`),
   getBlogPosts: (page = 1, pageSize = 9) =>
-    apiClient.get(`/Content/blog?page=${page}&pageSize=${pageSize}`),
+    publicApiClient.get(`/Content/blog?page=${page}&pageSize=${pageSize}`),
   getBlogPostBySlug: (slug: string) =>
-    apiClient.get(`/Content/blog/${slug}`),
+    publicApiClient.get(`/Content/blog/${slug}`),
   getPortfolio: (page = 1, pageSize = 12) =>
-    apiClient.get(`/Content/portfolio?page=${page}&pageSize=${pageSize}`),
+    publicApiClient.get(`/Content/portfolio?page=${page}&pageSize=${pageSize}`),
 
   // Admin — Portfolio
   getPortfolioItem: (id: string) =>
@@ -31,6 +33,25 @@ export const contentApi = {
   getAllBlogPosts: (page = 1, pageSize = 50) =>
     apiClient.get(`/Content/blog/all?page=${page}&pageSize=${pageSize}`),
 };
+
+export interface PortfolioItemResponse {
+  id: string;
+  title: string;
+  description: string;
+  detailedDescription: string | null;
+  imageUrl: string;
+  additionalImages: { id: string; imageUrl: string; caption: string | null }[] | null;
+  tags: string[] | null;
+  category: string;
+  isFeatured: boolean;
+  displayOrder: number;
+  isPublished: boolean;
+  projectDetails: string | null;
+  modelFileUrl: string | null;
+  timelapseVideoUrl: string | null;
+  createdAt: string;
+  material: { id: string; type: string; color: string } | null;
+}
 
 export interface CreatePortfolioItemRequest {
   title: string;
@@ -85,4 +106,3 @@ export interface UpdateBlogPostRequest {
   isPublished?: boolean;
   publishedAt?: string;
 }
-

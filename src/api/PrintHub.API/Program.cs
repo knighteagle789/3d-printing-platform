@@ -129,15 +129,19 @@ try
     });
 
     // ─── CORS ─────────────────────────────────────────────────────────────────
-    // YOUR VERSION: Allows WebAppUrl from config + localhost fallbacks (kept!)
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowWebApp", policy =>
         {
             policy.WithOrigins(
                     builder.Configuration["WebAppUrl"] ?? "http://localhost:3000",
+                    // Next.js dev server bumps port if 3000 is already taken
                     "http://localhost:3000",
-                    "https://localhost:3000"
+                    "https://localhost:3000",
+                    "http://localhost:3001",
+                    "https://localhost:3001",
+                    "http://localhost:3002",
+                    "https://localhost:3002"
                 )
                 .AllowAnyMethod()
                 .AllowAnyHeader()

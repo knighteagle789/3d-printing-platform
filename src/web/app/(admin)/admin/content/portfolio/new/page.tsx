@@ -18,6 +18,11 @@ import {
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { MediaUploadField } from '@/components/admin/MediaUploadField';
+import {
+  ProjectDetailsEditor,
+  ProjectDetailPair,
+  serialiseProjectDetails,
+} from '@/components/admin/ProjectDetailsEditor';
 
 const PORTFOLIO_CATEGORIES = [
   'Prototyping', 'Automotive', 'Aerospace', 'Medical', 'Architecture',
@@ -31,7 +36,7 @@ const schema = z.object({
   category: z.string().min(1, 'Category is required'),
   imageUrl: z.string().url('Must be a valid URL'),
   tags: z.string().optional(),
-  projectDetails: z.string().optional(),
+  projectDetails: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
   modelFileUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   timelapseVideoUrl: z.string().optional(),
   displayOrder: z.number().int().min(0),
@@ -72,7 +77,7 @@ export default function NewPortfolioItemPage() {
       modelFileUrl: data.modelFileUrl || undefined,
       timelapseVideoUrl: data.timelapseVideoUrl || undefined,
       tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
-      projectDetails: data.projectDetails || undefined,
+      projectDetails: serialiseProjectDetails(data.projectDetails ?? []),
       displayOrder: data.displayOrder,
       isFeatured: data.isFeatured,
       isPublished: data.isPublished,
@@ -168,9 +173,14 @@ export default function NewPortfolioItemPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="projectDetails">Project Details <span className="text-muted-foreground">(optional)</span></Label>
-          <Textarea id="projectDetails" {...register('projectDetails')} rows={3}
-            placeholder="e.g. Material: PLA, Print time: 8 hours, Layer height: 0.2mm" />
+          <Label>Project Details <span className="text-muted-foreground">(optional)</span></Label>
+          <p className="text-muted-foreground text-xs">
+            Add key / value pairs like Print Time, Layer Height, Infill, etc.
+          </p>
+          <ProjectDetailsEditor
+            pairs={watch('projectDetails') ?? []}
+            onChange={(pairs: ProjectDetailPair[]) => setValue('projectDetails', pairs)}
+          />
         </div>
 
         <div className="space-y-2">

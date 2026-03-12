@@ -19,6 +19,12 @@ import {
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { MediaUploadField } from '@/components/admin/MediaUploadField';
+import {
+  ProjectDetailsEditor,
+  ProjectDetailPair,
+  parseProjectDetails,
+  serialiseProjectDetails,
+} from '@/components/admin/ProjectDetailsEditor';
 
 const PORTFOLIO_CATEGORIES = [
   'Prototyping', 'Automotive', 'Aerospace', 'Medical', 'Architecture',
@@ -32,7 +38,7 @@ const schema = z.object({
   category: z.string().min(1, 'Category is required'),
   imageUrl: z.string().url('Must be a valid URL'),
   tags: z.string().optional(),
-  projectDetails: z.string().optional(),
+  projectDetails: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
   modelFileUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   timelapseVideoUrl: z.string().optional(),
   displayOrder: z.number().int().min(0),
@@ -41,6 +47,23 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+
+// Shape of the item as it comes back from the API — projectDetails is a raw
+// JSON string (or null), not the parsed pair array the form uses internally.
+interface RawItem {
+  title:               string;
+  description:         string;
+  detailedDescription: string | null;
+  category:            string;
+  imageUrl:            string;
+  modelFileUrl:        string | null;
+  timelapseVideoUrl:   string | null;
+  tags:                string[] | null;
+  projectDetails:      string | null;
+  displayOrder:        number;
+  isFeatured:          boolean;
+  isPublished:         boolean;
+}
 
 export default function EditPortfolioItemPage({
   params,
@@ -62,7 +85,7 @@ export default function EditPortfolioItemPage({
 
   useEffect(() => {
     if (data?.data) {
-      const item = data.data as FormData & { tags: string[] | null };
+      const item = data.data as RawItem;
       reset({
         title: item.title,
         description: item.description,
@@ -72,7 +95,7 @@ export default function EditPortfolioItemPage({
         modelFileUrl: item.modelFileUrl ?? '',
         timelapseVideoUrl: item.timelapseVideoUrl ?? '',
         tags: item.tags?.join(', ') ?? '',
-        projectDetails: item.projectDetails ?? '',
+        projectDetails: parseProjectDetails(item.projectDetails),
         displayOrder: item.displayOrder,
         isFeatured: item.isFeatured,
         isPublished: item.isPublished,
@@ -100,7 +123,7 @@ export default function EditPortfolioItemPage({
       modelFileUrl: data.modelFileUrl || undefined,
       timelapseVideoUrl: data.timelapseVideoUrl || undefined,
       tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
-      projectDetails: data.projectDetails || undefined,
+      projectDetails: serialiseProjectDetails(data.projectDetails ?? []),
       displayOrder: data.displayOrder,
       isFeatured: data.isFeatured,
       isPublished: data.isPublished,
@@ -204,8 +227,14 @@ export default function EditPortfolioItemPage({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="projectDetails">Project Details <span className="text-muted-foreground">(optional)</span></Label>
-          <Textarea id="projectDetails" {...register('projectDetails')} rows={3} />
+          <Label>Project Details <span className="text-muted-foreground">(optional)</span></Label>
+          <p className="text-muted-foreground text-xs">
+            Add key / value pairs like Print Time, Layer Height, Infill, etc.
+          </p>
+          <ProjectDetailsEditor
+            pairs={watch('projectDetails') ?? []}
+            onChange={(pairs: ProjectDetailPair[]) => setValue('projectDetails', pairs)}
+          />
         </div>
 
         <div className="space-y-2">
