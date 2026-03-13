@@ -37,11 +37,11 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
-const inputCls = `w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors`;
+const inputCls = `w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className={`${mono.className} block text-[9px] uppercase tracking-[0.15em] text-white/30 mb-1.5`}>
+    <label className={`${mono.className} block text-[9px] uppercase tracking-[0.15em] text-text-muted mb-1.5`}>
       {children}
     </label>
   );
@@ -56,10 +56,10 @@ function Section({ icon: Icon, title, children }: {
   icon: React.ComponentType<{ className?: string }>; title: string; children: React.ReactNode;
 }) {
   return (
-    <div className="border border-white/[0.08]" style={{ background: '#080705' }}>
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06]">
-        <Icon className="h-3.5 w-3.5 text-white/20" />
-        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+    <div className="border border-border bg-surface" >
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+        <Icon className="h-3.5 w-3.5 text-text-muted" />
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
           {title}
         </span>
       </div>
@@ -74,8 +74,8 @@ function Toast({ type, msg, onDismiss }: { type: 'success' | 'error'; msg: strin
       onClick={onDismiss}
       className={`cursor-pointer flex items-center gap-2 px-4 py-2.5 border text-[10px] mb-4 ${mono.className} ${
         type === 'success'
-          ? 'border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-400/80'
-          : 'border-red-400/20 bg-red-400/[0.04] text-red-400/70'
+          ? 'border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-700'
+          : 'border-red-400/20 bg-red-400/[0.04] text-red-600'
       }`}
     >
       {type === 'success'
@@ -157,7 +157,7 @@ function ProfileForm({ user }: {
           <button
             type="submit"
             disabled={isSubmitting || mutation.isPending}
-            className={`${mono.className} h-9 px-6 bg-amber-400/10 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-400/80 hover:bg-amber-400/20 hover:text-amber-400 transition-colors disabled:opacity-40`}
+            className={`${mono.className} h-9 px-6 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-500 hover:text-accent transition-colors disabled:opacity-40`}
           >
             {isSubmitting || mutation.isPending ? 'Saving...' : 'Save Changes'}
           </button>
@@ -211,7 +211,7 @@ function PasswordForm() {
           <button
             type="submit"
             disabled={isSubmitting || mutation.isPending}
-            className={`${mono.className} h-9 px-6 bg-white/[0.04] border border-white/10 text-[9px] uppercase tracking-[0.15em] text-white/40 hover:text-white/60 hover:border-white/20 transition-colors disabled:opacity-40`}
+            className={`${mono.className} h-9 px-6 bg-surface-alt border border-border text-[9px] uppercase tracking-[0.15em] text-text-secondary hover:text-text-secondary hover:border-border transition-colors disabled:opacity-40`}
           >
             {isSubmitting || mutation.isPending ? 'Updating...' : 'Update Password'}
           </button>
@@ -242,13 +242,13 @@ export default function ProfilePage() {
 
       {/* Header */}
       <div className="mb-8">
-        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-2`}>
           Account
         </p>
-        <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+        <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
           Profile
         </h1>
-        <p className={`${mono.className} text-[11px] text-white/30 mt-1`}>
+        <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>
           Manage your account details and security
         </p>
       </div>
@@ -256,17 +256,17 @@ export default function ProfilePage() {
       {/* Roles chip */}
       {storeUser?.roles && storeUser.roles.length > 0 && (
         <div className="mb-4 flex items-center gap-2">
-          <ShieldCheck className="h-3.5 w-3.5 text-white/15" />
+          <ShieldCheck className="h-3.5 w-3.5 text-text-muted" />
           <div className="flex gap-1.5">
             {storeUser.roles.map(role => (
               <span
                 key={role}
                 className={`${mono.className} text-[8px] uppercase tracking-[0.15em] px-2 py-0.5 border ${
                   role === 'Admin'
-                    ? 'border-amber-400/30 text-amber-400/60'
+                    ? 'border-amber-400/30 text-amber-700'
                     : role === 'Staff'
-                    ? 'border-sky-400/30 text-sky-400/60'
-                    : 'border-white/10 text-white/25'
+                    ? 'border-sky-400/30 text-sky-700'
+                    : 'border-border text-text-muted'
                 }`}
               >
                 {role}
@@ -278,8 +278,8 @@ export default function ProfilePage() {
 
       {isLoading && (
         <div className="space-y-4">
-          <div className="h-40 bg-white/[0.02] animate-pulse" />
-          <div className="h-40 bg-white/[0.02] animate-pulse" />
+          <div className="h-40 bg-surface-alt animate-pulse" />
+          <div className="h-40 bg-surface-alt animate-pulse" />
         </div>
       )}
 

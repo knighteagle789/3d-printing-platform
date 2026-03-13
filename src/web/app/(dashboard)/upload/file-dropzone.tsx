@@ -58,12 +58,12 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
       <div className="border border-amber-400/20 bg-amber-400/[0.02]">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <File className="h-4 w-4 text-amber-400/60 shrink-0" />
+            <File className="h-4 w-4 text-amber-700 shrink-0" />
             <div>
-              <p className={`${mono.className} text-[11px] text-white/70`}>
+              <p className={`${mono.className} text-[11px] text-text-primary`}>
                 {selectedFile.name}
               </p>
-              <p className={`${mono.className} text-[9px] text-white/25 mt-0.5`}>
+              <p className={`${mono.className} text-[9px] text-text-muted mt-0.5`}>
                 {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
               </p>
             </div>
@@ -71,7 +71,7 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
           {!isUploading && (
             <button
               onClick={clearFile}
-              className="text-white/20 hover:text-red-400/70 transition-colors p-1"
+              className="text-text-muted hover:text-red-600 transition-colors p-1"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -80,10 +80,10 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
 
         {isUploading && (
           <div className="px-4 pb-3">
-            <div className="h-[2px] w-full bg-white/[0.06] overflow-hidden">
-              <div className="h-full bg-amber-400/60 animate-pulse w-3/4 transition-all" />
+            <div className="h-[2px] w-full bg-surface-alt overflow-hidden">
+              <div className="h-full bg-amber-500 animate-pulse w-3/4 transition-all" />
             </div>
-            <p className={`${mono.className} text-[9px] text-amber-400/50 mt-1.5 animate-pulse`}>
+            <p className={`${mono.className} text-[9px] text-amber-700 mt-1.5 animate-pulse`}>
               Uploading...
             </p>
           </div>
@@ -104,18 +104,18 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
           border-2 border-dashed p-14 text-center cursor-pointer transition-colors
           ${dragOver
             ? 'border-amber-400/50 bg-amber-400/[0.04]'
-            : 'border-white/[0.08] hover:border-white/20 hover:bg-white/[0.02]'
+            : 'border-border hover:border-border hover:bg-surface-alt'
           }
         `}
       >
-        <Upload className={`h-8 w-8 mx-auto mb-4 ${dragOver ? 'text-amber-400/60' : 'text-white/15'}`} />
-        <p className={`${mono.className} text-[11px] text-white/50 mb-1`}>
+        <Upload className={`h-8 w-8 mx-auto mb-4 ${dragOver ? 'text-amber-700' : 'text-text-muted'}`} />
+        <p className={`${mono.className} text-[11px] text-text-secondary mb-1`}>
           Drag and drop your 3D model here
         </p>
-        <p className={`${mono.className} text-[10px] text-white/20 mb-4`}>
+        <p className={`${mono.className} text-[10px] text-text-muted mb-4`}>
           or click to browse
         </p>
-        <p className={`${mono.className} text-[9px] text-white/15`}>
+        <p className={`${mono.className} text-[9px] text-text-muted`}>
           {ALLOWED_EXTENSIONS.join('  ·  ')} &nbsp;·&nbsp; Max {MAX_SIZE_MB} MB
         </p>
       </div>

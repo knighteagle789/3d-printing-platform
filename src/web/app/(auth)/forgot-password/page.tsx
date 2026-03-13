@@ -23,34 +23,34 @@ const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="min-h-screen bg-[#0d0a06] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-page flex flex-col items-center justify-center px-6">
 
       {/* Logo */}
       <Link href="/" className="mb-16">
-        <span className={`${display.className} text-white text-2xl leading-none`}>
-          NOCO MAKE<span className="text-amber-400"> LAB.</span>
+        <span className={`${display.className} text-text-primary text-2xl leading-none`}>
+          NOCO MAKE<span className="text-accent"> LAB.</span>
         </span>
       </Link>
 
       <div className="w-full max-w-sm text-center">
-        <div className="w-12 h-12 border border-white/10 flex items-center justify-center mx-auto mb-8">
-          <Clock className="h-5 w-5 text-amber-400/60" />
+        <div className="w-12 h-12 border border-border flex items-center justify-center mx-auto mb-8">
+          <Clock className="h-5 w-5 text-accent" />
         </div>
 
-        <p className={`${mono.className} text-[10px] uppercase tracking-[0.28em] text-amber-400/70 mb-4`}>
+        <p className={`${mono.className} text-[10px] uppercase tracking-[0.28em] text-accent mb-4`}>
           Coming Soon
         </p>
         <h1
-          className="font-black tracking-tight leading-[1.1] mb-5 text-white"
+          className="font-black tracking-tight leading-[1.1] mb-5 text-text-primary"
           style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
         >
           Password reset<br />isn&apos;t available yet.
         </h1>
-        <p className="text-white/38 text-sm leading-relaxed mb-10">
+        <p className="text-text-secondary text-sm leading-relaxed mb-10">
           This feature is on the way. In the meantime, contact us at{' '}
           <a
             href="mailto:hello@nocomakelab.com"
-            className="text-amber-400/70 hover:text-amber-400 transition-colors"
+            className="text-accent hover:text-accent-dark transition-colors"
           >
             hello@nocomakelab.com
           </a>{' '}
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
 
         <Link
           href="/login"
-          className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.22em] text-white/30 hover:text-white transition-colors`}
+          className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.22em] text-text-muted hover:text-text-primary transition-colors`}
         >
           <ArrowLeft className="h-3 w-3" /> Back to Sign In
         </Link>

@@ -14,16 +14,16 @@ const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
-  Pending:       { dot: 'bg-white/20',       text: 'text-white/30'       },
-  UnderReview:   { dot: 'bg-sky-400/60',     text: 'text-sky-400/70'     },
-  QuoteProvided: { dot: 'bg-amber-400/60',   text: 'text-amber-400/70'   },
-  Accepted:      { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
-  Expired:       { dot: 'bg-red-400/40',     text: 'text-red-400/50'     },
-  Cancelled:     { dot: 'bg-red-400/40',     text: 'text-red-400/50'     },
+  Pending:       { dot: 'bg-gray-300',       text: 'text-text-muted'       },
+  UnderReview:   { dot: 'bg-sky-500',     text: 'text-sky-700'     },
+  QuoteProvided: { dot: 'bg-amber-500',   text: 'text-amber-700'   },
+  Accepted:      { dot: 'bg-emerald-500', text: 'text-emerald-700' },
+  Expired:       { dot: 'bg-red-500',     text: 'text-red-600'     },
+  Cancelled:     { dot: 'bg-red-500',     text: 'text-red-600'     },
 };
 
 function StatusPill({ status }: { status: string }) {
-  const s = STATUS_STYLES[status] ?? { dot: 'bg-white/20', text: 'text-white/30' };
+  const s = STATUS_STYLES[status] ?? { dot: 'bg-gray-300', text: 'text-text-muted' };
   return (
     <span className="inline-flex items-center gap-2">
       <span className={`h-2 w-2 rounded-full ${s.dot}`} />
@@ -43,10 +43,10 @@ function Section({ icon: Icon, title, children }: {
   icon?: React.ComponentType<{ className?: string }>; title: string; children: React.ReactNode;
 }) {
   return (
-    <div className="border border-white/[0.08]" style={{ background: '#080705' }}>
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06]">
-        {Icon && <Icon className="h-3.5 w-3.5 text-white/20" />}
-        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+    <div className="border border-border bg-surface" >
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+        {Icon && <Icon className="h-3.5 w-3.5 text-text-muted" />}
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
           {title}
         </span>
       </div>
@@ -57,9 +57,9 @@ function Section({ icon: Icon, title, children }: {
 
 function DataRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between py-1.5 border-b border-white/[0.04] last:border-0">
-      <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-white/20`}>{label}</span>
-      <span className={`${mono.className} text-[11px] text-white/50 text-right max-w-[60%]`}>{value}</span>
+    <div className="flex items-start justify-between py-1.5 border-b border-border last:border-0">
+      <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>{label}</span>
+      <span className={`${mono.className} text-[11px] text-text-secondary text-right max-w-[60%]`}>{value}</span>
     </div>
   );
 }
@@ -114,7 +114,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
     return (
       <div className="p-8 max-w-3xl space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-28 bg-white/[0.02] animate-pulse" />
+          <div key={i} className="h-28 bg-surface-alt animate-pulse" />
         ))}
       </div>
     );
@@ -126,7 +126,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
         <p className={`${mono.className} text-[10px] text-red-400`}>Quote request not found.</p>
         <button
           onClick={() => router.push('/quotes')}
-          className={`${mono.className} mt-4 text-[9px] uppercase tracking-[0.15em] text-white/25 hover:text-white/50 transition-colors`}
+          className={`${mono.className} mt-4 text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-secondary transition-colors`}
         >
           ← Back to quotes
         </button>
@@ -143,7 +143,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
       <div className="mb-8">
         <button
           onClick={() => router.push('/quotes')}
-          className={`${mono.className} flex items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-white/25 hover:text-white/50 transition-colors mb-4`}
+          className={`${mono.className} flex items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-secondary transition-colors mb-4`}
         >
           <ArrowLeft className="h-3 w-3" />
           All Quotes
@@ -151,13 +151,13 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
 
         <div className="flex items-start justify-between">
           <div>
-            <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-1`}>
+            <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-1`}>
               Quote Request
             </p>
-            <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+            <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
               {quote.requestNumber}
             </h1>
-            <p className={`${mono.className} text-[10px] text-white/25 mt-1`}>
+            <p className={`${mono.className} text-[10px] text-text-muted mt-1`}>
               Submitted {formatDate(quote.createdAt)}
             </p>
           </div>
@@ -171,8 +171,8 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
       {flash && (
         <div className={`${mono.className} mb-4 border px-4 py-2.5 text-[10px] ${
           flash.type === 'success'
-            ? 'border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-400/80'
-            : 'border-red-400/20 bg-red-400/[0.04] text-red-400/70'
+            ? 'border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-700'
+            : 'border-red-400/20 bg-red-400/[0.04] text-red-600'
         }`}>
           {flash.msg}
         </div>
@@ -208,65 +208,65 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
         {/* Responses */}
         <Section icon={MessageSquare} title={`Pricing Responses (${quote.responses.length})`}>
           {quote.responses.length === 0 ? (
-            <p className={`${mono.className} text-[10px] text-white/25`}>
+            <p className={`${mono.className} text-[10px] text-text-muted`}>
               No responses yet — we&apos;ll review your request and reply shortly.
             </p>
           ) : (
             <div className="space-y-5">
               {quote.responses.map((response, i) => (
                 <div key={response.id}>
-                  {i > 0 && <div className="border-t border-white/[0.06] mb-5" />}
+                  {i > 0 && <div className="border-t border-border mb-5" />}
 
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1.5">
                       <div className="flex items-baseline gap-3">
-                        <span className={`${bebas.className} text-2xl ${response.isAccepted ? 'text-emerald-400' : 'text-white'}`}>
+                        <span className={`${bebas.className} text-2xl ${response.isAccepted ? 'text-emerald-400' : 'text-text-primary'}`}>
                           ${response.price.toFixed(2)}
                         </span>
                         {response.shippingCost != null && (
-                          <span className={`${mono.className} text-[9px] text-white/25`}>
+                          <span className={`${mono.className} text-[9px] text-text-muted`}>
                             + ${response.shippingCost.toFixed(2)} shipping
                           </span>
                         )}
                       </div>
-                      <p className={`${mono.className} text-[9px] text-white/25`}>
+                      <p className={`${mono.className} text-[9px] text-text-muted`}>
                         Estimated {response.estimatedDays} days
                       </p>
                       {response.recommendedMaterial && (
-                        <p className={`${mono.className} text-[9px] text-white/25`}>
+                        <p className={`${mono.className} text-[9px] text-text-muted`}>
                           Recommended: {response.recommendedMaterial.type} — {response.recommendedMaterial.color}
                         </p>
                       )}
                       {response.technicalNotes && (
-                        <p className={`${mono.className} text-[10px] text-white/40 mt-1`}>
+                        <p className={`${mono.className} text-[10px] text-text-secondary mt-1`}>
                           {response.technicalNotes}
                         </p>
                       )}
-                      <p className={`${mono.className} text-[8px] text-white/15`}>
+                      <p className={`${mono.className} text-[8px] text-text-muted`}>
                         Expires {formatDate(response.expiresAt)}
                       </p>
                     </div>
 
                     <div className="shrink-0">
                       {response.isAccepted ? (
-                        <span className={`${mono.className} flex items-center gap-1.5 text-[9px] text-emerald-400/70`}>
+                        <span className={`${mono.className} flex items-center gap-1.5 text-[9px] text-emerald-700`}>
                           <CheckCircle2 className="h-3 w-3" />
                           Accepted
                         </span>
                       ) : quote.status === 'QuoteProvided' && (
                         pendingAccept === response.id ? (
                           <div className="flex items-center gap-2">
-                            <span className={`${mono.className} text-[9px] text-white/30`}>Confirm?</span>
+                            <span className={`${mono.className} text-[9px] text-text-muted`}>Confirm?</span>
                             <button
                               onClick={() => acceptMutation.mutate(response.id)}
                               disabled={acceptMutation.isPending}
-                              className={`${mono.className} px-3 h-7 bg-emerald-400/10 border border-emerald-400/30 text-[8px] uppercase tracking-[0.12em] text-emerald-400/80 hover:bg-emerald-400/20 transition-colors disabled:opacity-40`}
+                              className={`${mono.className} px-3 h-7 bg-emerald-500 border border-emerald-400/30 text-[8px] uppercase tracking-[0.12em] text-emerald-700 hover:bg-emerald-500 transition-colors disabled:opacity-40`}
                             >
                               {acceptMutation.isPending ? '...' : 'Yes'}
                             </button>
                             <button
                               onClick={() => setPendingAccept(null)}
-                              className={`${mono.className} px-3 h-7 border border-white/10 text-[8px] uppercase tracking-[0.12em] text-white/30 hover:text-white/60 transition-colors`}
+                              className={`${mono.className} px-3 h-7 border border-border text-[8px] uppercase tracking-[0.12em] text-text-muted hover:text-text-secondary transition-colors`}
                             >
                               No
                             </button>
@@ -274,7 +274,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
                         ) : (
                           <button
                             onClick={() => setPendingAccept(response.id)}
-                            className={`${mono.className} px-3 h-8 border border-amber-400/20 bg-amber-400/[0.03] hover:border-amber-400/40 hover:bg-amber-400/[0.07] text-[8px] uppercase tracking-[0.12em] text-amber-400/60 hover:text-amber-400/80 transition-colors`}
+                            className={`${mono.className} px-3 h-8 border border-amber-400/20 bg-amber-400/[0.03] hover:border-amber-400/40 hover:bg-amber-400/[0.07] text-[8px] uppercase tracking-[0.12em] text-amber-700 hover:text-amber-700 transition-colors`}
                           >
                             Accept Quote
                           </button>
@@ -292,27 +292,27 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
         {quote.status === 'Accepted' && !quote.orderId && (
           <div className="border border-amber-400/20 bg-amber-400/[0.03] p-5 flex items-center justify-between gap-4">
             <div>
-              <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-amber-400/80 mb-1`}>
+              <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-amber-700 mb-1`}>
                 Ready to Order?
               </p>
-              <p className={`${mono.className} text-[10px] text-white/30`}>
+              <p className={`${mono.className} text-[10px] text-text-muted`}>
                 Your quote is accepted. Create an order to begin production.
               </p>
             </div>
 
             {pendingConvert ? (
               <div className="flex items-center gap-2 shrink-0">
-                <span className={`${mono.className} text-[9px] text-white/30`}>Confirm?</span>
+                <span className={`${mono.className} text-[9px] text-text-muted`}>Confirm?</span>
                 <button
                   onClick={() => convertMutation.mutate()}
                   disabled={convertMutation.isPending}
-                  className={`${mono.className} px-3 h-8 bg-amber-400/10 border border-amber-400/30 text-[8px] uppercase tracking-[0.12em] text-amber-400/80 hover:bg-amber-400/20 transition-colors disabled:opacity-40`}
+                  className={`${mono.className} px-3 h-8 bg-amber-500 border border-amber-400/30 text-[8px] uppercase tracking-[0.12em] text-amber-700 hover:bg-amber-500 transition-colors disabled:opacity-40`}
                 >
                   {convertMutation.isPending ? '...' : 'Create'}
                 </button>
                 <button
                   onClick={() => setPendingConvert(false)}
-                  className={`${mono.className} px-3 h-8 border border-white/10 text-[8px] uppercase tracking-[0.12em] text-white/30 hover:text-white/60 transition-colors`}
+                  className={`${mono.className} px-3 h-8 border border-border text-[8px] uppercase tracking-[0.12em] text-text-muted hover:text-text-secondary transition-colors`}
                 >
                   Cancel
                 </button>
@@ -320,7 +320,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
             ) : (
               <button
                 onClick={() => setPendingConvert(true)}
-                className={`${mono.className} shrink-0 flex items-center gap-2 px-4 h-9 bg-amber-400/10 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-400/80 hover:bg-amber-400/20 hover:text-amber-400 transition-colors`}
+                className={`${mono.className} shrink-0 flex items-center gap-2 px-4 h-9 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-500 hover:text-accent transition-colors`}
               >
                 Create Order
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -330,16 +330,16 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
         )}
 
         {quote.status === 'Accepted' && quote.orderId && (
-          <div className="border border-white/[0.08] p-4 flex items-center justify-between">
+          <div className="border border-border p-4 flex items-center justify-between">
             <div>
-              <p className={`${mono.className} text-[10px] text-white/40 mb-0.5`}>Order Created</p>
-              <p className={`${mono.className} text-[9px] text-white/20`}>
+              <p className={`${mono.className} text-[10px] text-text-secondary mb-0.5`}>Order Created</p>
+              <p className={`${mono.className} text-[9px] text-text-muted`}>
                 This quote has been converted to an order.
               </p>
             </div>
             <button
               onClick={() => router.push(`/orders/${quote.orderId}`)}
-              className={`${mono.className} flex items-center gap-2 px-3 h-8 border border-white/10 text-[9px] uppercase tracking-[0.12em] text-white/30 hover:text-white/60 hover:border-white/20 transition-colors`}
+              className={`${mono.className} flex items-center gap-2 px-3 h-8 border border-border text-[9px] uppercase tracking-[0.12em] text-text-muted hover:text-text-secondary hover:border-border transition-colors`}
             >
               View Order
               <ArrowRight className="h-3 w-3" />
@@ -350,7 +350,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
         {/* Notes */}
         {quote.notes && (
           <Section icon={FileText} title="Notes">
-            <p className={`${mono.className} text-[10px] text-white/40`}>{quote.notes}</p>
+            <p className={`${mono.className} text-[10px] text-text-secondary`}>{quote.notes}</p>
           </Section>
         )}
 

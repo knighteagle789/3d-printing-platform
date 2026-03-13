@@ -37,31 +37,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#0d0a06' }}>
+    <div className="min-h-screen flex bg-page">
 
       {/* ── Sidebar ── */}
       <aside
-        className="w-56 flex flex-col shrink-0 border-r border-white/[0.06]"
-        style={{ background: '#080705' }}
+        className="w-56 flex flex-col shrink-0 border-r border-border bg-surface"
+        
       >
         {/* Wordmark */}
-        <div className="h-14 flex items-center px-5 border-b border-white/[0.06] shrink-0">
+        <div className="h-14 flex items-center px-5 border-b border-border shrink-0">
           <Link href="/upload" className="flex items-baseline gap-1.5">
-            <span className={`${bebas.className} text-2xl text-white tracking-wide leading-none`}>
+            <span className={`${bebas.className} text-2xl text-text-primary tracking-wide leading-none`}>
               NOCO
             </span>
-            <span className={`${bebas.className} text-2xl text-amber-400 tracking-wide leading-none`}>
+            <span className={`${bebas.className} text-2xl text-accent tracking-wide leading-none`}>
               MAKE LAB
             </span>
           </Link>
         </div>
 
         {/* User chip */}
-        <div className="px-4 py-3 border-b border-white/[0.06]">
-          <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/20 mb-0.5`}>
+        <div className="px-4 py-3 border-b border-border">
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted mb-0.5`}>
             Signed in as
           </p>
-          <p className={`${mono.className} text-[11px] text-white/60 truncate`}>
+          <p className={`${mono.className} text-[11px] text-text-secondary truncate`}>
             {user?.firstName} {user?.lastName}
           </p>
         </div>
@@ -76,13 +76,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href={href}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 transition-colors relative
-                  ${isActive ? 'text-white' : 'text-white/30 hover:text-white/60'}
+                  ${isActive ? 'text-text-primary' : 'text-text-muted hover:text-text-secondary'}
                 `}
               >
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-amber-400" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-accent" />
                 )}
-                <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-amber-400' : ''}`} />
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-accent' : ''}`} />
                 <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em]`}>
                   {label}
                 </span>
@@ -92,11 +92,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Footer actions */}
-        <div className="p-3 border-t border-white/[0.06] space-y-0.5">
+        <div className="p-3 border-t border-border space-y-0.5">
           {isAdmin && (
             <Link
               href="/admin"
-              className="flex items-center gap-3 px-3 py-2.5 text-white/25 hover:text-amber-400/80 transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-text-muted hover:text-accent transition-colors"
             >
               <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
               <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em]`}>
@@ -107,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <Link
             href="/"
-            className="flex items-center gap-3 px-3 py-2.5 text-white/25 hover:text-white/50 transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 text-text-muted hover:text-text-secondary transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5 shrink-0" />
             <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em]`}>
@@ -117,7 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-white/25 hover:text-red-400/70 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-text-muted hover:text-red-600 transition-colors"
           >
             <LogOut className="h-3.5 w-3.5 shrink-0" />
             <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em]`}>

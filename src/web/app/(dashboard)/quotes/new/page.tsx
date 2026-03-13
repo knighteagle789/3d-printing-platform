@@ -31,14 +31,14 @@ type QuoteFormValues = z.infer<typeof quoteSchema>;
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
-const inputCls = `w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors`;
-const textareaCls = `w-full bg-white/[0.03] border border-white/10 px-3 py-2.5 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors resize-none`;
+const inputCls = `w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
+const textareaCls = `w-full bg-surface-alt border border-border px-3 py-2.5 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-none`;
 
 function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
   return (
-    <label className={`${mono.className} block text-[9px] uppercase tracking-[0.15em] text-white/30 mb-1.5`}>
+    <label className={`${mono.className} block text-[9px] uppercase tracking-[0.15em] text-text-muted mb-1.5`}>
       {children}
-      {optional && <span className="ml-1.5 text-white/15 normal-case tracking-normal">optional</span>}
+      {optional && <span className="ml-1.5 text-text-muted normal-case tracking-normal">optional</span>}
     </label>
   );
 }
@@ -50,9 +50,9 @@ function FieldError({ msg }: { msg?: string }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border border-white/[0.08]" style={{ background: '#080705' }}>
-      <div className="px-4 py-2.5 border-b border-white/[0.06]">
-        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+    <div className="border border-border bg-surface" >
+      <div className="px-4 py-2.5 border-b border-border">
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
           {title}
         </span>
       </div>
@@ -114,18 +114,18 @@ export default function NewQuotePage() {
       <div className="mb-8">
         <button
           onClick={() => router.back()}
-          className={`${mono.className} flex items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-white/25 hover:text-white/50 transition-colors mb-4`}
+          className={`${mono.className} flex items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-secondary transition-colors mb-4`}
         >
           <ArrowLeft className="h-3 w-3" />
           Back
         </button>
-        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-2`}>
           Quotes / New
         </p>
-        <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+        <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
           Request a Quote
         </h1>
-        <p className={`${mono.className} text-[11px] text-white/30 mt-1`}>
+        <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>
           Tell us about your project and we&apos;ll get back to you with pricing
         </p>
       </div>
@@ -133,8 +133,8 @@ export default function NewQuotePage() {
       {/* File summary */}
       {fileData && (
         <div className="mb-4 border border-amber-400/10 bg-amber-400/[0.02] px-4 py-3 flex items-center justify-between">
-          <span className={`${mono.className} text-[10px] text-white/30`}>File</span>
-          <span className={`${mono.className} text-[11px] text-white/60`}>
+          <span className={`${mono.className} text-[10px] text-text-muted`}>File</span>
+          <span className={`${mono.className} text-[11px] text-text-secondary`}>
             {fileData.data.originalFileName}
           </span>
         </div>
@@ -164,12 +164,12 @@ export default function NewQuotePage() {
               >
                 <option value="">No preference</option>
                 {materialsData?.data.map(m => (
-                  <option key={m.id} value={m.id} className="bg-[#0d0a06]">
+                  <option key={m.id} value={m.id} className="bg-page">
                     {m.type} — {m.color}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/20 pointer-events-none" />
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted pointer-events-none" />
             </div>
           </div>
 
@@ -241,14 +241,14 @@ export default function NewQuotePage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className={`${mono.className} flex-1 h-10 border border-white/10 text-[9px] uppercase tracking-[0.15em] text-white/30 hover:text-white/60 hover:border-white/20 transition-colors`}
+            className={`${mono.className} flex-1 h-10 border border-border text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-secondary hover:border-border transition-colors`}
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`${mono.className} flex-1 h-10 bg-amber-400/10 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-400/80 hover:bg-amber-400/20 hover:text-amber-400 transition-colors disabled:opacity-40`}
+            className={`${mono.className} flex-1 h-10 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-500 hover:text-accent transition-colors disabled:opacity-40`}
           >
             {isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
           </button>

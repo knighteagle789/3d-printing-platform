@@ -14,19 +14,19 @@ const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
-  Draft:        { dot: 'bg-white/20',       text: 'text-white/30'       },
-  Submitted:    { dot: 'bg-sky-400/60',     text: 'text-sky-400/70'     },
-  InReview:     { dot: 'bg-sky-400/60',     text: 'text-sky-400/70'     },
-  Approved:     { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
-  Printing:     { dot: 'bg-amber-400/60',   text: 'text-amber-400/70'   },
-  QualityCheck: { dot: 'bg-amber-400/60',   text: 'text-amber-400/70'   },
-  Shipped:      { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
-  Completed:    { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
-  Cancelled:    { dot: 'bg-red-400/60',     text: 'text-red-400/70'     },
+  Draft:        { dot: 'bg-gray-300',       text: 'text-text-muted'       },
+  Submitted:    { dot: 'bg-sky-500',     text: 'text-sky-700'     },
+  InReview:     { dot: 'bg-sky-500',     text: 'text-sky-700'     },
+  Approved:     { dot: 'bg-emerald-500', text: 'text-emerald-700' },
+  Printing:     { dot: 'bg-amber-500',   text: 'text-amber-700'   },
+  QualityCheck: { dot: 'bg-amber-500',   text: 'text-amber-700'   },
+  Shipped:      { dot: 'bg-emerald-500', text: 'text-emerald-700' },
+  Completed:    { dot: 'bg-emerald-500', text: 'text-emerald-700' },
+  Cancelled:    { dot: 'bg-red-500',     text: 'text-red-600'     },
 };
 
 function StatusPill({ status }: { status: string }) {
-  const s = STATUS_STYLES[status] ?? { dot: 'bg-white/20', text: 'text-white/30' };
+  const s = STATUS_STYLES[status] ?? { dot: 'bg-gray-300', text: 'text-text-muted' };
   return (
     <span className="inline-flex items-center gap-2">
       <span className={`h-2 w-2 rounded-full ${s.dot}`} />
@@ -46,10 +46,10 @@ function Section({ icon: Icon, title, children }: {
   icon?: React.ComponentType<{ className?: string }>; title: string; children: React.ReactNode;
 }) {
   return (
-    <div className="border border-white/[0.08]" style={{ background: '#080705' }}>
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06]">
-        {Icon && <Icon className="h-3.5 w-3.5 text-white/20" />}
-        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+    <div className="border border-border bg-surface" >
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+        {Icon && <Icon className="h-3.5 w-3.5 text-text-muted" />}
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
           {title}
         </span>
       </div>
@@ -60,11 +60,11 @@ function Section({ icon: Icon, title, children }: {
 
 function DataRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between py-1.5 border-b border-white/[0.04] last:border-0">
-      <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-white/20`}>
+    <div className="flex items-start justify-between py-1.5 border-b border-border last:border-0">
+      <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
         {label}
       </span>
-      <span className={`${mono.className} text-[11px] text-white/60 text-right`}>
+      <span className={`${mono.className} text-[11px] text-text-secondary text-right`}>
         {value}
       </span>
     </div>
@@ -104,7 +104,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     return (
       <div className="p-8 max-w-3xl space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-28 bg-white/[0.02] animate-pulse" />
+          <div key={i} className="h-28 bg-surface-alt animate-pulse" />
         ))}
       </div>
     );
@@ -116,7 +116,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <p className={`${mono.className} text-[10px] text-red-400`}>Order not found.</p>
         <button
           onClick={() => router.push('/orders')}
-          className={`${mono.className} mt-4 text-[9px] uppercase tracking-[0.15em] text-white/25 hover:text-white/50 transition-colors`}
+          className={`${mono.className} mt-4 text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-secondary transition-colors`}
         >
           ← Back to orders
         </button>
@@ -133,7 +133,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       <div className="mb-8">
         <button
           onClick={() => router.push('/orders')}
-          className={`${mono.className} flex items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-white/25 hover:text-white/50 transition-colors mb-4`}
+          className={`${mono.className} flex items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-secondary transition-colors mb-4`}
         >
           <ArrowLeft className="h-3 w-3" />
           All Orders
@@ -141,13 +141,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         <div className="flex items-start justify-between">
           <div>
-            <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-1`}>
+            <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-1`}>
               Order
             </p>
-            <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+            <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
               {order.orderNumber}
             </h1>
-            <p className={`${mono.className} text-[10px] text-white/25 mt-1`}>
+            <p className={`${mono.className} text-[10px] text-text-muted mt-1`}>
               Placed {formatDate(order.createdAt)}
             </p>
           </div>
@@ -161,8 +161,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       {flash && (
         <div className={`${mono.className} mb-4 flex items-center gap-2 px-4 py-2.5 text-[10px] border ${
           flash.type === 'success'
-            ? 'border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-400/80'
-            : 'border-sky-400/20 bg-sky-400/[0.04] text-sky-400/70'
+            ? 'border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-700'
+            : 'border-sky-400/20 bg-sky-400/[0.04] text-sky-700'
         }`}>
           {flash.msg}
         </div>
@@ -174,20 +174,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {order.status === 'Submitted' && (
           <div className="border border-amber-400/20 bg-amber-400/[0.03] p-5 flex items-center justify-between gap-4">
             <div>
-              <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-amber-400/80 mb-1`}>
+              <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-amber-700 mb-1`}>
                 Payment Required
               </p>
-              <p className={`${mono.className} text-[10px] text-white/30 mb-2`}>
+              <p className={`${mono.className} text-[10px] text-text-muted mb-2`}>
                 Complete payment to approve your order and begin production.
               </p>
-              <p className={`${bebas.className} text-2xl text-white`}>
+              <p className={`${bebas.className} text-2xl text-text-primary`}>
                 ${order.totalPrice.toFixed(2)}
               </p>
             </div>
             <button
               onClick={() => payMutation.mutate()}
               disabled={payMutation.isPending}
-              className={`${mono.className} shrink-0 flex items-center gap-2 px-4 h-9 bg-amber-400/10 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-400/80 hover:bg-amber-400/20 hover:text-amber-400 transition-colors disabled:opacity-40`}
+              className={`${mono.className} shrink-0 flex items-center gap-2 px-4 h-9 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-500 hover:text-accent transition-colors disabled:opacity-40`}
             >
               <CreditCard className="h-3.5 w-3.5" />
               {payMutation.isPending ? 'Redirecting...' : 'Pay Now'}
@@ -197,8 +197,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {order.status === 'Approved' && (
           <div className="border border-emerald-400/15 bg-emerald-400/[0.03] px-4 py-3 flex items-center gap-2">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400/60 shrink-0" />
-            <p className={`${mono.className} text-[10px] text-emerald-400/70`}>
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+            <p className={`${mono.className} text-[10px] text-emerald-700`}>
               Payment confirmed — order approved and entering production
             </p>
           </div>
@@ -209,36 +209,36 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div className="space-y-4">
             {order.items.map((item, i) => (
               <div key={item.id}>
-                {i > 0 && <div className="border-t border-white/[0.06] mb-4" />}
+                {i > 0 && <div className="border-t border-border mb-4" />}
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1 flex-1">
-                    <p className={`${mono.className} text-[11px] text-white/60`}>
+                    <p className={`${mono.className} text-[11px] text-text-secondary`}>
                       {item.file?.originalFileName ?? 'Unknown file'}
                     </p>
-                    <p className={`${mono.className} text-[9px] text-white/25`}>
+                    <p className={`${mono.className} text-[9px] text-text-muted`}>
                       {item.material ? `${item.material.type} — ${item.material.color}` : '—'}
                       &nbsp;·&nbsp; {item.quality} quality
                       &nbsp;·&nbsp; {item.infill ?? '—'}% infill
                     </p>
                     {item.supportStructures && (
-                      <p className={`${mono.className} text-[9px] text-white/20`}>Support structures included</p>
+                      <p className={`${mono.className} text-[9px] text-text-muted`}>Support structures included</p>
                     )}
                     {item.estimatedWeight && (
-                      <p className={`${mono.className} text-[9px] text-white/20`}>
+                      <p className={`${mono.className} text-[9px] text-text-muted`}>
                         Est. weight: {item.estimatedWeight.toFixed(1)} g
                       </p>
                     )}
                     {item.specialInstructions && (
-                      <p className={`${mono.className} text-[9px] text-white/20 italic`}>
+                      <p className={`${mono.className} text-[9px] text-text-muted italic`}>
                         &quot;{item.specialInstructions}&quot;
                       </p>
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`${mono.className} text-[12px] text-white/70`}>
+                    <p className={`${mono.className} text-[12px] text-text-primary`}>
                       ${item.totalPrice.toFixed(2)}
                     </p>
-                    <p className={`${mono.className} text-[9px] text-white/20 mt-0.5`}>
+                    <p className={`${mono.className} text-[9px] text-text-muted mt-0.5`}>
                       {item.quantity} × ${item.unitPrice.toFixed(2)}
                     </p>
                   </div>
@@ -258,9 +258,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             {order.tax != null && (
               <DataRow label="Tax" value={`$${order.tax.toFixed(2)}`} />
             )}
-            <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-white/[0.08]">
-              <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-white/40`}>Total</span>
-              <span className={`${bebas.className} text-xl text-white`}>${order.totalPrice.toFixed(2)}</span>
+            <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-border">
+              <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-text-secondary`}>Total</span>
+              <span className={`${bebas.className} text-xl text-text-primary`}>${order.totalPrice.toFixed(2)}</span>
             </div>
           </div>
         </Section>
@@ -278,7 +278,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
           {order.shippingAddress && (
             <Section icon={MapPin} title="Ship To">
-              <p className={`${mono.className} text-[10px] text-white/40 whitespace-pre-line leading-relaxed`}>
+              <p className={`${mono.className} text-[10px] text-text-secondary whitespace-pre-line leading-relaxed`}>
                 {order.shippingAddress}
               </p>
             </Section>
@@ -288,7 +288,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {/* Notes */}
         {order.notes && (
           <Section icon={FileText} title="Notes">
-            <p className={`${mono.className} text-[10px] text-white/40`}>{order.notes}</p>
+            <p className={`${mono.className} text-[10px] text-text-secondary`}>{order.notes}</p>
           </Section>
         )}
 
