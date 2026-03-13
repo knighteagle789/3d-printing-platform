@@ -41,6 +41,10 @@ namespace PrintHub.Infrastructure.Data
         public DbSet<PortfolioItem> PortfolioItems { get; set; } = null!;
         public DbSet<BlogPost> BlogPosts { get; set; } = null!;
 
+        // Material Intake
+        public DbSet<MaterialIntake> MaterialIntakes { get; set; } = null!;
+        public DbSet<IntakeEvent> IntakeEvents { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

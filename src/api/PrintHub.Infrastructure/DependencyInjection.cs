@@ -1,9 +1,11 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 using PrintHub.Infrastructure.Data;
 using PrintHub.Infrastructure.Data.Repositories;
 using PrintHub.Infrastructure.Services;
+using PrintHub.Infrastructure.Services.Extraction;
 
 namespace PrintHub.Infrastructure;
 
@@ -13,7 +15,7 @@ namespace PrintHub.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -29,12 +31,26 @@ public static class DependencyInjection
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<IFileRepository, FileRepository>();
         services.AddScoped<IContentRepository, ContentRepository>();
+        services.AddScoped<IMaterialIntakeRepository, MaterialIntakeRepository>();
 
         // Infrastructure services
         services.AddSingleton<IFileStorageService, BlobStorageService>();
         services.AddScoped<IStlAnalyzerService, StlAnalyzerService>();
         services.AddScoped<IEmailService, SendGridEmailService>();
         services.AddScoped<IPaymentService, StripePaymentService>();
+
+        // Extraction provider — selected by Intake:Extractor:Provider config value
+        var extractorProvider = configuration["Intake:Extractor:Provider"] ?? "Mock";
+        if (extractorProvider.Equals("AzureVision", StringComparison.OrdinalIgnoreCase))
+        {
+            // AzureVisionExtractionProvider registered in #15
+            // services.AddScoped<IExtractionProvider, AzureVisionExtractionProvider>();
+            services.AddScoped<IExtractionProvider, MockExtractionProvider>(); // temporary until #15
+        }
+        else
+        {
+            services.AddScoped<IExtractionProvider, MockExtractionProvider>();
+        }
 
         // Database Seeder
         services.AddScoped<DatabaseSeeder>();

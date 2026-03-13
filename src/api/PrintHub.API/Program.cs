@@ -98,7 +98,7 @@ try
         }
     });
 
-    builder.Services.AddInfrastructureServices(); // Register infrastructure services (repositories, etc.)
+    builder.Services.AddInfrastructureServices(builder.Configuration); // Register infrastructure services (repositories, etc.)
     builder.Services.AddApplicationServices();      // Register application services (business logic)
 
     // ─── Authentication ───────────────────────────────────────────────────────
