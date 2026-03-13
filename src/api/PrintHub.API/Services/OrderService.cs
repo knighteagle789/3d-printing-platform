@@ -95,7 +95,6 @@ public class OrderService : IOrderService
 
         order.TotalPrice = totalPrice;
 
-        // Create initial status history entry
         order.StatusHistory.Add(new OrderStatusHistory
         {
             Id = Guid.NewGuid(),
@@ -109,9 +108,8 @@ public class OrderService : IOrderService
 
         _logger.LogInformation(
             "Order created: {OrderNumber} by user {UserId}, total: {TotalPrice:C}",
-            order.OrderNumber, userId, totalPrice);        
+            order.OrderNumber, userId, totalPrice);
 
-        // Reload with all relationships for the response
         var created = await _orderRepo.GetOrderWithDetailsAsync(order.Id);
         return OrderResponse.FromEntity(created!);
     }
@@ -133,6 +131,17 @@ public class OrderService : IOrderService
     }
 
     // --- Admin operations ---
+
+    /// <summary>
+    /// All orders, optionally scoped to a specific user. Backs GH #10: GET /Orders?userId=
+    /// </summary>
+    public async Task<PagedResponse<OrderResponse>> GetAllOrdersAsync(
+        Guid? userId, int page = 1, int pageSize = 20)
+    {
+        var orders = await _orderRepo.GetAllOrdersAsync(userId, page, pageSize);
+        return PagedResponse<OrderResponse>.FromPagedResult(
+            orders, OrderResponse.FromEntity);
+    }
 
     public async Task<PagedResponse<OrderResponse>> GetOrdersByStatusAsync(
         string status, int page = 1, int pageSize = 20)
@@ -166,17 +175,14 @@ public class OrderService : IOrderService
 
         var previousStatus = order.Status;
 
-        // Validate the status transition
         if (!IsValidStatusTransition(previousStatus, status))
         {
             throw new BusinessRuleException(
                 $"Cannot transition from {previousStatus} to {status}");
         }
 
-        // Update order status
         order.Status = status;
 
-        // Set timestamps for specific statuses
         if (status == OrderStatus.Shipped)
             order.ShippedAt = DateTime.UtcNow;
         else if (status == OrderStatus.Completed)
@@ -184,7 +190,6 @@ public class OrderService : IOrderService
 
         _orderRepo.Update(order);
 
-        // Create status history entry
         await _orderRepo.AddStatusHistoryAsync(new OrderStatusHistory
         {
             Id = Guid.NewGuid(),
@@ -219,8 +224,8 @@ public class OrderService : IOrderService
             "Order {OrderNumber} status changed: {PreviousStatus} → {NewStatus} by {UserId}",
             order.OrderNumber, previousStatus, status, changedByUserId);
 
-        var updated = await _orderRepo.GetOrderWithDetailsAsync(orderId);
-        return OrderResponse.FromEntity(updated!);
+        var updated2 = await _orderRepo.GetOrderWithDetailsAsync(orderId);
+        return OrderResponse.FromEntity(updated2!);
     }
 
     // --- Order history ---
@@ -244,7 +249,6 @@ public class OrderService : IOrderService
     private decimal CalculateUnitPrice(
         Material material, UploadedFile file, CreateOrderItemRequest request)
     {
-        // Base cost from material and estimated weight
         decimal baseCost = 0;
 
         if (file.Analysis?.EstimatedWeightGrams != null)
@@ -253,65 +257,48 @@ public class OrderService : IOrderService
         }
         else
         {
-            // Fallback: minimum price if no analysis available
             baseCost = 10.00m;
         }
 
-        // Quality multiplier
         var qualityMultiplier = Enum.Parse<PrintQuality>(request.Quality, ignoreCase: true) switch
         {
-            PrintQuality.Draft => 0.8m,
-            PrintQuality.Standard => 1.0m,
-            PrintQuality.High => 1.3m,
+            PrintQuality.Draft     => 0.8m,
+            PrintQuality.Standard  => 1.0m,
+            PrintQuality.High      => 1.3m,
             PrintQuality.UltraHigh => 1.6m,
-            _ => 1.0m
+            _                      => 1.0m
         };
 
-        // Infill affects material usage
         var infillMultiplier = (request.Infill ?? 20) / 100m;
         var infillAdjustment = 0.5m + (infillMultiplier * 0.5m);
-        // At 0% infill: 0.5x (hollow, still needs walls)
-        // At 20% infill: 0.6x
-        // At 100% infill: 1.0x (solid)
 
-        // Support structures add ~15% material
         var supportMultiplier = request.SupportStructures ? 1.15m : 1.0m;
 
         var calculatedPrice = baseCost * qualityMultiplier * infillAdjustment * supportMultiplier;
 
-        // Minimum order price
         return Math.Max(calculatedPrice, 5.00m);
     }
 
     private bool IsValidStatusTransition(OrderStatus current, OrderStatus next)
     {
-        // Define allowed transitions
         var allowedTransitions = new Dictionary<OrderStatus, OrderStatus[]>
         {
-            [OrderStatus.Draft] = new[] { OrderStatus.Submitted, OrderStatus.Cancelled },
-            [OrderStatus.Submitted] = new[] { OrderStatus.InReview, OrderStatus.Cancelled },
-            [OrderStatus.InReview] = new[] {
+            [OrderStatus.Draft]          = new[] { OrderStatus.Submitted, OrderStatus.Cancelled },
+            [OrderStatus.Submitted]      = new[] { OrderStatus.InReview, OrderStatus.Cancelled },
+            [OrderStatus.InReview]       = new[] {
                 OrderStatus.QuoteProvided, OrderStatus.Approved,
                 OrderStatus.Cancelled, OrderStatus.OnHold },
-            [OrderStatus.QuoteProvided] = new[] {
-                OrderStatus.Approved, OrderStatus.Cancelled },
-            [OrderStatus.Approved] = new[] {
+            [OrderStatus.QuoteProvided]  = new[] { OrderStatus.Approved, OrderStatus.Cancelled },
+            [OrderStatus.Approved]       = new[] {
                 OrderStatus.InProduction, OrderStatus.Cancelled, OrderStatus.OnHold },
-            [OrderStatus.InProduction] = new[] {
-                OrderStatus.Printing, OrderStatus.OnHold },
-            [OrderStatus.Printing] = new[] {
-                OrderStatus.PostProcessing, OrderStatus.OnHold },
-            [OrderStatus.PostProcessing] = new[] {
-                OrderStatus.QualityCheck },
-            [OrderStatus.QualityCheck] = new[] {
-                OrderStatus.Packaging, OrderStatus.Printing },  // Can re-print if failed
-            [OrderStatus.Packaging] = new[] {
-                OrderStatus.Shipped },
-            [OrderStatus.Shipped] = new[] {
-                OrderStatus.Delivered },
-            [OrderStatus.Delivered] = new[] {
-                OrderStatus.Completed },
-            [OrderStatus.OnHold] = new[] {
+            [OrderStatus.InProduction]   = new[] { OrderStatus.Printing, OrderStatus.OnHold },
+            [OrderStatus.Printing]       = new[] { OrderStatus.PostProcessing, OrderStatus.OnHold },
+            [OrderStatus.PostProcessing] = new[] { OrderStatus.QualityCheck },
+            [OrderStatus.QualityCheck]   = new[] { OrderStatus.Packaging, OrderStatus.Printing },
+            [OrderStatus.Packaging]      = new[] { OrderStatus.Shipped },
+            [OrderStatus.Shipped]        = new[] { OrderStatus.Delivered },
+            [OrderStatus.Delivered]      = new[] { OrderStatus.Completed },
+            [OrderStatus.OnHold]         = new[] {
                 OrderStatus.InReview, OrderStatus.Approved,
                 OrderStatus.InProduction, OrderStatus.Cancelled },
         };

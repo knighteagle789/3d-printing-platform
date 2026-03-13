@@ -9,6 +9,9 @@ namespace PrintHub.Core.Interfaces;
 /// </summary>
 public interface IQuoteRepository : IRepository<QuoteRequest>
 {
+    /// <summary>All quotes, optionally scoped to a user. Used by admin list with ?userId= filter.</summary>
+    Task<PagedResult<QuoteRequest>> GetAllQuotesAsync(Guid? userId, int page = 1, int pageSize = 20);
+
     Task<PagedResult<QuoteRequest>> GetUserQuotesAsync(Guid userId, int page = 1, int pageSize = 20);
 
     Task<QuoteRequest?> GetQuoteWithResponsesAsync(Guid quoteRequestId);

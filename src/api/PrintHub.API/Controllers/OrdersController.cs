@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -82,6 +81,22 @@ public class OrdersController : ControllerBase
     // ─── Admin endpoints ──────────────────────────────────────────────────
 
     /// <summary>
+    /// Get all orders, optionally filtered to a specific user.
+    /// Requires Staff or Admin role.
+    /// GH #10: GET /Orders?userId=&page=&pageSize=
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<PagedResponse<OrderResponse>>> GetAllOrders(
+        [FromQuery] Guid? userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var orders = await _orderService.GetAllOrdersAsync(userId, page, pageSize);
+        return Ok(orders);
+    }
+
+    /// <summary>
     /// Get orders filtered by status. Requires Staff or Admin role.
     /// </summary>
     [HttpGet("status/{status}")]
@@ -96,7 +111,7 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
-    /// Get recent orders for the admin dashboard.
+    /// Get recent orders for the admin dashboard. Requires Staff or Admin role.
     /// </summary>
     [HttpGet("recent")]
     [Authorize(Policy = "StaffOrAdmin")]
@@ -120,7 +135,4 @@ public class OrdersController : ControllerBase
             id, request.Status, userId, request.Notes);
         return Ok(order);
     }
-
-    // ─── Private helpers ──────────────────────────────────────────────────
-
 }

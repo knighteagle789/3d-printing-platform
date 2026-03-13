@@ -10,6 +10,28 @@ public class OrderRepository : Repository<Order>, IOrderRepository
 {
     public OrderRepository(ApplicationDbContext context) : base(context) { }
 
+    public async Task<PagedResult<Order>> GetAllOrdersAsync(
+        Guid? userId, int page = 1, int pageSize = 20)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = userId.HasValue
+            ? _dbSet.Where(o => o.UserId == userId.Value)
+            : _dbSet.AsQueryable();
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Include(o => o.User)
+            .Include(o => o.Items)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PagedResult<Order>(items, totalCount, page, pageSize);
+    }
+
     public async Task<PagedResult<Order>> GetUserOrdersAsync(
         Guid userId, int page = 1, int pageSize = 20)
     {
@@ -37,7 +59,6 @@ public class OrderRepository : Repository<Order>, IOrderRepository
                 .ThenInclude(i => i.Material)
             .Include(o => o.Items)
                 .ThenInclude(i => i.File)
-                    //.ThenInclude(f => f!.IsAnalyzed)
             .Include(o => o.StatusHistory.OrderBy(sh => sh.ChangedAt))
                 .ThenInclude(sh => sh.ChangedBy)
             .AsSplitQuery()

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -95,6 +94,22 @@ public class QuotesController : ControllerBase
     // ─── Admin endpoints ──────────────────────────────────────────────────
 
     /// <summary>
+    /// Get all quote requests, optionally filtered to a specific user.
+    /// Requires Staff or Admin role.
+    /// GH #11: GET /Quotes?userId=&page=&pageSize=
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<PagedResponse<QuoteRequestResponse>>> GetAllQuotes(
+        [FromQuery] Guid? userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var quotes = await _quoteService.GetAllQuotesAsync(userId, page, pageSize);
+        return Ok(quotes);
+    }
+
+    /// <summary>
     /// Get all pending quote requests. Requires Staff or Admin role.
     /// </summary>
     [HttpGet("pending")]
@@ -131,7 +146,4 @@ public class QuotesController : ControllerBase
         var quotes = await _quoteService.GetExpiringQuotesAsync(withinDays);
         return Ok(quotes);
     }
-
-    // ─── Private helpers ──────────────────────────────────────────────────
-
 }

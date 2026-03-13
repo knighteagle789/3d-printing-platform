@@ -16,6 +16,14 @@ public interface IOrderService
         Guid userId, int page = 1, int pageSize = 20);
 
     // --- Admin operations ---
+
+    /// <summary>
+    /// All orders, optionally filtered to a specific user. Requires StaffOrAdmin.
+    /// Backing GH #10: GET /Orders?userId=&page=&pageSize=
+    /// </summary>
+    Task<PagedResponse<OrderResponse>> GetAllOrdersAsync(
+        Guid? userId, int page = 1, int pageSize = 20);
+
     Task<PagedResponse<OrderResponse>> GetOrdersByStatusAsync(
         string status, int page = 1, int pageSize = 20);
     Task<IReadOnlyList<OrderResponse>> GetRecentOrdersAsync(int count = 10);

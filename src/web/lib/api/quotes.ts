@@ -59,7 +59,7 @@ export interface CreateQuoteResponseRequest {
 }
 
 export const quotesApi = {
-  // TODO (GH #11): backend endpoint GET /Quotes?userId= not yet implemented
+  // GET /Quotes?userId=&page=&pageSize= — StaffOrAdmin only (GH #11 resolved)
   getAll: (params?: { userId?: string; page?: number; pageSize?: number }) =>
     apiClient.get<PagedResponse<QuoteRequest>>('/Quotes', { params }),
 

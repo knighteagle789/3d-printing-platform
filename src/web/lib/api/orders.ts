@@ -1,4 +1,3 @@
-import { get } from 'http';
 import apiClient from '../api-client';
 
 export interface FileSummary {
@@ -68,7 +67,7 @@ export interface PagedResponse<T> {
 }
 
 export const ordersApi = {
-  // TODO (GH #10): backend endpoint GET /Orders?userId= not yet implemented
+  // GET /Orders?userId=&page=&pageSize= — StaffOrAdmin only (GH #10 resolved)
   getAll: (params?: { userId?: string; page?: number; pageSize?: number }) =>
     apiClient.get<PagedResponse<Order>>('/Orders', { params }),
 

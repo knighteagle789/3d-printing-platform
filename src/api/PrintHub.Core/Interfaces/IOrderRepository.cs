@@ -10,6 +10,9 @@ namespace PrintHub.Core.Interfaces;
 /// </summary>
 public interface IOrderRepository : IRepository<Order>
 {
+    /// <summary>All orders, optionally scoped to a user. Used by admin list with ?userId= filter.</summary>
+    Task<PagedResult<Order>> GetAllOrdersAsync(Guid? userId, int page = 1, int pageSize = 20);
+
     Task<PagedResult<Order>> GetUserOrdersAsync(Guid userId, int page = 1, int pageSize = 20);
 
     Task<Order?> GetOrderWithDetailsAsync(Guid orderId);

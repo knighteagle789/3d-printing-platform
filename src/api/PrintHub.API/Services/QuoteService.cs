@@ -19,7 +19,6 @@ public class QuoteService : IQuoteService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<QuoteService> _logger;
 
-
     public QuoteService(
         IQuoteRepository quoteRepo,
         IOrderRepository orderRepo,
@@ -73,14 +72,14 @@ public class QuoteService : IQuoteService
 
         _ = Task.Run(async () =>
         {
-           var user = await _userRepo.GetByIdAsync(userId);
-           if (user == null) return;
-           await _emailService.SendQuoteRequestReceivedAsync(
-               user.Email, user.FirstName, quote.RequestNumber);
-           await _emailService.SendNewQuoteRequestAdminAsync(
-               quote.RequestNumber, 
-               $"{user.FullName}",
-               request.FileId.HasValue ? "Attached" : null);
+            var user = await _userRepo.GetByIdAsync(userId);
+            if (user == null) return;
+            await _emailService.SendQuoteRequestReceivedAsync(
+                user.Email, user.FirstName, quote.RequestNumber);
+            await _emailService.SendNewQuoteRequestAdminAsync(
+                quote.RequestNumber,
+                $"{user.FullName}",
+                request.FileId.HasValue ? "Attached" : null);
         });
 
         _logger.LogInformation(
@@ -114,7 +113,6 @@ public class QuoteService : IQuoteService
         if (quote == null)
             throw new NotFoundException("Quote request", quoteRequestId);
 
-        // Verify the customer owns this quote
         if (quote.UserId != userId)
         {
             _logger.LogWarning(
@@ -123,27 +121,23 @@ public class QuoteService : IQuoteService
             throw new ForbiddenException("You do not have permission to accept this quote.");
         }
 
-        // Find the specific response
         var response = quote.Responses.FirstOrDefault(r => r.Id == quoteResponseId);
         if (response == null)
             throw new NotFoundException("Quote response", quoteResponseId);
 
-        // Check if already accepted
         if (quote.Status == QuoteStatus.Accepted)
             throw new BusinessRuleException("This quote has already been accepted.");
 
-        // Check if expired
         if (response.ExpiresAt < DateTime.UtcNow)
             throw new BusinessRuleException("This quote response has expired.");
 
-        // Accept the response
         response.IsAccepted = true;
         response.AcceptedAt = DateTime.UtcNow;
         quote.Status = QuoteStatus.Accepted;
 
         _quoteRepo.Update(quote);
         await _unitOfWork.SaveChangesAsync();
-    
+
         _ = Task.Run(async () =>
         {
             await _emailService.SendQuoteAcceptedConfirmationAsync(
@@ -164,28 +158,22 @@ public class QuoteService : IQuoteService
         if (quote == null)
             throw new NotFoundException("Quote request", quoteRequestId);
 
-        // Ownership check
         if (quote.UserId != userId)
             throw new ForbiddenException("You do not have permission to convert this quote.");
 
-        // Must be accepted
         if (quote.Status != QuoteStatus.Accepted)
             throw new BusinessRuleException("Only accepted quotes can be converted to orders.");
 
-        // Prevent duplicate conversion
         if (quote.OrderId != null)
             throw new BusinessRuleException("This quote has already been converted to an order.");
 
-        // Must have a file
         if (quote.FileId == null)
             throw new BusinessRuleException("Cannot convert a quote without an uploaded file.");
 
-        // Get the accepted response
         var acceptedResponse = quote.Responses.FirstOrDefault(r => r.IsAccepted);
         if (acceptedResponse == null)
             throw new BusinessRuleException("No accepted response found on this quote.");
 
-        // Resolve material — prefer recommended, fall back to preferred
         var materialId = acceptedResponse.RecommendedMaterialId ?? quote.PreferredMaterialId;
         if (materialId == null)
             throw new BusinessRuleException(
@@ -200,10 +188,7 @@ public class QuoteService : IQuoteService
         if (file == null)
             throw new NotFoundException("File", quote.FileId.Value);
 
-        // Resolve color
         var color = acceptedResponse.RecommendedColor ?? quote.PreferredColor;
-
-        // Unit price = accepted price / quantity
         var unitPrice = Math.Round(acceptedResponse.Price / quote.Quantity, 2);
 
         var order = new Order
@@ -246,13 +231,11 @@ public class QuoteService : IQuoteService
 
         await _orderRepo.AddAsync(order);
 
-        // Link the quote to the order
         quote.OrderId = order.Id;
         _quoteRepo.Update(quote);
 
         await _unitOfWork.SaveChangesAsync();
 
-        // After _unitOfWork.SaveChangesAsync() in ConvertToOrderAsync
         _ = Task.Run(async () =>
         {
             var user = await _userRepo.GetByIdAsync(userId);
@@ -263,7 +246,7 @@ public class QuoteService : IQuoteService
                 order.OrderNumber,
                 $"{user.FullName}",
                 order.TotalPrice);
-        });        
+        });
 
         _logger.LogInformation(
             "Quote {RequestNumber} converted to order {OrderNumber} by user {UserId}",
@@ -274,6 +257,17 @@ public class QuoteService : IQuoteService
     }
 
     // --- Admin operations ---
+
+    /// <summary>
+    /// All quotes, optionally scoped to a specific user. Backs GH #11: GET /Quotes?userId=
+    /// </summary>
+    public async Task<PagedResponse<QuoteRequestResponse>> GetAllQuotesAsync(
+        Guid? userId, int page = 1, int pageSize = 20)
+    {
+        var quotes = await _quoteRepo.GetAllQuotesAsync(userId, page, pageSize);
+        return PagedResponse<QuoteRequestResponse>.FromPagedResult(
+            quotes, QuoteRequestResponse.FromEntity);
+    }
 
     public async Task<PagedResponse<QuoteRequestResponse>> GetPendingQuotesAsync(
         int page = 1, int pageSize = 20)
@@ -306,7 +300,6 @@ public class QuoteService : IQuoteService
             CreatedAt = DateTime.UtcNow
         };
 
-        // Update quote status to show a response has been provided
         quote.Status = QuoteStatus.QuoteProvided;
         _quoteRepo.Update(quote);
 
