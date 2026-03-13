@@ -34,7 +34,7 @@ const NAV_LINKS = [
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-[#0d0a06] text-white">
+    <div className="min-h-screen flex flex-col bg-page text-text-primary">
       <PublicNav />
       <main className="flex-1">{children}</main>
       <PublicFooter />
@@ -50,18 +50,12 @@ function PublicNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled,   setScrolled]   = useState(false);
 
-  // Close mobile menu on route change
-  // NOTE: handled via onClick on each mobile link — avoids synchronous
-  // setState inside an effect body which triggers cascading renders.
-
-  // Subtle border intensifies on scroll
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 12);
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
-  // Lock body scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -80,8 +74,8 @@ function PublicNav() {
       <nav
         className="fixed top-0 left-0 right-0 z-50 transition-colors duration-300"
         style={{
-          background:     scrolled ? 'rgba(13,10,6,0.97)' : 'rgba(13,10,6,0.88)',
-          borderBottom:   scrolled ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.07)',
+          background:     scrolled ? 'rgba(249,250,251,0.97)' : 'rgba(249,250,251,0.92)',
+          borderBottom:   scrolled ? '1px solid #e5e7eb' : '1px solid rgba(229,231,235,0.6)',
           backdropFilter: 'blur(12px)',
         }}
       >
@@ -89,10 +83,10 @@ function PublicNav() {
 
           {/* Logo */}
           <Link href="/home" className="shrink-0 flex items-baseline leading-none">
-            <span className={`${display.className} text-white text-[1.5rem] tracking-wide`}>
+            <span className={`${display.className} text-text-primary text-[1.5rem] tracking-wide`}>
               NOCO&nbsp;MAKE
             </span>
-            <span className={`${display.className} text-amber-400 text-[1.5rem] tracking-wide`}>
+            <span className={`${display.className} text-accent text-[1.5rem] tracking-wide`}>
               &nbsp;LAB.
             </span>
           </Link>
@@ -106,12 +100,12 @@ function PublicNav() {
                 className={`
                   ${mono.className} text-[10px] uppercase tracking-[0.22em] px-4 py-2
                   transition-colors duration-150 relative
-                  ${isActive(href) ? 'text-white' : 'text-white/42 hover:text-white/80'}
+                  ${isActive(href) ? 'text-text-primary' : 'text-text-muted hover:text-text-secondary'}
                 `}
               >
                 {label}
                 {isActive(href) && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-px bg-amber-400" />
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-px bg-accent" />
                 )}
               </Link>
             ))}
@@ -120,17 +114,17 @@ function PublicNav() {
           {/* Right — auth */}
           <div className="flex items-center gap-2 shrink-0">
             {!isInitialized ? (
-              <div className="w-20 h-8 bg-white/5 animate-pulse" />
+              <div className="w-20 h-8 bg-surface-alt animate-pulse rounded" />
             ) : isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className={`
                     ${mono.className} flex items-center gap-2 text-[10px] uppercase tracking-[0.15em]
-                    text-white/55 hover:text-white transition-colors px-3 py-2
-                    border border-white/10 hover:border-white/22
+                    text-text-secondary hover:text-text-primary transition-colors px-3 py-2
+                    border border-border hover:border-border-strong
                   `}>
-                    <div className="w-5 h-5 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center shrink-0">
-                      <span className="text-amber-400 text-[9px] font-bold leading-none">
+                    <div className="w-5 h-5 rounded-full bg-accent-light border border-accent/30 flex items-center justify-center shrink-0">
+                      <span className="text-accent text-[9px] font-bold leading-none">
                         {user.firstName[0]}{user.lastName[0]}
                       </span>
                     </div>
@@ -140,39 +134,39 @@ function PublicNav() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-52 bg-[#0d0a06] border border-white/12 text-white rounded-none shadow-2xl p-0"
+                  className="w-52 bg-surface border border-border text-text-primary rounded-none shadow-lg p-0"
                 >
-                  <div className="px-3 py-2.5 border-b border-white/8">
-                    <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-white/80`}>
+                  <div className="px-3 py-2.5 border-b border-border">
+                    <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-text-primary`}>
                       {user.firstName} {user.lastName}
                     </p>
-                    <p className={`${mono.className} text-[9px] text-white/30 truncate mt-0.5`}>
+                    <p className={`${mono.className} text-[9px] text-text-muted truncate mt-0.5`}>
                       {user.email}
                     </p>
                   </div>
                   <DropdownMenuItem
-                    className={`${mono.className} gap-2.5 text-[10px] uppercase tracking-[0.15em] text-white/55 hover:text-white hover:bg-white/5 cursor-pointer py-2.5 rounded-none`}
+                    className={`${mono.className} gap-2.5 text-[10px] uppercase tracking-[0.15em] text-text-secondary hover:text-text-primary hover:bg-surface-alt cursor-pointer py-2.5 rounded-none`}
                     onClick={() => router.push('/orders')}
                   >
                     <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className={`${mono.className} gap-2.5 text-[10px] uppercase tracking-[0.15em] text-white/55 hover:text-white hover:bg-white/5 cursor-pointer py-2.5 rounded-none`}
+                    className={`${mono.className} gap-2.5 text-[10px] uppercase tracking-[0.15em] text-text-secondary hover:text-text-primary hover:bg-surface-alt cursor-pointer py-2.5 rounded-none`}
                     onClick={() => router.push('/orders')}
                   >
                     <Package className="h-3.5 w-3.5" /> My Orders
                   </DropdownMenuItem>
                   {(user.roles.includes('Admin') || user.roles.includes('Staff')) && (
                     <DropdownMenuItem
-                      className={`${mono.className} gap-2.5 text-[10px] uppercase tracking-[0.15em] text-amber-400/70 hover:text-amber-400 hover:bg-white/5 cursor-pointer py-2.5 rounded-none`}
+                      className={`${mono.className} gap-2.5 text-[10px] uppercase tracking-[0.15em] text-accent hover:text-accent hover:bg-accent-light cursor-pointer py-2.5 rounded-none`}
                       onClick={() => router.push('/admin')}
                     >
                       <ShieldCheck className="h-3.5 w-3.5" /> Admin Panel
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator className="bg-white/8 my-0" />
+                  <DropdownMenuSeparator className="bg-border my-0" />
                   <DropdownMenuItem
-                    className={`${mono.className} gap-2.5 text-[10px] uppercase tracking-[0.15em] text-red-400/70 hover:text-red-400 hover:bg-white/5 cursor-pointer py-2.5 rounded-none`}
+                    className={`${mono.className} gap-2.5 text-[10px] uppercase tracking-[0.15em] text-danger hover:text-danger hover:bg-red-50 cursor-pointer py-2.5 rounded-none`}
                     onClick={handleSignOut}
                   >
                     <LogOut className="h-3.5 w-3.5" /> Sign Out
@@ -183,13 +177,13 @@ function PublicNav() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className={`${mono.className} hidden sm:inline-flex text-[10px] uppercase tracking-[0.18em] text-white/42 hover:text-white transition-colors px-4 py-2`}
+                  className={`${mono.className} hidden sm:inline-flex text-[10px] uppercase tracking-[0.18em] text-text-muted hover:text-text-primary transition-colors px-4 py-2`}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className={`${mono.className} inline-flex items-center text-[10px] uppercase tracking-[0.18em] font-semibold bg-amber-400 text-black px-5 h-9 hover:bg-amber-300 transition-colors`}
+                  className={`${mono.className} inline-flex items-center text-[10px] uppercase tracking-[0.18em] font-semibold bg-accent text-white px-5 h-9 hover:bg-accent/90 transition-colors`}
                 >
                   Get Started
                 </Link>
@@ -198,7 +192,7 @@ function PublicNav() {
 
             {/* Hamburger — mobile only */}
             <button
-              className="md:hidden flex items-center justify-center w-9 h-9 text-white/55 hover:text-white transition-colors ml-1"
+              className="md:hidden flex items-center justify-center w-9 h-9 text-text-muted hover:text-text-primary transition-colors ml-1"
               onClick={() => setMobileOpen(v => !v)}
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             >
@@ -218,17 +212,17 @@ function PublicNav() {
       >
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
 
         {/* Panel */}
         <div
-          className="absolute top-16 left-0 right-0 bg-[#0d0a06] border-b border-white/12 transition-transform duration-200"
+          className="absolute top-16 left-0 right-0 bg-surface border-b border-border shadow-lg transition-transform duration-200"
           style={{ transform: mobileOpen ? 'translateY(0)' : 'translateY(-6px)' }}
         >
           {/* Nav links */}
-          <div className="px-6 py-2 border-b border-white/8">
+          <div className="px-6 py-2 border-b border-border">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
@@ -237,13 +231,13 @@ function PublicNav() {
                 className={`
                   ${mono.className} flex items-center justify-between
                   text-[11px] uppercase tracking-[0.22em] py-4
-                  border-b border-white/5 last:border-0 transition-colors
-                  ${isActive(href) ? 'text-white' : 'text-white/45 hover:text-white'}
+                  border-b border-border last:border-0 transition-colors
+                  ${isActive(href) ? 'text-text-primary' : 'text-text-muted hover:text-text-primary'}
                 `}
               >
                 {label}
                 {isActive(href) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                 )}
               </Link>
             ))}
@@ -253,7 +247,7 @@ function PublicNav() {
           <div className="px-6 py-5">
             {isAuthenticated && user ? (
               <div className="space-y-0.5">
-                <div className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/22 mb-3`}>
+                <div className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-text-muted mb-3`}>
                   {user.firstName} {user.lastName}
                 </div>
                 {[
@@ -263,7 +257,7 @@ function PublicNav() {
                   <button
                     key={item.label}
                     onClick={() => { router.push(item.path); setMobileOpen(false); }}
-                    className={`${mono.className} w-full flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-white/50 hover:text-white py-3 transition-colors`}
+                    className={`${mono.className} w-full flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-text-secondary hover:text-text-primary py-3 transition-colors`}
                   >
                     {item.icon} {item.label}
                   </button>
@@ -271,15 +265,15 @@ function PublicNav() {
                 {(user.roles.includes('Admin') || user.roles.includes('Staff')) && (
                   <button
                     onClick={() => { router.push('/admin'); setMobileOpen(false); }}
-                    className={`${mono.className} w-full flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-amber-400/60 hover:text-amber-400 py-3 transition-colors`}
+                    className={`${mono.className} w-full flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-accent hover:text-accent/80 py-3 transition-colors`}
                   >
                     <ShieldCheck className="h-3.5 w-3.5" /> Admin Panel
                   </button>
                 )}
-                <div className="pt-2 border-t border-white/8 mt-2">
+                <div className="pt-2 border-t border-border mt-2">
                   <button
                     onClick={handleSignOut}
-                    className={`${mono.className} w-full flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-red-400/60 hover:text-red-400 py-3 transition-colors`}
+                    className={`${mono.className} w-full flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-danger hover:text-danger/80 py-3 transition-colors`}
                   >
                     <LogOut className="h-3.5 w-3.5" /> Sign Out
                   </button>
@@ -289,13 +283,13 @@ function PublicNav() {
               <div className="flex gap-3">
                 <Link
                   href="/login"
-                  className={`${mono.className} flex-1 flex items-center justify-center text-[10px] uppercase tracking-[0.18em] text-white/50 border border-white/15 h-11 hover:text-white hover:border-white/30 transition-colors`}
+                  className={`${mono.className} flex-1 flex items-center justify-center text-[10px] uppercase tracking-[0.18em] text-text-secondary border border-border h-11 hover:text-text-primary hover:border-border-strong transition-colors`}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className={`${mono.className} flex-1 flex items-center justify-center text-[10px] uppercase tracking-[0.18em] font-semibold bg-amber-400 text-black h-11 hover:bg-amber-300 transition-colors`}
+                  className={`${mono.className} flex-1 flex items-center justify-center text-[10px] uppercase tracking-[0.18em] font-semibold bg-accent text-white h-11 hover:bg-accent/90 transition-colors`}
                 >
                   Get Started
                 </Link>
@@ -311,7 +305,7 @@ function PublicNav() {
 // ─── Footer ───────────────────────────────────────────────────────────────────
 function PublicFooter() {
   return (
-    <footer className="bg-[#0d0a06] border-t border-white/10">
+    <footer className="bg-surface border-t border-border">
 
       {/* Main grid */}
       <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
@@ -319,19 +313,19 @@ function PublicFooter() {
         {/* Brand */}
         <div className="md:col-span-5">
           <Link href="/home" className="inline-flex items-baseline leading-none mb-5">
-            <span className={`${display.className} text-white text-[1.5rem] tracking-wide`}>
+            <span className={`${display.className} text-text-primary text-[1.5rem] tracking-wide`}>
               NOCO&nbsp;MAKE
             </span>
-            <span className={`${display.className} text-amber-400 text-[1.5rem] tracking-wide`}>
+            <span className={`${display.className} text-accent text-[1.5rem] tracking-wide`}>
               &nbsp;LAB.
             </span>
           </Link>
-          <p className="text-white/50 text-sm leading-relaxed max-w-[22rem] mb-8">
+          <p className="text-text-secondary text-sm leading-relaxed max-w-[22rem] mb-8">
             Precision 3D printing for engineers, designers, and makers —
             right here in Northern Colorado. Every layer, dialled in.
           </p>
-          <div className={`${mono.className} flex items-center gap-2 text-[9px] uppercase tracking-[0.25em] text-white/22`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400/45 shrink-0" />
+          <div className={`${mono.className} flex items-center gap-2 text-[9px] uppercase tracking-[0.25em] text-text-muted`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-accent/60 shrink-0" />
             Loveland, CO · Est. 2024
           </div>
         </div>
@@ -340,7 +334,7 @@ function PublicFooter() {
 
         {/* Navigate */}
         <div className="md:col-span-3">
-          <p className={`${mono.className} text-[9px] uppercase tracking-[0.3em] text-white/22 mb-6`}>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.3em] text-text-muted mb-6`}>
             Navigate
           </p>
           <div className="space-y-3.5">
@@ -354,7 +348,7 @@ function PublicFooter() {
               <div key={href}>
                 <Link
                   href={href}
-                  className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/35 hover:text-white transition-colors`}
+                  className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-text-secondary hover:text-text-primary transition-colors`}
                 >
                   {label}
                 </Link>
@@ -365,7 +359,7 @@ function PublicFooter() {
 
         {/* Account */}
         <div className="md:col-span-3">
-          <p className={`${mono.className} text-[9px] uppercase tracking-[0.3em] text-white/22 mb-6`}>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.3em] text-text-muted mb-6`}>
             Account
           </p>
           <div className="space-y-3.5">
@@ -378,7 +372,7 @@ function PublicFooter() {
               <div key={href}>
                 <Link
                   href={href}
-                  className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/35 hover:text-white transition-colors`}
+                  className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-text-secondary hover:text-text-primary transition-colors`}
                 >
                   {label}
                 </Link>
@@ -389,9 +383,9 @@ function PublicFooter() {
       </div>
 
       {/* Bottom strip */}
-      <div className="border-t border-white/8">
+      <div className="border-t border-border">
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/18`}>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-text-muted`}>
             © {new Date().getFullYear()} NoCo Make Lab · All rights reserved.
           </p>
           <div className="flex items-center gap-6">
@@ -402,7 +396,7 @@ function PublicFooter() {
               <Link
                 key={href}
                 href={href}
-                className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/18 hover:text-white/45 transition-colors`}
+                className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-text-muted hover:text-text-secondary transition-colors`}
               >
                 {label}
               </Link>
