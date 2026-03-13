@@ -80,7 +80,7 @@ export function MediaUploadField({
         <div className="relative group">
 
           {mode === 'image' && (
-            <div className="relative border border-white/8 bg-white/[0.02] aspect-video w-full overflow-hidden">
+            <div className="relative border border-border bg-surface-alt aspect-video w-full overflow-hidden">
               <img
                 src={value}
                 alt="Preview"
@@ -90,7 +90,7 @@ export function MediaUploadField({
               <button
                 type="button"
                 onClick={() => onChange('')}
-                className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X className="h-3.5 w-3.5 text-white" />
               </button>
@@ -99,16 +99,20 @@ export function MediaUploadField({
 
           {mode === 'video' && (
             <>
-              <div className="flex items-center gap-3 border border-white/8 bg-white/[0.02] px-3 py-2.5">
-                <Video className="h-4 w-4 text-amber-400 shrink-0" />
-                <span className={`${mono.className} text-[10px] text-white/40 truncate flex-1`}>
+              <div className="flex items-center gap-3 border border-border bg-surface-alt px-3 py-2.5">
+                <Video className="h-4 w-4 text-accent shrink-0" />
+                <span className={`${mono.className} text-[10px] text-text-secondary truncate flex-1`}>
                   {value.split('/').pop() ?? value}
                 </span>
-                <button type="button" onClick={() => onChange('')} className="text-white/20 hover:text-red-400 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => onChange('')}
+                  className="text-text-muted hover:text-danger transition-colors"
+                >
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="border border-white/8 mt-1.5 overflow-hidden">
+              <div className="border border-border mt-1.5 overflow-hidden">
                 <video src={toProxiedUrl(value)} controls className="w-full max-h-[280px] bg-black">
                   Your browser does not support the video tag.
                 </video>
@@ -118,17 +122,21 @@ export function MediaUploadField({
 
           {mode === 'model' && (
             <>
-              <div className="flex items-center gap-3 border border-white/8 bg-white/[0.02] px-3 py-2.5">
-                <FileBox className="h-4 w-4 text-amber-400 shrink-0" />
-                <span className={`${mono.className} text-[10px] text-white/40 truncate flex-1`}>
+              <div className="flex items-center gap-3 border border-border bg-surface-alt px-3 py-2.5">
+                <FileBox className="h-4 w-4 text-accent shrink-0" />
+                <span className={`${mono.className} text-[10px] text-text-secondary truncate flex-1`}>
                   {value.split('/').pop() ?? value}
                 </span>
-                <button type="button" onClick={() => onChange('')} className="text-white/20 hover:text-red-400 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => onChange('')}
+                  className="text-text-muted hover:text-danger transition-colors"
+                >
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
               {value.toLowerCase().endsWith('.stl') && (
-                <div className="border border-white/8 mt-1.5 overflow-hidden">
+                <div className="border border-border mt-1.5 overflow-hidden">
                   <StlViewer url={toProxiedUrl(value)} className="w-full h-[280px]" />
                 </div>
               )}
@@ -144,13 +152,13 @@ export function MediaUploadField({
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder="https://... or upload a file"
-          className={`${mono.className} flex-1 h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors`}
+          className={`${mono.className} flex-1 h-9 bg-surface border border-border px-3 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`}
         />
         <button
           type="button"
           disabled={isUploading}
           onClick={() => inputRef.current?.click()}
-          className={`${mono.className} inline-flex items-center gap-1.5 shrink-0 px-3 h-9 border border-white/10 text-[9px] uppercase tracking-[0.15em] text-white/35 hover:text-white/60 hover:border-white/20 transition-colors disabled:opacity-40`}
+          className={`${mono.className} inline-flex items-center gap-1.5 shrink-0 px-3 h-9 border border-border text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-primary hover:border-border-strong transition-colors disabled:opacity-40`}
         >
           <Upload className="h-3 w-3" />
           {uploadLabel}
@@ -165,8 +173,8 @@ export function MediaUploadField({
         onChange={handleFileChange}
       />
 
-      {uploadError && <p className={`${mono.className} text-[8px] text-red-400`}>{uploadError}</p>}
-      {error       && <p className={`${mono.className} text-[8px] text-red-400`}>{error}</p>}
+      {uploadError && <p className={`${mono.className} text-[10px] text-danger`}>{uploadError}</p>}
+      {error       && <p className={`${mono.className} text-[10px] text-danger`}>{error}</p>}
     </div>
   );
 }
