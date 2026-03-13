@@ -1,210 +1,334 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { usersApi } from '@/lib/api/users';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, User, Shield } from 'lucide-react';
-import { toast } from 'sonner';
 
-const ALL_ROLES = ['Customer', 'Staff', 'Admin'];
+import { ordersApi } from '@/lib/api/orders';
+import { quotesApi } from '@/lib/api/quotes';
+import { JetBrains_Mono } from 'next/font/google';
+import {
+  ArrowLeft, Shield,
+  Calendar, ShoppingBag, MessageSquare, AlertTriangle,
+  CheckCircle2, AlertCircle,
+} from 'lucide-react';
 
-const ROLE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
-  Admin: 'default',
-  Staff: 'secondary',
-  Customer: 'outline',
+const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
+
+const ALL_ROLES = ['Customer', 'Staff', 'Admin'] as const;
+
+const ROLE_COLOURS: Record<string, string> = {
+  Admin:    'bg-amber-400/15 text-amber-400 border-amber-400/30',
+  Staff:    'bg-sky-400/15 text-sky-400 border-sky-400/30',
+  Customer: 'bg-white/[0.06] text-white/50 border-white/12',
 };
 
-function formatDate(d: string) {
+const ROLE_ACTIVE_COLOURS: Record<string, string> = {
+  Admin:    'bg-amber-400 text-black border-amber-400',
+  Staff:    'bg-sky-400 text-black border-sky-400',
+  Customer: 'bg-white/80 text-black border-white/80',
+};
+
+function formatDate(d: string | null | undefined) {
+  if (!d) return '—';
   return new Date(d).toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
   });
 }
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className={`${mono.className} text-[8px] uppercase tracking-[0.22em] text-white/20 pb-2 border-b border-white/6`}>
+      {children}
+    </p>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+      <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/25`}>
+        {label}
+      </p>
+      <p className={`${mono.className} text-[10px] text-white/60`}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminUserDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
-  const router = useRouter();
-  const queryClient = useQueryClient();
+  const { id }        = use(params);
+  const router        = useRouter();
+  const queryClient   = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const [toast,         setToast]         = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [deactivateArm, setDeactivateArm] = useState(false);
+
+  const showToast = (type: 'success' | 'error', msg: string) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  // ── Data ──
+  const { data: userData, isLoading } = useQuery({
     queryKey: ['admin', 'user', id],
-    queryFn: () => usersApi.getById(id),
+    queryFn:  () => usersApi.getById(id),
   });
 
+  // TODO (GH #10, #11): flip enabled: true once backend supports ?userId= filtering
+  const { data: ordersData } = useQuery({
+    queryKey: ['admin', 'user-orders', id],
+    queryFn:  () => ordersApi.getAll({ userId: id, pageSize: 100 }),
+    enabled:  false,
+  });
+
+  const { data: quotesData } = useQuery({
+    queryKey: ['admin', 'user-quotes', id],
+    queryFn:  () => quotesApi.getAll({ userId: id, pageSize: 100 }),
+    enabled:  false,
+  });
+
+  const orderCount = ordersData?.data?.items?.length ?? '—';
+  const quoteCount = quotesData?.data?.items?.length ?? '—';
+
+  // ── Mutations ──
   const rolesMutation = useMutation({
     mutationFn: (roles: string[]) => usersApi.updateRoles(id, roles),
-    onSuccess: (res) => {
+    onSuccess:  () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'user', id] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      toast.success(`Roles updated for ${res.data.firstName} ${res.data.lastName}`);
+      showToast('success', 'Roles updated.');
     },
-    onError: () => toast.error('Failed to update roles.'),
+    onError: () => showToast('error', 'Failed to update roles.'),
   });
 
   const activeMutation = useMutation({
     mutationFn: (isActive: boolean) => usersApi.setActive(id, isActive),
-    onSuccess: (res) => {
+    onSuccess:  (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'user', id] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      toast.success(res.data.isActive ? 'User reactivated.' : 'User deactivated.');
+      setDeactivateArm(false);
+      showToast('success', res.data.isActive ? 'Account reactivated.' : 'Account deactivated.');
     },
-    onError: () => toast.error('Failed to update user status.'),
+    onError: () => showToast('error', 'Failed to update account status.'),
   });
 
+  // ── Loading ──
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4 max-w-2xl">
+      <div className="space-y-4 max-w-2xl">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-32 bg-muted animate-pulse rounded" />
+          <div key={i} className="h-28 bg-white/[0.02] animate-pulse" />
         ))}
       </div>
     );
   }
 
-  const user = data?.data;
+  const user = userData?.data;
   if (!user) return null;
 
   const toggleRole = (role: string) => {
-    const current = user.roles;
-    const updated = current.includes(role)
-      ? current.filter(r => r !== role)
-      : [...current, role];
+    const updated = user.roles.includes(role)
+      ? user.roles.filter(r => r !== role)
+      : [...user.roles, role];
 
-    // Always keep at least Customer role
     if (updated.length === 0) {
-      toast.error('User must have at least one role.');
+      showToast('error', 'User must have at least one role.');
       return;
     }
-
     rolesMutation.mutate(updated);
   };
 
   return (
-    <div className="p-6 max-w-2xl">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="-ml-2 mb-6"
-        onClick={() => router.push('/admin/users')}
-      >
-        <ArrowLeft className="h-4 w-4 mr-1" /> Back to Users
-      </Button>
+    <div className="space-y-6 max-w-2xl">
 
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      {/* ── Toast ── */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 border ${
+          toast.type === 'success'
+            ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
+            : 'bg-red-400/10 border-red-400/20 text-red-400'
+        }`}>
+          {toast.type === 'success'
+            ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+            : <AlertCircle   className="h-3.5 w-3.5 shrink-0" />}
+          <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em]`}>
+            {toast.msg}
+          </p>
+        </div>
+      )}
+
+      {/* ── Back ── */}
+      <button
+        onClick={() => router.push('/admin/users')}
+        className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-white/50 transition-colors`}
+      >
+        <ArrowLeft className="h-3 w-3" /> Users
+      </button>
+
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1
+            className="font-black tracking-tight leading-[1.1] text-white mb-1.5"
+            style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}
+          >
             {user.firstName} {user.lastName}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">{user.email}</p>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/25`}>
+            {user.email}
+          </p>
         </div>
-        <Badge variant={user.isActive ? 'default' : 'destructive'}>
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 py-1.5 border ${
+          user.isActive
+            ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
+            : 'bg-white/[0.04] text-white/20 border-white/8'
+        }`}>
           {user.isActive ? 'Active' : 'Inactive'}
-        </Badge>
+        </span>
       </div>
 
-      <div className="space-y-6">
-        {/* Account info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4" /> Account Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Email</span>
-              <span>{user.email}</span>
+      {/* ── Stats strip ── */}
+      <div className="grid grid-cols-3 gap-px bg-white/[0.04]">
+        {[
+          { icon: ShoppingBag,   label: 'Orders',   value: orderCount },
+          { icon: MessageSquare, label: 'Quotes',   value: quoteCount },
+          { icon: Calendar,      label: 'Joined',   value: new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) },
+        ].map(({ icon: Icon, label, value }) => (
+          <div key={label} className="bg-[#0d0a06] px-4 py-3.5">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Icon className="h-3 w-3 text-white/20" />
+              <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20`}>{label}</p>
             </div>
-            {user.phoneNumber && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Phone</span>
-                <span>{user.phoneNumber}</span>
-              </div>
-            )}
-            {user.companyName && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Company</span>
-                <span>{user.companyName}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Member since</span>
-              <span>{formatDate(user.createdAt)}</span>
-            </div>
-          </CardContent>
-        </Card>
+            <p className={`${mono.className} text-[15px] font-semibold text-white/70`}>{value}</p>
+          </div>
+        ))}
+      </div>
 
-        {/* Roles */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Shield className="h-4 w-4" /> Roles
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Click a role to toggle it on or off. Users must have at least one role.
-            </p>
-            <div className="flex gap-3">
-              {ALL_ROLES.map((role) => {
-                const hasRole = user.roles.includes(role);
-                return (
-                  <button
-                    key={role}
-                    disabled={rolesMutation.isPending}
-                    onClick={() => toggleRole(role)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors
-                      ${hasRole
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background text-muted-foreground border-border hover:bg-muted'
-                      }`}
-                  >
-                    {role}
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+      {/* ── Account details ── */}
+      <div className="space-y-3">
+        <SectionLabel>Account Details</SectionLabel>
+        <div className="bg-white/[0.02] border border-white/6 px-4 py-1">
+          <InfoRow label="Email"   value={<a href={`mailto:${user.email}`} className="text-amber-400 hover:underline">{user.email}</a>} />
+          {user.phoneNumber  && <InfoRow label="Phone"   value={user.phoneNumber} />}
+          {user.companyName  && <InfoRow label="Company" value={user.companyName} />}
+          <InfoRow label="Member Since" value={formatDate(user.createdAt)} />
+          <InfoRow label="User ID"      value={<span className="text-white/25 text-[9px]">{user.id}</span>} />
+        </div>
+      </div>
 
-        {/* Account status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Account Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {user.isActive
-                ? 'This account is active and the user can log in.'
-                : 'This account is deactivated. The user cannot log in.'}
+      {/* ── Roles ── */}
+      <div className="space-y-3">
+        <SectionLabel>Roles</SectionLabel>
+        <p className={`${mono.className} text-[9px] text-white/25`}>
+          Click to toggle. User must always retain at least one role.
+        </p>
+        <div className="flex gap-2">
+          {ALL_ROLES.map(role => {
+            const hasRole = user.roles.includes(role);
+            return (
+              <button
+                key={role}
+                type="button"
+                disabled={rolesMutation.isPending}
+                onClick={() => toggleRole(role)}
+                className={`${mono.className} text-[9px] uppercase tracking-[0.18em] px-4 py-2 border transition-colors disabled:opacity-40 ${
+                  hasRole
+                    ? ROLE_ACTIVE_COLOURS[role]
+                    : `${ROLE_COLOURS[role]} hover:opacity-80`
+                }`}
+              >
+                {role}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Account status ── */}
+      <div className="space-y-3">
+        <SectionLabel>Account Status</SectionLabel>
+
+        {!user.isActive && (
+          <div className="flex items-start gap-2.5 bg-red-400/[0.06] border border-red-400/15 px-4 py-3">
+            <AlertTriangle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+            <p className={`${mono.className} text-[9px] text-red-400/80 leading-relaxed`}>
+              This account is deactivated — the user cannot log in or place orders.
             </p>
-            <Button
-              variant={user.isActive ? 'outline' : 'default'}
-              size="sm"
-              disabled={activeMutation.isPending}
-              onClick={() => {
-                const action = user.isActive ? 'deactivate' : 'reactivate';
-                if (confirm(`Are you sure you want to ${action} this account?`)) {
-                  activeMutation.mutate(!user.isActive);
-                }
-              }}
+          </div>
+        )}
+
+        {user.isActive ? (
+          deactivateArm ? (
+            <div className="flex items-center gap-3 bg-red-400/[0.06] border border-red-400/15 px-4 py-3">
+              <AlertTriangle className="h-3.5 w-3.5 text-red-400 shrink-0" />
+              <p className={`${mono.className} text-[9px] text-red-400/80 flex-1`}>
+                Deactivate this account? The user will be unable to log in.
+              </p>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={() => setDeactivateArm(false)}
+                  className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 py-1.5 border border-white/10 text-white/30 hover:text-white/50 transition-colors`}
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={activeMutation.isPending}
+                  onClick={() => activeMutation.mutate(false)}
+                  className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 py-1.5 bg-red-500 text-white hover:bg-red-400 transition-colors disabled:opacity-40`}
+                >
+                  {activeMutation.isPending ? 'Deactivating...' : 'Confirm'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setDeactivateArm(true)}
+              className={`${mono.className} text-[9px] uppercase tracking-[0.18em] px-4 py-2 border border-red-400/20 text-red-400/60 hover:text-red-400 hover:border-red-400/40 transition-colors`}
             >
-              {activeMutation.isPending
-                ? 'Updating...'
-                : user.isActive ? 'Deactivate Account' : 'Reactivate Account'}
-            </Button>
-          </CardContent>
-        </Card>
+              Deactivate Account
+            </button>
+          )
+        ) : (
+          <button
+            disabled={activeMutation.isPending}
+            onClick={() => activeMutation.mutate(true)}
+            className={`${mono.className} text-[9px] uppercase tracking-[0.18em] px-4 py-2 bg-emerald-400 text-black hover:bg-emerald-300 transition-colors disabled:opacity-40`}
+          >
+            {activeMutation.isPending ? 'Reactivating...' : 'Reactivate Account'}
+          </button>
+        )}
       </div>
+
+      {/* ── Quick links ── */}
+      <div className="space-y-3">
+        <SectionLabel>Activity</SectionLabel>
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.push(`/admin/orders?userId=${user.id}`)}
+            className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] px-4 py-2 border border-white/8 text-white/30 hover:text-white/60 hover:border-white/20 transition-colors`}
+          >
+            <ShoppingBag className="h-3 w-3" /> View Orders
+          </button>
+          <button
+            onClick={() => router.push(`/admin/quotes?userId=${user.id}`)}
+            className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] px-4 py-2 border border-white/8 text-white/30 hover:text-white/60 hover:border-white/20 transition-colors`}
+          >
+            <MessageSquare className="h-3 w-3" /> View Quotes
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }

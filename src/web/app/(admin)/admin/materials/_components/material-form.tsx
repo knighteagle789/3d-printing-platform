@@ -4,31 +4,32 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import {
   MATERIAL_TYPES, MATERIAL_FINISHES, MATERIAL_GRADES,
-  type MaterialFinish, type MaterialGrade,
 } from '@/lib/api/materials';
 import { technologiesApi } from '@/lib/api/technologies';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { JetBrains_Mono } from 'next/font/google';
 import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
-} from '@/components/ui/form';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+  PrintSettingsEditor,
+  parsePrintSettings,
+  serialisePrintSettings,
+  type PrintSettingPair,
+} from './PrintSettingsEditor';
+
+const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
 const materialSchema = z.object({
-  type:                   z.string().min(1, 'Type is required'),
-  color:                  z.string().min(1, 'Color is required'),
+  type:                   z.string().min(1, 'Required'),
+  color:                  z.string().min(1, 'Required'),
   finish:                 z.string().optional(),
   grade:                  z.string().optional(),
   description:            z.string().optional(),
   brand:                  z.string().optional(),
-  pricePerGram:           z.number().min(0.0001, 'Price must be greater than 0'),
-  stockGrams:             z.number().min(0, 'Stock cannot be negative'),
+  pricePerGram:           z.number({ message: 'Required' }).min(0.0001, 'Must be > 0'),
+  stockGrams:             z.number({ message: 'Required' }).min(0, 'Cannot be negative'),
   lowStockThresholdGrams: z.number().min(0).optional(),
   notes:                  z.string().optional(),
   printSettings:          z.string().optional(),
@@ -38,12 +39,56 @@ const materialSchema = z.object({
 
 export type MaterialFormValues = z.infer<typeof materialSchema>;
 
+// ─── Props ────────────────────────────────────────────────────────────────────
+
 interface MaterialFormProps {
   defaultValues?: Partial<MaterialFormValues>;
   onSubmit: (values: MaterialFormValues) => void;
   isSubmitting: boolean;
   submitLabel: string;
 }
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-white/25 mb-4 pt-2`}>
+      {children}
+    </p>
+  );
+}
+
+function FormRow({
+  label, optional, error, hint, children,
+}: {
+  label: string;
+  optional?: boolean;
+  error?: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/35 block mb-1.5`}>
+        {label}
+        {optional && <span className="text-white/18 ml-1.5 normal-case tracking-normal">optional</span>}
+      </label>
+      {children}
+      {hint && !error && (
+        <p className={`${mono.className} text-[9px] text-white/20 mt-1`}>{hint}</p>
+      )}
+      {error && (
+        <p className={`${mono.className} text-[9px] text-red-400 mt-1`}>{error}</p>
+      )}
+    </div>
+  );
+}
+
+const inputCls = `${mono.className} w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 transition-colors`;
+const selectCls = `${mono.className} w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 focus:outline-none focus:border-amber-400/40 transition-colors appearance-none`;
+const textareaCls = `${mono.className} w-full bg-white/[0.03] border border-white/10 px-3 py-2.5 text-[11px] text-white/70 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 transition-colors resize-none`;
+
+// ─── Form ─────────────────────────────────────────────────────────────────────
 
 export function MaterialForm({
   defaultValues,
@@ -58,13 +103,23 @@ export function MaterialForm({
 
   const technologies = techData?.data ?? [];
 
-  const form = useForm<MaterialFormValues>({
+  const [printSettingPairs, setPrintSettingPairs] = useState<PrintSettingPair[]>(
+    () => parsePrintSettings(defaultValues?.printSettings ?? null)
+  );
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema),
     defaultValues: {
       type:                   defaultValues?.type ?? '',
       color:                  defaultValues?.color ?? '',
-      finish:                 defaultValues?.finish ?? undefined,
-      grade:                  defaultValues?.grade ?? undefined,
+      finish:                 defaultValues?.finish ?? '',
+      grade:                  defaultValues?.grade ?? '',
       description:            defaultValues?.description ?? '',
       brand:                  defaultValues?.brand ?? '',
       pricePerGram:           defaultValues?.pricePerGram ?? 0.15,
@@ -72,297 +127,199 @@ export function MaterialForm({
       lowStockThresholdGrams: defaultValues?.lowStockThresholdGrams ?? undefined,
       notes:                  defaultValues?.notes ?? '',
       printSettings:          defaultValues?.printSettings ?? '',
-      printingTechnologyId:   defaultValues?.printingTechnologyId ?? undefined,
+      printingTechnologyId:   defaultValues?.printingTechnologyId ?? '',
       isActive:               defaultValues?.isActive ?? true,
     },
   });
 
+  const isActive = watch('isActive');
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit((values) => onSubmit({
+      ...values,
+      printSettings: serialisePrintSettings(printSettingPairs),
+    }))} className="space-y-5">
 
-        {/* Type + Color */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {MATERIAL_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+      {/* ── Identity ── */}
+      <SectionLabel>Identity</SectionLabel>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormRow label="Type" error={errors.type?.message}>
+          <select className={selectCls} {...register('type')}>
+            <option value="">Select type...</option>
+            {MATERIAL_TYPES.map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </FormRow>
+        <FormRow label="Color" error={errors.color?.message}>
+          <input
+            type="text"
+            className={inputCls}
+            placeholder="e.g. Galaxy Black"
+            {...register('color')}
           />
-          <FormField
-            control={form.control}
-            name="color"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Color</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Galaxy Black" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+        </FormRow>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormRow label="Finish" optional>
+          <select className={selectCls} {...register('finish')}>
+            <option value="">None</option>
+            {MATERIAL_FINISHES.map(f => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+        </FormRow>
+        <FormRow label="Grade" optional>
+          <select className={selectCls} {...register('grade')}>
+            <option value="">None</option>
+            {MATERIAL_GRADES.map(g => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+        </FormRow>
+      </div>
+
+      {/* ── Customer-facing ── */}
+      <div className="border-t border-white/6 pt-4">
+        <SectionLabel>Customer-facing</SectionLabel>
+      </div>
+
+      <FormRow label="Description" optional>
+        <textarea
+          rows={3}
+          className={textareaCls}
+          placeholder="Describe the material's properties and best use cases..."
+          {...register('description')}
+        />
+      </FormRow>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormRow label="Technology" optional>
+          <select className={selectCls} {...register('printingTechnologyId')}>
+            <option value="">None</option>
+            {technologies.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </FormRow>
+        <FormRow label="Price per gram ($)" error={errors.pricePerGram?.message}>
+          <input
+            type="number"
+            step="0.0001"
+            min={0}
+            className={inputCls}
+            placeholder="0.0150"
+            {...register('pricePerGram', { valueAsNumber: true })}
           />
+        </FormRow>
+      </div>
+
+      {/* ── Inventory ── */}
+      <div className="border-t border-white/6 pt-4">
+        <SectionLabel>Inventory</SectionLabel>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormRow label="Stock (grams)" error={errors.stockGrams?.message}>
+          <input
+            type="number"
+            step="1"
+            min={0}
+            className={inputCls}
+            placeholder="1000"
+            {...register('stockGrams', { valueAsNumber: true })}
+          />
+        </FormRow>
+        <FormRow
+          label="Low stock threshold (grams)"
+          optional
+          hint="Alert fires when stock drops below this"
+        >
+          <input
+            type="number"
+            step="1"
+            min={0}
+            className={inputCls}
+            placeholder="e.g. 500"
+            {...register('lowStockThresholdGrams', {
+              setValueAs: v => v === '' ? undefined : isNaN(Number(v)) ? undefined : Number(v),
+            })}
+          />
+        </FormRow>
+      </div>
+
+      {/* ── Internal ── */}
+      <div className="border-t border-white/6 pt-4">
+        <SectionLabel>Internal</SectionLabel>
+      </div>
+
+      <FormRow label="Brand" optional hint="Not shown to customers">
+        <input
+          type="text"
+          className={inputCls}
+          placeholder="e.g. Polymaker"
+          {...register('brand')}
+        />
+      </FormRow>
+
+      <FormRow label="Notes" optional hint="Reorder info, supplier contacts, etc.">
+        <textarea
+          rows={2}
+          className={textareaCls}
+          placeholder="Internal notes..."
+          {...register('notes')}
+        />
+      </FormRow>
+
+      <FormRow
+        label="Print Settings"
+        optional
+        hint="Technology-specific slicer config — numeric values are stored as numbers"
+      >
+        <PrintSettingsEditor
+          pairs={printSettingPairs}
+          onChange={setPrintSettingPairs}
+        />
+      </FormRow>
+
+      {/* ── Visibility ── */}
+      <div className="border-t border-white/6 pt-5 flex items-center justify-between">
+        <div>
+          <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-white/50`}>
+            Active — visible to customers
+          </p>
+          <p className={`${mono.className} text-[9px] text-white/20 mt-0.5`}>
+            Inactive materials are hidden from the order form
+          </p>
         </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isActive}
+          onClick={() => setValue('isActive', !isActive)}
+          className={`relative w-10 h-5 transition-colors shrink-0 ${
+            isActive ? 'bg-amber-400' : 'bg-white/10'
+          }`}
+        >
+          <span className={`absolute top-0.5 h-4 w-4 bg-white transition-transform ${
+            isActive ? 'translate-x-5' : 'translate-x-0.5'
+          }`} />
+        </button>
+      </div>
 
-        {/* Finish + Grade */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="finish"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Finish <span className="text-muted-foreground">(optional)</span></FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select finish..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {MATERIAL_FINISHES.map((f) => (
-                      <SelectItem key={f} value={f}>{f}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="grade"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Grade <span className="text-muted-foreground">(optional)</span></FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select grade..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {MATERIAL_GRADES.map((g) => (
-                      <SelectItem key={g} value={g}>{g}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Description (customer-facing) */}
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description <span className="text-muted-foreground">(optional, customer-facing)</span></FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Describe the material's properties and best use cases..."
-                  rows={3}
-                  {...field}
-                  value={field.value ?? ''}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Brand + Technology */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="brand"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Brand <span className="text-muted-foreground">(internal only)</span></FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Polymaker" {...field} value={field.value ?? ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="printingTechnologyId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Technology <span className="text-muted-foreground">(optional)</span></FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select technology..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {technologies.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Price + Stock */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="pricePerGram"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price per gram ($)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.0001"
-                    min={0}
-                    {...field}
-                    value={field.value ?? ''}
-                    onChange={(e) => field.onChange(
-                      isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber
-                    )}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="stockGrams"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Stock (grams)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="1"
-                    min={0}
-                    {...field}
-                    value={field.value ?? ''}
-                    onChange={(e) => field.onChange(
-                      isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber
-                    )}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Low Stock Threshold */}
-        <FormField
-          control={form.control}
-          name="lowStockThresholdGrams"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Low stock threshold (grams) <span className="text-muted-foreground">(optional)</span></FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="1"
-                  min={0}
-                  placeholder="e.g. 500"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(
-                    e.target.value === '' ? undefined : isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Notes (internal) */}
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes <span className="text-muted-foreground">(internal only)</span></FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Internal notes, reorder reminders, supplier info..."
-                  rows={2}
-                  {...field}
-                  value={field.value ?? ''}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Print Settings (JSON) */}
-        <FormField
-          control={form.control}
-          name="printSettings"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Print Settings <span className="text-muted-foreground">(optional, JSON)</span></FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder='{"bedTemp":60,"hotendTemp":210,"printSpeed":60}'
-                  rows={3}
-                  className="font-mono text-xs"
-                  {...field}
-                  value={field.value ?? ''}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Active toggle */}
-        <FormField
-          control={form.control}
-          name="isActive"
-          render={({ field }) => (
-            <FormItem className="flex items-center gap-3">
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <FormLabel className="!mt-0">Active (visible to customers)</FormLabel>
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" disabled={isSubmitting}>
+      {/* ── Submit ── */}
+      <div className="pt-2">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={`${mono.className} inline-flex items-center gap-2 bg-amber-400 text-black text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
+        >
           {isSubmitting ? 'Saving...' : submitLabel}
-        </Button>
+        </button>
+      </div>
 
-      </form>
-    </Form>
+    </form>
   );
 }

@@ -28,10 +28,10 @@ export interface QuoteRequest {
   notes: string | null;
   budgetDisplay: string | null;
   createdAt: string;
-  file: { id: string; originalFileName: string; } | null;
+  file: { id: string; originalFileName: string; storageUrl: string | null; } | null;
   preferredMaterial: { id: string; type: string; color: string; finish?: string; grade?: string; pricePerGram: number; } | null;
   responses: QuoteResponseDto[];
-  user: { id: string; firstName: string; lastName: string; } | null;
+  user: { id: string; email: string; firstName: string; lastName: string; } | null;
   orderId: string | null;
 }
 
@@ -59,6 +59,10 @@ export interface CreateQuoteResponseRequest {
 }
 
 export const quotesApi = {
+  // TODO (GH #11): backend endpoint GET /Quotes?userId= not yet implemented
+  getAll: (params?: { userId?: string; page?: number; pageSize?: number }) =>
+    apiClient.get<PagedResponse<QuoteRequest>>('/Quotes', { params }),
+
   getMine: (page = 1, pageSize = 20) =>
     apiClient.get<PagedResponse<QuoteRequest>>('/Quotes/my', {
       params: { page, pageSize },

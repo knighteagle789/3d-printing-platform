@@ -2,36 +2,35 @@
 
 import { useCallback, useState } from 'react';
 import { Upload, File, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { JetBrains_Mono } from 'next/font/google';
+
+const mono = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 const ALLOWED_EXTENSIONS = ['.stl', '.obj', '.3mf', '.step', '.iges', '.gcode'];
-const MAX_SIZE_MB = 100;
+const MAX_SIZE_MB = 250;
 
 interface FileDropzoneProps {
   onFileSelect: (file: File) => void;
-  isUploading: boolean;
+  isUploading:  boolean;
 }
 
 export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
-  const [dragOver, setDragOver] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [dragOver,     setDragOver]     = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const validateAndSelect = useCallback((file: File) => {
     setError(null);
-
-    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
       setError(`File type not supported. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
       return;
     }
-
     const sizeMB = file.size / (1024 * 1024);
     if (sizeMB > MAX_SIZE_MB) {
-      setError(`File too large. Maximum size is ${MAX_SIZE_MB}MB.`);
+      setError(`File too large — maximum size is ${MAX_SIZE_MB} MB.`);
       return;
     }
-
     setSelectedFile(file);
     onFileSelect(file);
   }, [onFileSelect]);
@@ -53,63 +52,71 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
     setError(null);
   };
 
-  // File selected state
+  // ── File selected ──
   if (selectedFile) {
     return (
-      <div className="border-2 border-primary rounded-lg p-8">
-        <div className="flex items-center justify-between">
+      <div className="border border-amber-400/20 bg-amber-400/[0.02]">
+        <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-md">
-              <File className="h-6 w-6 text-primary" />
-            </div>
+            <File className="h-4 w-4 text-amber-400/60 shrink-0" />
             <div>
-              <p className="font-medium">{selectedFile.name}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className={`${mono.className} text-[11px] text-white/70`}>
+                {selectedFile.name}
+              </p>
+              <p className={`${mono.className} text-[9px] text-white/25 mt-0.5`}>
                 {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
               </p>
             </div>
           </div>
           {!isUploading && (
-            <Button variant="ghost" size="sm" onClick={clearFile}>
-              <X className="h-4 w-4" />
-            </Button>
+            <button
+              onClick={clearFile}
+              className="text-white/20 hover:text-red-400/70 transition-colors p-1"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
+
         {isUploading && (
-          <div className="mt-4">
-            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full animate-pulse w-3/4" />
+          <div className="px-4 pb-3">
+            <div className="h-[2px] w-full bg-white/[0.06] overflow-hidden">
+              <div className="h-full bg-amber-400/60 animate-pulse w-3/4 transition-all" />
             </div>
-            <p className="text-sm text-muted-foreground mt-2">Uploading...</p>
+            <p className={`${mono.className} text-[9px] text-amber-400/50 mt-1.5 animate-pulse`}>
+              Uploading...
+            </p>
           </div>
         )}
       </div>
     );
   }
 
-  // Dropzone state
+  // ── Empty drop zone ──
   return (
     <div>
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer
-          ${dragOver
-            ? 'border-primary bg-primary/5'
-            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
-          }`}
         onClick={() => document.getElementById('file-input')?.click()}
+        className={`
+          border-2 border-dashed p-14 text-center cursor-pointer transition-colors
+          ${dragOver
+            ? 'border-amber-400/50 bg-amber-400/[0.04]'
+            : 'border-white/[0.08] hover:border-white/20 hover:bg-white/[0.02]'
+          }
+        `}
       >
-        <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-        <p className="font-medium mb-1">
+        <Upload className={`h-8 w-8 mx-auto mb-4 ${dragOver ? 'text-amber-400/60' : 'text-white/15'}`} />
+        <p className={`${mono.className} text-[11px] text-white/50 mb-1`}>
           Drag and drop your 3D model here
         </p>
-        <p className="text-sm text-muted-foreground mb-4">
-          or click to browse your files
+        <p className={`${mono.className} text-[10px] text-white/20 mb-4`}>
+          or click to browse
         </p>
-        <p className="text-xs text-muted-foreground">
-          Supported formats: {ALLOWED_EXTENSIONS.join(', ')} · Max {MAX_SIZE_MB}MB
+        <p className={`${mono.className} text-[9px] text-white/15`}>
+          {ALLOWED_EXTENSIONS.join('  ·  ')} &nbsp;·&nbsp; Max {MAX_SIZE_MB} MB
         </p>
       </div>
 
@@ -122,7 +129,7 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
       />
 
       {error && (
-        <p className="text-sm text-destructive mt-2">{error}</p>
+        <p className={`${mono.className} text-[10px] text-red-400 mt-2`}>{error}</p>
       )}
     </div>
   );

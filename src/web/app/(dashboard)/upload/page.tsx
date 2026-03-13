@@ -7,26 +7,28 @@ import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { FileDropzone } from './file-dropzone';
 import { FileAnalysisPanel } from './file-analysis';
 import { StlViewer } from '@/components/3d-viewer/StlViewer';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toProxiedUrl } from '@/lib/utils';
 import { FileText, ShoppingCart } from 'lucide-react';
+import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+
+const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
+const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 export default function UploadPage() {
   const router = useRouter();
   const { isAuthenticated, isInitialized } = useRequireAuth();
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading,  setIsUploading]  = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadError,  setUploadError]  = useState<string | null>(null);
+  const [previewUrl,   setPreviewUrl]   = useState<string | null>(null);
 
   const handleFileSelect = async (file: File) => {
     setIsUploading(true);
     setUploadError(null);
     setUploadedFile(null);
 
-    // Show 3D preview immediately using local blob URL
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    if (file.name.toLocaleLowerCase().endsWith('.stl')) {
+    if (file.name.toLowerCase().endsWith('.stl')) {
       setPreviewUrl(URL.createObjectURL(file));
     } else {
       setPreviewUrl(null);
@@ -36,101 +38,111 @@ export default function UploadPage() {
       const response = await filesApi.upload(file);
       setUploadedFile(response.data);
     } catch {
-      setUploadError('Upload failed. Please try again.');
+      setUploadError('Upload failed — please try again.');
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleRequestQuote = () => {
-    if (uploadedFile) {
-      router.push(`/quotes/new?fileId=${uploadedFile.id}`);
-    }
+    if (uploadedFile) router.push(`/quotes/new?fileId=${uploadedFile.id}`);
   };
 
   const handlePlaceOrder = () => {
-    if (uploadedFile) {
-      router.push(`/orders/new?fileId=${uploadedFile.id}`);
-    }
+    if (uploadedFile) router.push(`/orders/new?fileId=${uploadedFile.id}`);
   };
 
-  if (!isInitialized) return null;
-  if (!isAuthenticated) return null;
+  if (!isInitialized || !isAuthenticated) return null;
 
   return (
-    <div className="container mx-auto p-6 max-w-3xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Upload 3D Model</h1>
-        <p className="text-muted-foreground mt-1">
-          Upload your file to get a quote or place an order
+    <div className="p-8 max-w-3xl">
+
+      {/* ── Page header ── */}
+      <div className="mb-8">
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
+          Upload
+        </p>
+        <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+          Upload 3D Model
+        </h1>
+        <p className={`${mono.className} text-[11px] text-white/30 mt-1`}>
+          STL · OBJ · 3MF · STEP · IGES · G-Code &nbsp;·&nbsp; Max 250 MB
         </p>
       </div>
 
-      <div className="space-y-6">
-        {/* Dropzone */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Select File</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FileDropzone
-              onFileSelect={handleFileSelect}
-              isUploading={isUploading}
-            />
-            {uploadError && (
-              <p className="text-sm text-destructive mt-2">{uploadError}</p>
-            )}
-          </CardContent>
-        </Card>
+      <div className="space-y-4">
 
-        {/* 3D Viewer - shows as soon as file is selected */}
+        {/* ── Drop zone ── */}
+        <FileDropzone onFileSelect={handleFileSelect} isUploading={isUploading} />
+
+        {uploadError && (
+          <p className={`${mono.className} text-[10px] text-red-400`}>{uploadError}</p>
+        )}
+
+        {/* ── 3D Preview ── */}
         {previewUrl && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">3D Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StlViewer url={previewUrl} className="w-full h-[400px] rounded-b-lg overflow-hidden bg-slate-50" />
-            </CardContent>
-          </Card>
+          <div className="border border-white/[0.08] overflow-hidden">
+            <div
+              className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]"
+              style={{ background: '#080705' }}
+            >
+              <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+                3D Preview
+              </span>
+              {isUploading && (
+                <span className={`${mono.className} text-[9px] text-amber-400/50 animate-pulse`}>
+                  Uploading...
+                </span>
+              )}
+            </div>
+            <StlViewer
+              url={toProxiedUrl(previewUrl)}
+              className="w-full h-[400px]"
+            />
+          </div>
         )}
 
-        {/* Analysis results */}
-        {uploadedFile && (
-          <FileAnalysisPanel file={uploadedFile} />
-        )}
+        {/* ── File analysis ── */}
+        {uploadedFile && <FileAnalysisPanel file={uploadedFile} />}
 
-        {/* Next step buttons */}
+        {/* ── Next step CTA ── */}
         {uploadedFile && !isUploading && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">What would you like to do?</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <Button
-                variant="outline"
-                className="h-auto py-4 flex flex-col gap-2"
-                onClick={handleRequestQuote}
-              >
-                <FileText className="h-6 w-6" />
-                <span className="font-medium">Request a Quote</span>
-                <span className="text-xs text-muted-foreground text-wrap">
-                  Get pricing from our team before committing
-                </span>
-              </Button>
+          <div className="border border-white/[0.08]" style={{ background: '#080705' }}>
+            <div className="px-4 py-2.5 border-b border-white/[0.06]">
+              <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+                Next Step
+              </span>
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-3">
 
-              <Button
-                className="h-auto py-4 flex flex-col gap-2"
-                onClick={handlePlaceOrder}
+              <button
+                onClick={handleRequestQuote}
+                className="group border border-white/[0.08] hover:border-white/20 p-5 text-left transition-colors"
               >
-                <ShoppingCart className="h-6 w-6" />
-                <span className="font-medium">Place an Order</span>
-                <span className="text-xs text-primary-foreground/70 text-wrap">
+                <FileText className="h-5 w-5 text-white/20 group-hover:text-white/50 mb-3 transition-colors" />
+                <p className={`${mono.className} text-[11px] text-white/60 group-hover:text-white mb-1.5 transition-colors`}>
+                  Request a Quote
+                </p>
+                <p className={`${mono.className} text-[9px] text-white/20 leading-relaxed`}>
+                  Get pricing from our team before committing
+                </p>
+              </button>
+
+              <button
+                onClick={handlePlaceOrder}
+                className="group border border-amber-400/20 hover:border-amber-400/50 bg-amber-400/[0.03] hover:bg-amber-400/[0.06] p-5 text-left transition-colors"
+              >
+                <ShoppingCart className="h-5 w-5 text-amber-400/40 group-hover:text-amber-400/70 mb-3 transition-colors" />
+                <p className={`${mono.className} text-[11px] text-amber-400/60 group-hover:text-amber-400 mb-1.5 transition-colors`}>
+                  Place an Order
+                </p>
+                <p className={`${mono.className} text-[9px] text-white/20 leading-relaxed`}>
                   Choose material and submit directly
-                </span>
-              </Button>
-            </CardContent>
-          </Card>
+                </p>
+              </button>
+
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -9,66 +9,83 @@ import { materialsApi } from '@/lib/api/materials';
 import { quotesApi } from '@/lib/api/quotes';
 import { filesApi } from '@/lib/api/files';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+
+const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
+const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
+
+// ── Schema ────────────────────────────────────────────────────────────────────
 
 const quoteSchema = z.object({
-  quantity:               z.number().int().min(1, 'Quantity must be at least 1'),
-  preferredMaterialId:    z.string().optional(),
-  preferredColor:         z.string().optional(),
-  requiredByDate:         z.string().optional(),
-  specialRequirements:    z.string().optional(),
-  notes:                  z.string().optional(),
-  budgetMin:              z.number().min(0).optional(),
-  budgetMax:              z.number().min(0).optional(),
+  quantity:            z.number().int().min(1, 'Quantity must be at least 1'),
+  preferredMaterialId: z.string().optional(),
+  requiredByDate:      z.string().optional(),
+  specialRequirements: z.string().optional(),
+  notes:               z.string().optional(),
+  budgetMin:           z.number().min(0).optional(),
+  budgetMax:           z.number().min(0).optional(),
 });
 
 type QuoteFormValues = z.infer<typeof quoteSchema>;
 
+// ── Shared primitives ─────────────────────────────────────────────────────────
+
+const inputCls = `w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors`;
+const textareaCls = `w-full bg-white/[0.03] border border-white/10 px-3 py-2.5 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors resize-none`;
+
+function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
+  return (
+    <label className={`${mono.className} block text-[9px] uppercase tracking-[0.15em] text-white/30 mb-1.5`}>
+      {children}
+      {optional && <span className="ml-1.5 text-white/15 normal-case tracking-normal">optional</span>}
+    </label>
+  );
+}
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return <p className={`${mono.className} text-[8px] text-red-400 mt-1`}>{msg}</p>;
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-white/[0.08]" style={{ background: '#080705' }}>
+      <div className="px-4 py-2.5 border-b border-white/[0.06]">
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+          {title}
+        </span>
+      </div>
+      <div className="p-4 space-y-4">{children}</div>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function NewQuotePage() {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
-  const fileId = searchParams.get('fileId');
+  const fileId       = searchParams.get('fileId');
   const { isAuthenticated, isInitialized } = useRequireAuth();
 
   const { data: fileData } = useQuery({
     queryKey: ['file', fileId],
-    queryFn: () => filesApi.getById(fileId!),
-    enabled: !!fileId && isAuthenticated,
+    queryFn:  () => filesApi.getById(fileId!),
+    enabled:  !!fileId && isAuthenticated,
   });
 
   const { data: materialsData } = useQuery({
     queryKey: ['materials'],
-    queryFn: () => materialsApi.getAll(),
-    enabled: isAuthenticated,
+    queryFn:  () => materialsApi.getAll(),
+    enabled:  isAuthenticated,
   });
 
-  const form = useForm<QuoteFormValues>({
-    resolver: zodResolver(quoteSchema),
-    defaultValues: { quantity: 1 },
-  });
-
-  const selectedMaterialId = form.watch('preferredMaterialId');
-  const selectedMaterial = materialsData?.data.find(
-    (m) => m.id === selectedMaterialId
-  );
+  const { register, handleSubmit, formState: { errors, isSubmitting } } =
+    useForm<QuoteFormValues>({
+      resolver: zodResolver(quoteSchema),
+      defaultValues: { quantity: 1 },
+    });
 
   const onSubmit = async (values: QuoteFormValues) => {
     try {
@@ -76,7 +93,6 @@ export default function NewQuotePage() {
         fileId:              fileId ?? undefined,
         quantity:            values.quantity,
         preferredMaterialId: values.preferredMaterialId,
-        preferredColor:      values.preferredColor,
         requiredByDate:      values.requiredByDate,
         specialRequirements: values.specialRequirements,
         notes:               values.notes,
@@ -85,216 +101,160 @@ export default function NewQuotePage() {
       });
       router.push(`/quotes?created=${response.data.id}`);
     } catch {
-      form.setError('root', { message: 'Failed to submit quote request. Please try again.' });
+      // root error handled below
     }
   };
 
-  if (!isInitialized) return null;
-  if (!isAuthenticated) return null;
+  if (!isInitialized || !isAuthenticated) return null;
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Request a Quote</h1>
-        <p className="text-muted-foreground mt-1">
-          Tell us about your project and we will get back to you with pricing
+    <div className="p-8 max-w-2xl">
+
+      {/* Header */}
+      <div className="mb-8">
+        <button
+          onClick={() => router.back()}
+          className={`${mono.className} flex items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-white/25 hover:text-white/50 transition-colors mb-4`}
+        >
+          <ArrowLeft className="h-3 w-3" />
+          Back
+        </button>
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
+          Quotes / New
+        </p>
+        <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+          Request a Quote
+        </h1>
+        <p className={`${mono.className} text-[11px] text-white/30 mt-1`}>
+          Tell us about your project and we&apos;ll get back to you with pricing
         </p>
       </div>
 
       {/* File summary */}
       {fileData && (
-        <Card className="mb-6">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">File</span>
-              <span className="font-medium">{fileData.data.originalFileName}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm mt-1">
-              <span className="text-muted-foreground">Size</span>
-              <span>{(fileData.data.fileSizeBytes / (1024 * 1024)).toFixed(2)} MB</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="mb-4 border border-amber-400/10 bg-amber-400/[0.02] px-4 py-3 flex items-center justify-between">
+          <span className={`${mono.className} text-[10px] text-white/30`}>File</span>
+          <span className={`${mono.className} text-[11px] text-white/60`}>
+            {fileData.data.originalFileName}
+          </span>
+        </div>
       )}
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-          {/* Preferences */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Print Preferences</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={1} {...field} onChange={e => field.onChange(isNaN(e.target.valueAsNumber) ? '' : e.target.valueAsNumber)} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="preferredMaterialId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Preferred Material <span className="text-muted-foreground">(optional)</span></FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="No preference" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {materialsData?.data.map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.type} — {m.color}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="requiredByDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Required By <span className="text-muted-foreground">(optional)</span></FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Budget */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Budget <span className="text-muted-foreground font-normal text-sm">(optional)</span></CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="budgetMin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minimum ($)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min={0} 
-                          placeholder="0.00" 
-                          {...field}
-                          value={field.value ?? ''}
-                          onChange={e => field.onChange(isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber)} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="budgetMax"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Maximum ($)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min={0} 
-                          placeholder="0.00" 
-                          {...field} 
-                          value={field.value ?? ''}
-                          onChange={e => field.onChange(isNaN(e.target.valueAsNumber) ? undefined : e.target.valueAsNumber)} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Additional info */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Additional Information</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="specialRequirements"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Special Requirements <span className="text-muted-foreground">(optional)</span></FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Any specific technical requirements..."
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes <span className="text-muted-foreground">(optional)</span></FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Anything else you'd like us to know..."
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {form.formState.errors.root && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.root.message}
-            </p>
-          )}
-
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              className="flex-1"
-            >
-              Back
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
-            </Button>
+        {/* Preferences */}
+        <Section title="Print Preferences">
+          <div>
+            <FieldLabel>Quantity</FieldLabel>
+            <input
+              type="number"
+              min={1}
+              className={`${inputCls} ${mono.className}`}
+              {...register('quantity', { valueAsNumber: true })}
+            />
+            <FieldError msg={errors.quantity?.message} />
           </div>
 
-        </form>
-      </Form>
+          <div>
+            <FieldLabel optional>Preferred Material</FieldLabel>
+            <div className="relative">
+              <select
+                {...register('preferredMaterialId')}
+                className={`${inputCls} ${mono.className} appearance-none pr-8`}
+              >
+                <option value="">No preference</option>
+                {materialsData?.data.map(m => (
+                  <option key={m.id} value={m.id} className="bg-[#0d0a06]">
+                    {m.type} — {m.color}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/20 pointer-events-none" />
+            </div>
+          </div>
+
+          <div>
+            <FieldLabel optional>Required By</FieldLabel>
+            <input
+              type="date"
+              className={`${inputCls} ${mono.className}`}
+              {...register('requiredByDate')}
+            />
+          </div>
+        </Section>
+
+        {/* Budget */}
+        <Section title="Budget (optional)">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <FieldLabel optional>Minimum ($)</FieldLabel>
+              <input
+                type="number"
+                min={0}
+                placeholder="0.00"
+                className={`${inputCls} ${mono.className}`}
+                {...register('budgetMin', { valueAsNumber: true })}
+              />
+            </div>
+            <div>
+              <FieldLabel optional>Maximum ($)</FieldLabel>
+              <input
+                type="number"
+                min={0}
+                placeholder="0.00"
+                className={`${inputCls} ${mono.className}`}
+                {...register('budgetMax', { valueAsNumber: true })}
+              />
+            </div>
+          </div>
+        </Section>
+
+        {/* Notes */}
+        <Section title="Additional Information">
+          <div>
+            <FieldLabel optional>Special Requirements</FieldLabel>
+            <textarea
+              rows={3}
+              placeholder="Any specific technical requirements..."
+              className={`${textareaCls} ${mono.className}`}
+              {...register('specialRequirements')}
+            />
+          </div>
+          <div>
+            <FieldLabel optional>Notes</FieldLabel>
+            <textarea
+              rows={2}
+              placeholder="Anything else you'd like us to know..."
+              className={`${textareaCls} ${mono.className}`}
+              {...register('notes')}
+            />
+          </div>
+        </Section>
+
+        {errors.root && (
+          <p className={`${mono.className} text-[10px] text-red-400`}>
+            {(errors.root as { message?: string }).message}
+          </p>
+        )}
+
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className={`${mono.className} flex-1 h-10 border border-white/10 text-[9px] uppercase tracking-[0.15em] text-white/30 hover:text-white/60 hover:border-white/20 transition-colors`}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`${mono.className} flex-1 h-10 bg-amber-400/10 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-400/80 hover:bg-amber-400/20 hover:text-amber-400 transition-colors disabled:opacity-40`}
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
+          </button>
+        </div>
+
+      </form>
     </div>
   );
 }

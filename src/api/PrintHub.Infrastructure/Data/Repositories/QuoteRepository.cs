@@ -33,8 +33,12 @@ public class QuoteRepository : Repository<QuoteRequest>, IQuoteRepository
     {
         return await _dbSet
             .Include(q => q.User)
+            .Include(q => q.File)
+            .Include(q => q.PreferredMaterial)
             .Include(q => q.Responses)
                 .ThenInclude(r => r.CreatedBy)
+            .Include(q => q.Responses)
+                .ThenInclude(r => r.RecommendedMaterial)
             .FirstOrDefaultAsync(q => q.Id == quoteRequestId);
     }
 

@@ -1,93 +1,135 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { CheckCircle } from 'lucide-react';
 import { quotesApi } from '@/lib/api/quotes';
-import { ordersApi } from '@/lib/api/orders';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, FileText, Calendar, MessageSquare } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, MessageSquare, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  Pending:       'outline',
-  UnderReview:   'secondary',
-  QuoteProvided: 'default',
-  Accepted:      'default',
-  Expired:       'destructive',
-  Cancelled:     'destructive',
+const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
+const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
+
+// ── Status config ─────────────────────────────────────────────────────────────
+
+const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
+  Pending:       { dot: 'bg-white/20',       text: 'text-white/30'       },
+  UnderReview:   { dot: 'bg-sky-400/60',     text: 'text-sky-400/70'     },
+  QuoteProvided: { dot: 'bg-amber-400/60',   text: 'text-amber-400/70'   },
+  Accepted:      { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
+  Expired:       { dot: 'bg-red-400/40',     text: 'text-red-400/50'     },
+  Cancelled:     { dot: 'bg-red-400/40',     text: 'text-red-400/50'     },
 };
 
-function formatDate(dateString: string | null) {
-  if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  });
+function StatusPill({ status }: { status: string }) {
+  const s = STATUS_STYLES[status] ?? { dot: 'bg-white/20', text: 'text-white/30' };
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className={`h-2 w-2 rounded-full ${s.dot}`} />
+      <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em] ${s.text}`}>
+        {status}
+      </span>
+    </span>
+  );
 }
 
-export default function QuoteDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
+function formatDate(d: string | null) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function Section({ icon: Icon, title, children }: {
+  icon?: React.ComponentType<{ className?: string }>; title: string; children: React.ReactNode;
 }) {
-  const { id } = use(params);
-  const router = useRouter();
+  return (
+    <div className="border border-white/[0.08]" style={{ background: '#080705' }}>
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06]">
+        {Icon && <Icon className="h-3.5 w-3.5 text-white/20" />}
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+          {title}
+        </span>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+function DataRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between py-1.5 border-b border-white/[0.04] last:border-0">
+      <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-white/20`}>{label}</span>
+      <span className={`${mono.className} text-[11px] text-white/50 text-right max-w-[60%]`}>{value}</span>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default function QuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id }       = use(params);
+  const router       = useRouter();
+  const queryClient  = useQueryClient();
   const { isAuthenticated, isInitialized } = useRequireAuth();
-  const queryClient = useQueryClient();
+  const [flash, setFlash] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
-  const acceptMutation = useMutation({
-    mutationFn: (responseId: string) =>
-      quotesApi.acceptResponse(id, responseId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotes', id] });
-      queryClient.invalidateQueries({ queryKey: ['quotes']});
-      toast.success('Quote accepted! You can now proceed to place your order.');
-    },
-    onError: () => toast.error('Failed to accept quote. Please try again.'),
-  });
-
-  const convertMutation = useMutation({ 
-    mutationFn: () => quotesApi.convertToOrder(id),
-    onSuccess: (res) => {
-      toast.success('Quote converted to order! Redirecting to order details...');
-      router.push(`/orders/${res.data.id}`);
-    },
-    onError: () => toast.error('Failed to convert quote to order. Please try again.'),
-  });
+  // Confirm state for accept (avoids browser confirm())
+  const [pendingAccept, setPendingAccept] = useState<string | null>(null);
+  const [pendingConvert, setPendingConvert] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['quotes', id],
-    queryFn: () => quotesApi.getById(id),
-    enabled: isAuthenticated,
+    queryFn:  () => quotesApi.getById(id),
+    enabled:  isAuthenticated,
   });
 
-  if (!isInitialized) return null;
-  if (!isAuthenticated) return null;
+  const acceptMutation = useMutation({
+    mutationFn: (responseId: string) => quotesApi.acceptResponse(id, responseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      setPendingAccept(null);
+      setFlash({ type: 'success', msg: 'Quote accepted — you can now proceed to place your order.' });
+    },
+    onError: () => {
+      setPendingAccept(null);
+      setFlash({ type: 'error', msg: 'Failed to accept quote — please try again.' });
+    },
+  });
+
+  const convertMutation = useMutation({
+    mutationFn: () => quotesApi.convertToOrder(id),
+    onSuccess: (res) => {
+      router.push(`/orders/${res.data.id}`);
+    },
+    onError: () => {
+      setPendingConvert(false);
+      setFlash({ type: 'error', msg: 'Failed to convert quote — please try again.' });
+    },
+  });
+
+  if (!isInitialized || !isAuthenticated) return null;
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 max-w-3xl">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/3" />
-          <div className="h-48 bg-muted rounded" />
-          <div className="h-48 bg-muted rounded" />
-        </div>
+      <div className="p-8 max-w-3xl space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-28 bg-white/[0.02] animate-pulse" />
+        ))}
       </div>
     );
   }
 
   if (isError || !data) {
     return (
-      <div className="container mx-auto p-6 max-w-3xl">
-        <p className="text-destructive">Quote request not found.</p>
-        <Button variant="outline" className="mt-4" onClick={() => router.push('/quotes')}>
-          Back to Quotes
-        </Button>
+      <div className="p-8">
+        <p className={`${mono.className} text-[10px] text-red-400`}>Quote request not found.</p>
+        <button
+          onClick={() => router.push('/quotes')}
+          className={`${mono.className} mt-4 text-[9px] uppercase tracking-[0.15em] text-white/25 hover:text-white/50 transition-colors`}
+        >
+          ← Back to quotes
+        </button>
       </div>
     );
   }
@@ -95,225 +137,223 @@ export default function QuoteDetailPage({
   const quote = data.data;
 
   return (
-    <div className="container mx-auto p-6 max-w-3xl">
+    <div className="p-8 max-w-3xl">
+
       {/* Header */}
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-4 -ml-2"
+      <div className="mb-8">
+        <button
           onClick={() => router.push('/quotes')}
+          className={`${mono.className} flex items-center gap-1.5 text-[9px] uppercase tracking-[0.15em] text-white/25 hover:text-white/50 transition-colors mb-4`}
         >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Quotes
-        </Button>
+          <ArrowLeft className="h-3 w-3" />
+          All Quotes
+        </button>
 
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold">{quote.requestNumber}</h1>
-            <p className="text-muted-foreground mt-1">
+            <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-1`}>
+              Quote Request
+            </p>
+            <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+              {quote.requestNumber}
+            </h1>
+            <p className={`${mono.className} text-[10px] text-white/25 mt-1`}>
               Submitted {formatDate(quote.createdAt)}
             </p>
           </div>
-          <Badge variant={STATUS_VARIANTS[quote.status] ?? 'outline'} className="text-sm px-3 py-1">
-            {quote.status}
-          </Badge>
+          <div className="mt-1">
+            <StatusPill status={quote.status} />
+          </div>
         </div>
       </div>
 
-      <div className="space-y-6">
+      {/* Flash */}
+      {flash && (
+        <div className={`${mono.className} mb-4 border px-4 py-2.5 text-[10px] ${
+          flash.type === 'success'
+            ? 'border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-400/80'
+            : 'border-red-400/20 bg-red-400/[0.04] text-red-400/70'
+        }`}>
+          {flash.msg}
+        </div>
+      )}
+
+      <div className="space-y-4">
+
         {/* Request details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Request Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            {quote.file && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">File</span>
-                <span>{quote.file.originalFileName}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Quantity</span>
-              <span>{quote.quantity}</span>
-            </div>
+        <Section icon={FileText} title="Request Details">
+          <div className="space-y-0">
+            {quote.file && <DataRow label="File" value={quote.file.originalFileName} />}
+            <DataRow label="Quantity" value={quote.quantity} />
             {quote.preferredMaterial && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Preferred material</span>
-                <span>{quote.preferredMaterial.type} - {quote.preferredMaterial.color}</span>
-              </div>
+              <DataRow label="Preferred Material" value={`${quote.preferredMaterial.type} — ${quote.preferredMaterial.color}`} />
             )}
-            {quote.preferredColor && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Preferred color</span>
-                <span>{quote.preferredColor}</span>
-              </div>
-            )}
-            {quote.budgetDisplay && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Budget</span>
-                <span>{quote.budgetDisplay}</span>
-              </div>
-            )}
+            {quote.budgetDisplay && <DataRow label="Budget" value={quote.budgetDisplay} />}
             {quote.specialRequirements && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Special requirements</span>
-                <span className="text-right max-w-[60%]">{quote.specialRequirements}</span>
-              </div>
+              <DataRow label="Special Requirements" value={quote.specialRequirements} />
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Section>
 
         {/* Dates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Dates
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Submitted</span>
-              <span>{formatDate(quote.createdAt)}</span>
-            </div>
+        <Section icon={Calendar} title="Dates">
+          <div className="space-y-0">
+            <DataRow label="Submitted"   value={formatDate(quote.createdAt)} />
             {quote.requiredByDate && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Required by</span>
-                <span>{formatDate(quote.requiredByDate)}</span>
-              </div>
+              <DataRow label="Required by" value={formatDate(quote.requiredByDate)} />
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Section>
 
-        {/* Pricing responses */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Pricing Responses ({quote.responses.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {quote.responses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No pricing responses yet. We&apos;ll review your request and respond shortly.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {quote.responses.map((response, index) => (
-                  <div key={response.id}>
-                    {index > 0 && <Separator className="mb-4" />}
-                    <div className={`rounded-md text-sm space-y-2 ${response.isAccepted ? 'text-primary' : ''}`}>
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-semibold">
+        {/* Responses */}
+        <Section icon={MessageSquare} title={`Pricing Responses (${quote.responses.length})`}>
+          {quote.responses.length === 0 ? (
+            <p className={`${mono.className} text-[10px] text-white/25`}>
+              No responses yet — we&apos;ll review your request and reply shortly.
+            </p>
+          ) : (
+            <div className="space-y-5">
+              {quote.responses.map((response, i) => (
+                <div key={response.id}>
+                  {i > 0 && <div className="border-t border-white/[0.06] mb-5" />}
+
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline gap-3">
+                        <span className={`${bebas.className} text-2xl ${response.isAccepted ? 'text-emerald-400' : 'text-white'}`}>
                           ${response.price.toFixed(2)}
                         </span>
-                        {response.isAccepted
-                          ? <Badge className="gap-1"><CheckCircle className="h-3 w-3" /> Accepted</Badge>
-                          : quote.status === 'QuoteProvided' && (
-                              <Button
-                                size="sm"
-                                disabled={acceptMutation.isPending}
-                                onClick={() => {
-                                  if (confirm(`Accept this quote for $${response.price.toFixed(2)}?`)) {
-                                    acceptMutation.mutate(response.id);
-                                  }
-                                }}
-                              >
-                                {acceptMutation.isPending ? 'Accepting...' : 'Accept Quote'}
-                              </Button>
-                            )
-                        }
+                        {response.shippingCost != null && (
+                          <span className={`${mono.className} text-[9px] text-white/25`}>
+                            + ${response.shippingCost.toFixed(2)} shipping
+                          </span>
+                        )}
                       </div>
-                      {response.shippingCost != null && (
-                        <p className="text-muted-foreground">
-                          + ${response.shippingCost.toFixed(2)} shipping
-                        </p>
-                      )}
-                      <p className="text-muted-foreground">
+                      <p className={`${mono.className} text-[9px] text-white/25`}>
                         Estimated {response.estimatedDays} days
                       </p>
                       {response.recommendedMaterial && (
-                        <p className="text-muted-foreground">
-                          Recommended material: {response.recommendedMaterial.type} - {response.recommendedMaterial.color }
+                        <p className={`${mono.className} text-[9px] text-white/25`}>
+                          Recommended: {response.recommendedMaterial.type} — {response.recommendedMaterial.color}
                         </p>
                       )}
                       {response.technicalNotes && (
-                        <p>{response.technicalNotes}</p>
+                        <p className={`${mono.className} text-[10px] text-white/40 mt-1`}>
+                          {response.technicalNotes}
+                        </p>
                       )}
-                      <p className="text-xs text-muted-foreground">
+                      <p className={`${mono.className} text-[8px] text-white/15`}>
                         Expires {formatDate(response.expiresAt)}
                       </p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {quote.status === 'Accepted' && !quote.orderId && (
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">Ready to place your order?</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Your quote has been accepted. Create an order to begin production.
-                  </p>
+                    <div className="shrink-0">
+                      {response.isAccepted ? (
+                        <span className={`${mono.className} flex items-center gap-1.5 text-[9px] text-emerald-400/70`}>
+                          <CheckCircle2 className="h-3 w-3" />
+                          Accepted
+                        </span>
+                      ) : quote.status === 'QuoteProvided' && (
+                        pendingAccept === response.id ? (
+                          <div className="flex items-center gap-2">
+                            <span className={`${mono.className} text-[9px] text-white/30`}>Confirm?</span>
+                            <button
+                              onClick={() => acceptMutation.mutate(response.id)}
+                              disabled={acceptMutation.isPending}
+                              className={`${mono.className} px-3 h-7 bg-emerald-400/10 border border-emerald-400/30 text-[8px] uppercase tracking-[0.12em] text-emerald-400/80 hover:bg-emerald-400/20 transition-colors disabled:opacity-40`}
+                            >
+                              {acceptMutation.isPending ? '...' : 'Yes'}
+                            </button>
+                            <button
+                              onClick={() => setPendingAccept(null)}
+                              className={`${mono.className} px-3 h-7 border border-white/10 text-[8px] uppercase tracking-[0.12em] text-white/30 hover:text-white/60 transition-colors`}
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setPendingAccept(response.id)}
+                            className={`${mono.className} px-3 h-8 border border-amber-400/20 bg-amber-400/[0.03] hover:border-amber-400/40 hover:bg-amber-400/[0.07] text-[8px] uppercase tracking-[0.12em] text-amber-400/60 hover:text-amber-400/80 transition-colors`}
+                          >
+                            Accept Quote
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <Button
+              ))}
+            </div>
+          )}
+        </Section>
+
+        {/* Convert to order */}
+        {quote.status === 'Accepted' && !quote.orderId && (
+          <div className="border border-amber-400/20 bg-amber-400/[0.03] p-5 flex items-center justify-between gap-4">
+            <div>
+              <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-amber-400/80 mb-1`}>
+                Ready to Order?
+              </p>
+              <p className={`${mono.className} text-[10px] text-white/30`}>
+                Your quote is accepted. Create an order to begin production.
+              </p>
+            </div>
+
+            {pendingConvert ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`${mono.className} text-[9px] text-white/30`}>Confirm?</span>
+                <button
+                  onClick={() => convertMutation.mutate()}
                   disabled={convertMutation.isPending}
-                  onClick={() => {
-                    if (confirm('Create an order from this quote?')) {
-                      convertMutation.mutate();
-                    }
-                  }}
+                  className={`${mono.className} px-3 h-8 bg-amber-400/10 border border-amber-400/30 text-[8px] uppercase tracking-[0.12em] text-amber-400/80 hover:bg-amber-400/20 transition-colors disabled:opacity-40`}
                 >
-                  {convertMutation.isPending ? 'Creating...' : 'Create Order'}
-                </Button>
+                  {convertMutation.isPending ? '...' : 'Create'}
+                </button>
+                <button
+                  onClick={() => setPendingConvert(false)}
+                  className={`${mono.className} px-3 h-8 border border-white/10 text-[8px] uppercase tracking-[0.12em] text-white/30 hover:text-white/60 transition-colors`}
+                >
+                  Cancel
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <button
+                onClick={() => setPendingConvert(true)}
+                className={`${mono.className} shrink-0 flex items-center gap-2 px-4 h-9 bg-amber-400/10 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-400/80 hover:bg-amber-400/20 hover:text-amber-400 transition-colors`}
+              >
+                Create Order
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         )}
 
         {quote.status === 'Accepted' && quote.orderId && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">Order Created</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    This quote has been converted to an order.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/orders/${quote.orderId}`)}
-                >
-                  View Order
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}        
+          <div className="border border-white/[0.08] p-4 flex items-center justify-between">
+            <div>
+              <p className={`${mono.className} text-[10px] text-white/40 mb-0.5`}>Order Created</p>
+              <p className={`${mono.className} text-[9px] text-white/20`}>
+                This quote has been converted to an order.
+              </p>
+            </div>
+            <button
+              onClick={() => router.push(`/orders/${quote.orderId}`)}
+              className={`${mono.className} flex items-center gap-2 px-3 h-8 border border-white/10 text-[9px] uppercase tracking-[0.12em] text-white/30 hover:text-white/60 hover:border-white/20 transition-colors`}
+            >
+              View Order
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+        )}
 
         {/* Notes */}
         {quote.notes && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">{quote.notes}</p>
-            </CardContent>
-          </Card>
+          <Section icon={FileText} title="Notes">
+            <p className={`${mono.className} text-[10px] text-white/40`}>{quote.notes}</p>
+          </Section>
         )}
+
       </div>
     </div>
   );

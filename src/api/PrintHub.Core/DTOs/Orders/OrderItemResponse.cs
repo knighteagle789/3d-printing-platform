@@ -67,18 +67,20 @@ public record MaterialSummaryResponse(
 
 /// <summary>
 /// Minimal file info embedded in order items.
-/// Just enough to show which file is being printed.
+/// Includes StorageUrl for admin download access.
 /// </summary>
 public record FileSummaryResponse(
     Guid Id,
     string OriginalFileName,
     long FileSizeBytes,
-    bool IsAnalyzed)
+    bool IsAnalyzed,
+    string? StorageUrl)
 {
     public static FileSummaryResponse FromEntity(UploadedFile file) => new(
         Id: file.Id,
         OriginalFileName: file.OriginalFileName,
         FileSizeBytes: file.FileSizeBytes,
-        IsAnalyzed: file.IsAnalyzed
+        IsAnalyzed: file.IsAnalyzed,
+        StorageUrl: file.StorageUrl
     );
 }

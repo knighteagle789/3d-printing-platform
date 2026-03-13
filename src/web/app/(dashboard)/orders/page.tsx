@@ -1,139 +1,150 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ordersApi } from '@/lib/api/orders';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Package } from 'lucide-react';
+import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-// Maps order status to a badge colour
-function StatusBadge({ status }: { status: string }) {
-  const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-    Draft:         'outline',
-    Submitted:     'secondary',
-    InReview:      'secondary',
-    Approved:      'default',
-    InProduction:  'default',
-    Printing:      'default',
-    Shipped:       'default',
-    Completed:     'default',
-    Cancelled:     'destructive',
-  };
+const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
+const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
+// ── Status config ─────────────────────────────────────────────────────────────
+
+const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
+  Draft:        { dot: 'bg-white/20',       text: 'text-white/30'    },
+  Submitted:    { dot: 'bg-sky-400/60',     text: 'text-sky-400/70'  },
+  InReview:     { dot: 'bg-sky-400/60',     text: 'text-sky-400/70'  },
+  Approved:     { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
+  Printing:     { dot: 'bg-amber-400/60',   text: 'text-amber-400/70'  },
+  QualityCheck: { dot: 'bg-amber-400/60',   text: 'text-amber-400/70'  },
+  Shipped:      { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
+  Completed:    { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
+  Cancelled:    { dot: 'bg-red-400/60',     text: 'text-red-400/70'    },
+};
+
+function StatusPill({ status }: { status: string }) {
+  const s = STATUS_STYLES[status] ?? { dot: 'bg-white/20', text: 'text-white/30' };
   return (
-    <Badge variant={variants[status] ?? 'outline'}>
-      {status}
-    </Badge>
+    <span className="flex items-center gap-1.5">
+      <span className={`inline-block h-1.5 w-1.5 rounded-full ${s.dot}`} />
+      <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] ${s.text}`}>
+        {status}
+      </span>
+    </span>
   );
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function OrdersPage() {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
-  const toastShown = useRef(false);
-
-  useEffect(() => {
-    const created = searchParams.get('created');
-    if (created && !toastShown.current) {
-      toastShown.current = true; // prevent showing toast multiple times
-      toast.success('Order created successfully!', {
-        description: 'Your order has been placed and is now being processed.',
-      });
-      // Clean up the URL without triggering a navigation
-      router.replace('/orders');
-    }
-  }, [searchParams, router]);
-
   const { isAuthenticated, isInitialized } = useRequireAuth();
+
+  const [flash] = useState<string | null>(
+    searchParams.get('created') ? 'Order placed successfully.' : null
+  );
+  // Clean up the ?created= param once on mount without triggering a cascade
+  if (searchParams.get('created') && typeof window !== 'undefined') {
+    window.history.replaceState(null, '', '/orders');
+  }
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['orders'],
-    queryFn: () => ordersApi.getMine(),
-    enabled: isAuthenticated, // don't fetch until we know user is logged in
+    queryFn:  () => ordersApi.getMine(),
+    enabled:  isAuthenticated,
   });
 
-  if (!isInitialized) return null; // still initializing, render nothing
-  if (!isAuthenticated) return null; // redirecting, render nothing
+  if (!isInitialized || !isAuthenticated) return null;
+
+  const orders = data?.data.items ?? [];
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">My Orders</h1>
-        <p className="text-muted-foreground mt-1">
+    <div className="p-8">
+
+      {/* Header */}
+      <div className="mb-8">
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
+          Orders
+        </p>
+        <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+          My Orders
+        </h1>
+        <p className={`${mono.className} text-[11px] text-white/30 mt-1`}>
           Track and manage your 3D printing orders
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Order History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading && (
-            <p className="text-muted-foreground text-sm py-4">
-              Loading orders...
-            </p>
-          )}
+      {/* Flash */}
+      {flash && (
+        <div className={`${mono.className} mb-4 flex items-center gap-2 border border-emerald-400/20 bg-emerald-400/[0.04] px-4 py-2.5 text-[10px] text-emerald-400/80`}>
+          {flash}
+        </div>
+      )}
 
-          {isError && (
-            <p className="text-destructive text-sm py-4">
-              Failed to load orders. Please try again.
-            </p>
-          )}
+      {/* Table */}
+      <div className="border border-white/[0.08]">
+        {/* Column headers */}
+        <div
+          className="grid px-4 py-2.5 border-b border-white/[0.06]"
+          style={{ background: '#080705', gridTemplateColumns: '1fr 1fr 4rem 6rem 7rem' }}
+        >
+          {['Order #', 'Date', 'Items', 'Total', 'Status'].map(h => (
+            <span key={h} className={`${mono.className} text-[8px] uppercase tracking-[0.18em] text-white/20`}>
+              {h}
+            </span>
+          ))}
+        </div>
 
-          {data && data.data.items.length === 0 && (
-            <p className="text-muted-foreground text-sm py-4">
-              You haven&apos;t placed any orders yet.
-            </p>
-          )}
+        {isLoading && (
+          <div className="px-4 py-8 space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-5 bg-white/[0.03] animate-pulse rounded-sm" />
+            ))}
+          </div>
+        )}
 
-          {data && data.data.items.length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.data.items.map((order) => (
-                  <TableRow 
-                      key={order.id} 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => router.push(`/orders/${order.id}`)} >
-                    <TableCell className="font-medium">
-                      {order.orderNumber}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{order.items.length}</TableCell>
-                    <TableCell>${order.totalPrice.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={order.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        {isError && (
+          <p className={`${mono.className} text-[10px] text-red-400/70 px-4 py-6`}>
+            Failed to load orders — please refresh.
+          </p>
+        )}
+
+        {!isLoading && !isError && orders.length === 0 && (
+          <div className="px-4 py-12 text-center">
+            <Package className="h-8 w-8 text-white/10 mx-auto mb-3" />
+            <p className={`${mono.className} text-[10px] text-white/25`}>
+              No orders yet — upload a model to get started.
+            </p>
+          </div>
+        )}
+
+        {orders.map((order, i) => (
+          <div
+            key={order.id}
+            onClick={() => router.push(`/orders/${order.id}`)}
+            className={`grid items-center px-4 py-3 cursor-pointer hover:bg-white/[0.03] transition-colors group ${i < orders.length - 1 ? 'border-b border-white/[0.04]' : ''}`}
+            style={{ gridTemplateColumns: '1fr 1fr 4rem 6rem 7rem' }}
+          >
+            <span className={`${mono.className} text-[11px] text-white/60 group-hover:text-white transition-colors`}>
+              {order.orderNumber}
+            </span>
+            <span className={`${mono.className} text-[10px] text-white/30`}>
+              {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+            <span className={`${mono.className} text-[10px] text-white/30`}>
+              {order.items.length}
+            </span>
+            <span className={`${mono.className} text-[11px] text-white/60`}>
+              ${order.totalPrice.toFixed(2)}
+            </span>
+            <StatusPill status={order.status} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

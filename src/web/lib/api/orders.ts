@@ -6,6 +6,7 @@ export interface FileSummary {
   originalFileName: string;
   fileSizeBytes: number;
   isAnalyzed: boolean;
+  storageUrl: string | null;
 }
 
 export interface MaterialSummary {
@@ -67,6 +68,10 @@ export interface PagedResponse<T> {
 }
 
 export const ordersApi = {
+  // TODO (GH #10): backend endpoint GET /Orders?userId= not yet implemented
+  getAll: (params?: { userId?: string; page?: number; pageSize?: number }) =>
+    apiClient.get<PagedResponse<Order>>('/Orders', { params }),
+
   getMine: (page = 1, pageSize = 20) =>
     apiClient.get<PagedResponse<Order>>('/Orders/my', {
       params: { page, pageSize },

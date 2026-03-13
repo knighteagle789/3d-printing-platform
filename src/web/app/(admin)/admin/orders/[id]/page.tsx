@@ -3,24 +3,33 @@
 import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { ordersApi } from '@/lib/api/orders';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
+import { ordersApi, type OrderStatusHistory } from '@/lib/api/orders';
+import { JetBrains_Mono } from 'next/font/google';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
-import { ArrowLeft, Package, Calendar, MapPin, Clock } from 'lucide-react';
+  ArrowLeft, Package, Calendar, MapPin, Clock,
+  CheckCircle2, AlertCircle, User, Download, Mail,
+} from 'lucide-react';
 
-const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  Draft: 'outline', Submitted: 'secondary', InReview: 'secondary',
-  Approved: 'default', InProduction: 'default', Printing: 'default',
-  PostProcessing: 'default', QualityCheck: 'default', Packaging: 'default',
-  Shipped: 'default', Delivered: 'default', Completed: 'default',
-  Cancelled: 'destructive', OnHold: 'secondary', QuoteProvided: 'secondary',
+const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const STATUS_COLOUR: Record<string, string> = {
+  Draft:          'text-white/30 bg-white/[0.04] border-white/8',
+  Submitted:      'text-amber-400 bg-amber-400/8 border-amber-400/20',
+  InReview:       'text-amber-400 bg-amber-400/8 border-amber-400/20',
+  QuoteProvided:  'text-amber-400 bg-amber-400/8 border-amber-400/20',
+  Approved:       'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  InProduction:   'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  Printing:       'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  PostProcessing: 'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  QualityCheck:   'text-blue-400 bg-blue-400/8 border-blue-400/20',
+  Packaging:      'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  Shipped:        'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  Delivered:      'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  Completed:      'text-white/40 bg-white/[0.04] border-white/8',
+  Cancelled:      'text-red-400 bg-red-400/8 border-red-400/20',
+  OnHold:         'text-amber-400 bg-amber-400/8 border-amber-400/20',
 };
 
 // Valid transitions matching backend logic
@@ -40,30 +49,74 @@ const NEXT_STATUSES: Record<string, string[]> = {
   OnHold:         ['InReview', 'Approved', 'InProduction', 'Cancelled'],
 };
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function formatDate(d: string | null) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return new Date(d).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  });
 }
 
 function formatDateTime(d: string | null) {
   if (!d) return '—';
-  return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(d).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
+
+const DONE_STATUSES = new Set(['Shipped', 'Delivered', 'Completed', 'Cancelled']);
+
+function isDeadlineUrgent(requiredByDate: string | null, status: string): boolean {
+  if (!requiredByDate) return false;
+  if (DONE_STATUSES.has(status)) return false;
+  const hoursLeft = (new Date(requiredByDate).getTime() - Date.now()) / 36e5;
+  return hoursLeft <= 48;
+}
+
+function StatusPill({ status, large }: { status: string; large?: boolean }) {
+  const colours = STATUS_COLOUR[status] ?? 'text-white/30 bg-white/[0.04] border-white/8';
+  return (
+    <span className={`${mono.className} inline-flex items-center border uppercase tracking-[0.15em] ${
+      large ? 'text-[10px] px-3 py-1' : 'text-[8px] px-2 py-0.5'
+    } ${colours}`}>
+      {status}
+    </span>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-white/25 mb-4`}>
+      {children}
+    </p>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminOrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
-  const router = useRouter();
+  const { id }      = use(params);
+  const router      = useRouter();
   const queryClient = useQueryClient();
-  const [newStatus, setNewStatus] = useState<string>('');
-  const [notes, setNotes] = useState('');
+
+  const [newStatus,  setNewStatus]  = useState('');
+  const [notes,      setNotes]      = useState('');
+  const [toast,      setToast]      = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const showToast = (msg: string, ok: boolean) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'order', id],
-    queryFn: () => ordersApi.getById(id),
+    queryFn:  () => ordersApi.getById(id),
   });
 
   const mutation = useMutation({
@@ -73,15 +126,22 @@ export default function AdminOrderDetailPage({
       queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
       setNewStatus('');
       setNotes('');
-      toast.success(`Order moved to ${res.data.status}`);
+      showToast(`Order moved to ${res.data.status}`, true);
     },
-    onError: () => toast.error('Failed to update status.'),
+    onError: () => showToast('Failed to update status.', false),
   });
 
+  // ── Loading skeleton ──
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4 max-w-4xl">
-        {[...Array(3)].map((_, i) => <div key={i} className="h-32 bg-muted animate-pulse rounded" />)}
+      <div className="space-y-6 max-w-5xl">
+        <div className="h-6 bg-white/[0.05] animate-pulse w-32" />
+        <div className="h-24 bg-white/[0.04] animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-px bg-white/8">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-[#0d0a06] h-40" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -92,187 +152,361 @@ export default function AdminOrderDetailPage({
   const availableTransitions = NEXT_STATUSES[order.status] ?? [];
 
   return (
-    <div className="p-6 max-w-4xl">
-      {/* Header */}
-      <div className="mb-6">
-        <Button variant="ghost" size="sm" className="-ml-2 mb-4" onClick={() => router.push('/admin/orders')}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Orders
-        </Button>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{order.orderNumber}</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {order.user?.firstName} {order.user?.lastName} · {order.user?.email}
-            </p>
-          </div>
-          <Badge variant={STATUS_VARIANTS[order.status] ?? 'outline'} className="text-sm px-3 py-1">
-            {order.status}
-          </Badge>
+    <div className="space-y-8 max-w-5xl">
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border ${
+          toast.ok
+            ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
+            : 'bg-red-400/10 border-red-400/30 text-red-400'
+        }`}>
+          {toast.ok
+            ? <CheckCircle2 className="h-4 w-4 shrink-0" />
+            : <AlertCircle className="h-4 w-4 shrink-0" />}
+          <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em]`}>
+            {toast.msg}
+          </span>
         </div>
+      )}
+
+      {/* ── Back link ── */}
+      <button
+        onClick={() => router.push('/admin/orders')}
+        className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-white transition-colors`}
+      >
+        <ArrowLeft className="h-3 w-3" /> Back to Orders
+      </button>
+
+      {/* ── Urgency banner ── */}
+      {isDeadlineUrgent(order.requiredByDate, order.status) && (
+        <div className="flex items-center gap-3 px-5 py-3.5 border border-amber-400/30 bg-amber-400/[0.05]">
+          <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
+          <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-amber-400`}>
+            Required by {formatDate(order.requiredByDate)} — deadline within 48 hours
+          </p>
+        </div>
+      )}
+
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <h1
+            className="font-black tracking-tight leading-[1.1] text-white mb-2"
+            style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
+          >
+            {order.orderNumber}
+          </h1>
+          <div className={`${mono.className} flex flex-wrap items-center gap-3 text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+            <span className="flex items-center gap-1.5">
+              <User className="h-3 w-3" />
+              {order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Unknown'}
+            </span>
+            {order.user?.email && (
+              <>
+                <span className="text-white/12">·</span>
+                <a
+                  href={`mailto:${order.user.email}`}
+                  onClick={e => e.stopPropagation()}
+                  className="flex items-center gap-1.5 text-white/30 hover:text-amber-400 transition-colors"
+                >
+                  <Mail className="h-3 w-3" />
+                  {order.user.email}
+                </a>
+              </>
+            )}
+            <span className="text-white/12">·</span>
+            <span>{formatDate(order.createdAt)}</span>
+          </div>
+        </div>
+        <StatusPill status={order.status} large />
       </div>
 
-      <div className="space-y-6">
-        {/* Status update */}
-        {availableTransitions.length > 0 && (
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Update Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Select value={newStatus} onValueChange={setNewStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select next status..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTransitions.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Textarea
-                placeholder="Add a note (optional)..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-              />
-              <Button
-                disabled={!newStatus || mutation.isPending}
-                onClick={() => mutation.mutate()}
-              >
-                {mutation.isPending ? 'Updating...' : 'Update Status'}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+      {/* ── Status update panel ── */}
+      {availableTransitions.length > 0 && (
+        <div className="border border-amber-400/20 bg-amber-400/[0.03] p-6">
+          <SectionLabel>Update Status</SectionLabel>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {availableTransitions.map((s) => {
+              const active = newStatus === s;
+              const isDanger = s === 'Cancelled';
+              return (
+                <button
+                  key={s}
+                  onClick={() => setNewStatus(active ? '' : s)}
+                  className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-4 h-8 border transition-colors ${
+                    active
+                      ? isDanger
+                        ? 'bg-red-400 border-red-400 text-black'
+                        : 'bg-amber-400 border-amber-400 text-black font-semibold'
+                      : isDanger
+                        ? 'text-red-400/60 border-red-400/20 hover:border-red-400/40 hover:text-red-400'
+                        : 'text-white/40 border-white/12 hover:border-white/25 hover:text-white'
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add a note (optional)..."
+            rows={2}
+            className={`${mono.className} w-full bg-white/[0.03] border border-white/10 text-white/70 placeholder:text-white/20 text-[10px] px-4 py-3 resize-none focus:outline-none focus:border-amber-400/40 transition-colors`}
+          />
+          <button
+            disabled={!newStatus || mutation.isPending}
+            onClick={() => mutation.mutate()}
+            className={`${mono.className} mt-3 inline-flex items-center gap-2 bg-amber-400 text-black text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
+          >
+            {mutation.isPending ? 'Updating...' : `Move to ${newStatus || '...'}`}
+          </button>
+        </div>
+      )}
+
+      {/* ── Main grid: items + sidebar ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-px bg-white/8">
 
         {/* Items */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Package className="h-4 w-4" />
+        <div className="bg-[#0d0a06] p-6">
+          <SectionLabel>
+            <span className="flex items-center gap-2">
+              <Package className="h-3 w-3" />
               Items ({order.items.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {order.items.map((item, i) => (
-              <div key={item.id}>
-                {i > 0 && <Separator className="mb-4" />}
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <p className="font-medium">{item.file?.originalFileName ?? 'Unknown file'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.material?.name} · {item.quality} · {item.infill ?? 20}% infill
-                    </p>
-                    {item.color && <p className="text-sm text-muted-foreground">Color: {item.color}</p>}
-                    {item.estimatedWeight && (
-                      <p className="text-sm text-muted-foreground">Est. weight: {item.estimatedWeight.toFixed(1)}g</p>
-                    )}
+            </span>
+          </SectionLabel>
+
+          <div className="space-y-px bg-white/5">
+            {order.items.map((item) => (
+              <div key={item.id} className="bg-[#0d0a06] p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <p
+                        className="text-white/80 font-medium truncate"
+                        style={{ fontFamily: 'var(--font-epilogue)' }}
+                      >
+                        {item.file?.originalFileName ?? 'Unknown file'}
+                      </p>
+                      {item.file?.storageUrl && (
+                        <a
+                          href={item.file.storageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="shrink-0 flex items-center gap-1 text-white/20 hover:text-amber-400 transition-colors"
+                          title="Download file"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                    </div>
+                    <div className={`${mono.className} flex flex-wrap gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.12em] text-white/30`}>
+                      {item.material && (
+                        <span>{item.material.type} · {item.material.color}</span>
+                      )}
+                      <span>{item.quality}</span>
+                      <span>{item.infill ?? 20}% infill</span>
+                      {item.supportStructures && <span>Supports</span>}
+                      {item.color && <span>Color: {item.color}</span>}
+                      {item.estimatedWeight && (
+                        <span>{item.estimatedWeight.toFixed(1)}g est.</span>
+                      )}
+                    </div>
                     {item.specialInstructions && (
-                      <p className="text-sm italic text-muted-foreground">&quot;{item.specialInstructions}&quot;</p>
+                      <p className={`${mono.className} text-[9px] text-white/25 italic`}>
+                        &quot;{item.specialInstructions}&quot;
+                      </p>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">${item.totalPrice.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">{item.quantity} × ${item.unitPrice.toFixed(2)}</p>
+                  <div className="text-right shrink-0">
+                    <p
+                      className="text-white/70 font-medium"
+                      style={{ fontFamily: 'var(--font-epilogue)' }}
+                    >
+                      ${item.totalPrice.toFixed(2)}
+                    </p>
+                    <p className={`${mono.className} text-[9px] uppercase tracking-[0.1em] text-white/25 mt-0.5`}>
+                      {item.quantity} × ${item.unitPrice.toFixed(2)}
+                    </p>
                   </div>
                 </div>
               </div>
             ))}
-            <Separator />
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span>${order.totalPrice.toFixed(2)}</span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Details grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4" /> Dates
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Ordered</span>
-                <span>{formatDate(order.createdAt)}</span>
+          {/* Totals */}
+          <div className="mt-4 pt-4 border-t border-white/8 space-y-2">
+            {order.shippingCost != null && (
+              <div className={`${mono.className} flex justify-between text-[10px] uppercase tracking-[0.15em] text-white/30`}>
+                <span>Shipping</span>
+                <span>${order.shippingCost.toFixed(2)}</span>
               </div>
-              {order.requiredByDate && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Required by</span>
-                  <span>{formatDate(order.requiredByDate)}</span>
-                </div>
-              )}
-              {order.shippedAt && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipped</span>
-                  <span>{formatDate(order.shippedAt)}</span>
-                </div>
-              )}
-              {order.completedAt && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Completed</span>
-                  <span>{formatDate(order.completedAt)}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {order.shippingAddress && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MapPin className="h-4 w-4" /> Shipping Address
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-line">{order.shippingAddress}</p>
-              </CardContent>
-            </Card>
-          )}
+            )}
+            {order.tax != null && (
+              <div className={`${mono.className} flex justify-between text-[10px] uppercase tracking-[0.15em] text-white/30`}>
+                <span>Tax</span>
+                <span>${order.tax.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-baseline pt-1">
+              <span className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/40`}>
+                Total
+              </span>
+              <span
+                className="text-white font-black"
+                style={{ fontFamily: 'var(--font-epilogue)', fontSize: '1.4rem' }}
+              >
+                ${order.totalPrice.toFixed(2)}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Status history */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Status History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <StatusHistory orderId={id} />
-          </CardContent>
-        </Card>
+        {/* Sidebar */}
+        <div className="bg-[#0d0a06] divide-y divide-white/8">
+
+          {/* Dates */}
+          <div className="p-6">
+            <SectionLabel>
+              <span className="flex items-center gap-2">
+                <Calendar className="h-3 w-3" /> Dates
+              </span>
+            </SectionLabel>
+            <div className="space-y-3">
+              {[
+                { label: 'Ordered',     value: formatDate(order.createdAt) },
+                { label: 'Required by', value: formatDate(order.requiredByDate) },
+                { label: 'Shipped',     value: formatDate(order.shippedAt) },
+                { label: 'Completed',   value: formatDate(order.completedAt) },
+              ].filter(r => r.value !== '—').map(({ label, value }) => (
+                <div key={label} className="flex justify-between items-baseline gap-2">
+                  <span className={`${mono.className} text-[9px] uppercase tracking-[0.15em] text-white/25`}>
+                    {label}
+                  </span>
+                  <span className={`${mono.className} text-[10px] text-white/55 text-right`}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Shipping address */}
+          {order.shippingAddress && (
+            <div className="p-6">
+              <SectionLabel>
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-3 w-3" /> Ship To
+                </span>
+              </SectionLabel>
+              <p className={`${mono.className} text-[10px] leading-relaxed text-white/40 whitespace-pre-line`}>
+                {order.shippingAddress}
+              </p>
+            </div>
+          )}
+
+          {/* Notes */}
+          {order.notes && (
+            <div className="p-6">
+              <SectionLabel>Notes</SectionLabel>
+              <p className={`${mono.className} text-[10px] leading-relaxed text-white/40`}>
+                {order.notes}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ── Status history ── */}
+      <div className="border border-white/8">
+        <div className="flex items-center gap-2.5 px-6 py-4 border-b border-white/8">
+          <Clock className="h-3.5 w-3.5 text-white/25" />
+          <span className={`${mono.className} text-[10px] uppercase tracking-[0.2em] text-white/40`}>
+            Status History
+          </span>
+        </div>
+        <div className="p-6">
+          <StatusHistory orderId={id} monoClass={mono.className} />
+        </div>
+      </div>
+
     </div>
   );
 }
 
-function StatusHistory({ orderId }: { orderId: string }) {
+// ─── Status History ───────────────────────────────────────────────────────────
+
+function StatusHistory({ orderId, monoClass }: { orderId: string; monoClass: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'order', orderId, 'history'],
-    queryFn: () => ordersApi.getHistory(orderId),
+    queryFn:  () => ordersApi.getHistory(orderId),
   });
 
-  if (isLoading) return <div className="h-16 bg-muted animate-pulse rounded" />;
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex gap-4">
+            <div className="w-2 h-2 bg-white/[0.06] animate-pulse mt-1 shrink-0" />
+            <div className="space-y-1.5 flex-1">
+              <div className="h-3 bg-white/[0.05] animate-pulse w-24" />
+              <div className="h-2 bg-white/[0.03] animate-pulse w-40" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-  const history = data?.data ?? [];
+  const history: OrderStatusHistory[] = data?.data ?? [];
+
+  if (history.length === 0) {
+    return (
+      <p className={`${monoClass} text-[9px] uppercase tracking-[0.2em] text-white/20`}>
+        No history yet
+      </p>
+    );
+  }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-0">
       {history.map((entry, i) => (
-        <div key={entry.id} className="flex gap-3 text-sm">
+        <div key={entry.id} className="flex gap-5">
+          {/* Timeline spine */}
           <div className="flex flex-col items-center">
-            <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
-            {i < history.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
+            <div className={`w-1.5 h-1.5 border mt-1 shrink-0 ${
+              i === 0 ? 'bg-amber-400 border-amber-400' : 'bg-white/20 border-white/20'
+            }`} />
+            {i < history.length - 1 && (
+              <div className="w-px flex-1 bg-white/8 mt-1" />
+            )}
           </div>
-          <div className="pb-3">
-            <p className="font-medium">{entry.status}</p>
-            {entry.notes && <p className="text-muted-foreground">{entry.notes}</p>}
-            <p className="text-muted-foreground text-xs mt-0.5">
-              {new Date(entry.changedAt).toLocaleString()} 
+
+          {/* Content */}
+          <div className={`pb-5 ${i === history.length - 1 ? 'pb-0' : ''}`}>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span
+                className="text-white/70 font-medium text-sm"
+                style={{ fontFamily: 'var(--font-epilogue)' }}
+              >
+                {entry.status}
+              </span>
+              {i === 0 && (
+                <span className={`${monoClass} text-[8px] uppercase tracking-[0.15em] text-amber-400`}>
+                  Current
+                </span>
+              )}
+            </div>
+            {entry.notes && (
+              <p className={`${monoClass} text-[10px] text-white/35 mb-1`}>
+                {entry.notes}
+              </p>
+            )}
+            <p className={`${monoClass} text-[9px] uppercase tracking-[0.12em] text-white/20`}>
+              {formatDateTime(entry.changedAt)}
               {entry.changedBy && ` · ${entry.changedBy.firstName} ${entry.changedBy.lastName}`}
             </p>
           </div>

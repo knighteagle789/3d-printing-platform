@@ -5,17 +5,17 @@ import { JetBrains_Mono } from 'next/font/google';
 
 const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
-export type ProjectDetailPair = { key: string; value: string };
+export type PrintSettingPair = { key: string; value: string };
 
 interface Props {
-  pairs:    ProjectDetailPair[];
-  onChange: (pairs: ProjectDetailPair[]) => void;
+  pairs:    PrintSettingPair[];
+  onChange: (pairs: PrintSettingPair[]) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Deserialise a stored JSON string back to pairs. Returns [] on any failure. */
-export function parseProjectDetails(raw: string | null | undefined): ProjectDetailPair[] {
+/** Deserialise a stored JSON string back to key-value pairs. Returns [] on failure. */
+export function parsePrintSettings(raw: string | null | undefined): PrintSettingPair[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -29,27 +29,34 @@ export function parseProjectDetails(raw: string | null | undefined): ProjectDeta
   }
 }
 
-/** Serialise pairs to a JSON string for the API, filtering out blank keys. */
-export function serialiseProjectDetails(
-  pairs: ProjectDetailPair[],
-): string | undefined {
+/** Serialise pairs to a JSON string for the API, filtering blank keys. */
+export function serialisePrintSettings(pairs: PrintSettingPair[]): string | undefined {
   const entries = pairs.filter(p => p.key.trim());
   if (entries.length === 0) return undefined;
   return JSON.stringify(
-    Object.fromEntries(entries.map(p => [p.key.trim(), p.value.trim()])),
+    Object.fromEntries(
+      entries.map(p => {
+        const val = p.value.trim();
+        // Coerce numeric-looking values to numbers
+        const num = Number(val);
+        return [p.key.trim(), val !== '' && !isNaN(num) ? num : val];
+      })
+    )
   );
 }
 
 // ─── Suggestions ─────────────────────────────────────────────────────────────
 
 const SUGGESTIONS = [
-  'Print Time', 'Layer Height', 'Infill', 'Material', 'Supports',
-  'Post-Processing', 'Scale', 'Wall Thickness',
+  'bedTemp', 'hotendTemp', 'printSpeed', 'travelSpeed',
+  'layerHeight', 'infill', 'wallThickness', 'supportEnabled',
+  'coolingFanSpeed', 'retraction', 'retractionDistance',
+  'uvWavelength', 'exposureTime', 'liftSpeed',
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ProjectDetailsEditor({ pairs, onChange }: Props) {
+export function PrintSettingsEditor({ pairs, onChange }: Props) {
   const addPair    = () => onChange([...pairs, { key: '', value: '' }]);
   const removePair = (i: number) => onChange(pairs.filter((_, idx) => idx !== i));
   const updatePair = (i: number, field: 'key' | 'value', val: string) =>
@@ -59,7 +66,7 @@ export function ProjectDetailsEditor({ pairs, onChange }: Props) {
 
   return (
     <div className="space-y-2">
-      {/* Column headers */}
+      {/* Header row */}
       {pairs.length > 0 && (
         <div className="grid gap-2 pr-8" style={{ gridTemplateColumns: '1fr 1fr' }}>
           <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20 px-0.5`}>Key</p>
@@ -75,15 +82,15 @@ export function ProjectDetailsEditor({ pairs, onChange }: Props) {
               type="text"
               value={pair.key}
               onChange={e => updatePair(i, 'key', e.target.value)}
-              placeholder="e.g. Print Time"
-              list="project-detail-keys"
+              placeholder="e.g. bedTemp"
+              list="print-setting-keys"
               className={inputCls}
             />
             <input
               type="text"
               value={pair.value}
               onChange={e => updatePair(i, 'value', e.target.value)}
-              placeholder="e.g. 8 hours"
+              placeholder="e.g. 60"
               className={inputCls}
             />
           </div>
@@ -99,7 +106,7 @@ export function ProjectDetailsEditor({ pairs, onChange }: Props) {
       ))}
 
       {/* Suggestions datalist */}
-      <datalist id="project-detail-keys">
+      <datalist id="print-setting-keys">
         {SUGGESTIONS.map(s => <option key={s} value={s} />)}
       </datalist>
 
@@ -109,13 +116,13 @@ export function ProjectDetailsEditor({ pairs, onChange }: Props) {
         onClick={addPair}
         className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-amber-400 transition-colors pt-1`}
       >
-        <Plus className="h-3 w-3" /> Add Detail
+        <Plus className="h-3 w-3" /> Add Setting
       </button>
 
       {/* JSON preview */}
       {pairs.some(p => p.key.trim()) && (
         <p className={`${mono.className} text-[9px] text-white/15 pt-1 break-all`}>
-          {serialiseProjectDetails(pairs)}
+          {serialisePrintSettings(pairs)}
         </p>
       )}
     </div>

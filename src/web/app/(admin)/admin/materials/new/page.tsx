@@ -3,15 +3,22 @@
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { materialsApi, type MaterialFinish, type MaterialGrade } from '@/lib/api/materials';
-import { MaterialForm, MaterialFormValues } from '../_components/material-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
+import { MaterialForm, type MaterialFormValues } from '../_components/material-form';
+import { JetBrains_Mono } from 'next/font/google';
+import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+
+const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 export default function NewMaterialPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const showToast = (msg: string, ok: boolean) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const mutation = useMutation({
     mutationFn: (values: MaterialFormValues) =>
@@ -31,37 +38,56 @@ export default function NewMaterialPage() {
       }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'materials'] });
-      toast.success(`${res.data.type} - ${res.data.color} created successfully.`);
-      router.push('/admin/materials');
+      showToast(`${res.data.type} — ${res.data.color} created.`, true);
+      setTimeout(() => router.push('/admin/materials'), 800);
     },
-    onError: () => toast.error('Failed to create material.'),
+    onError: () => showToast('Failed to create material.', false),
   });
 
   return (
-    <div className="p-6 max-w-2xl">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="-ml-2 mb-6"
+    <div className="space-y-8 max-w-2xl">
+
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border ${
+          toast.ok
+            ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
+            : 'bg-red-400/10 border-red-400/30 text-red-400'
+        }`}>
+          {toast.ok
+            ? <CheckCircle2 className="h-4 w-4 shrink-0" />
+            : <AlertCircle  className="h-4 w-4 shrink-0" />}
+          <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em]`}>
+            {toast.msg}
+          </span>
+        </div>
+      )}
+
+      {/* Back */}
+      <button
         onClick={() => router.push('/admin/materials')}
+        className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-white transition-colors`}
       >
-        <ArrowLeft className="h-4 w-4 mr-1" /> Back to Materials
-      </Button>
+        <ArrowLeft className="h-3 w-3" /> Back to Materials
+      </button>
 
-      <h1 className="text-2xl font-bold mb-6">Add Material</h1>
+      {/* Header */}
+      <h1
+        className="font-black tracking-tight leading-[1.1] text-white"
+        style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
+      >
+        New Material
+      </h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Material Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MaterialForm
-            onSubmit={(values) => mutation.mutate(values)}
-            isSubmitting={mutation.isPending}
-            submitLabel="Create Material"
-          />
-        </CardContent>
-      </Card>
+      {/* Form */}
+      <div className="border border-white/8 p-6">
+        <MaterialForm
+          onSubmit={(values) => mutation.mutate(values)}
+          isSubmitting={mutation.isPending}
+          submitLabel="Create Material"
+        />
+      </div>
+
     </div>
   );
 }

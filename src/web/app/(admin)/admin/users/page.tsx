@@ -4,16 +4,12 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { usersApi } from '@/lib/api/users';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { JetBrains_Mono } from 'next/font/google';
+import { Users, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const ROLE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
-  Admin: 'default',
-  Staff: 'secondary',
-  Customer: 'outline',
-};
+const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
+
+type FilterType = 'all' | 'active' | 'inactive' | 'admin' | 'staff';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', {
@@ -21,131 +17,229 @@ function formatDate(d: string) {
   });
 }
 
+const ROLE_COLOURS: Record<string, string> = {
+  Admin:    'bg-amber-400/15 text-amber-400 border-amber-400/20',
+  Staff:    'bg-sky-400/15 text-sky-400 border-sky-400/20',
+  Customer: 'bg-white/[0.06] text-white/40 border-white/10',
+};
+
 export default function AdminUsersPage() {
-  const router = useRouter();
-  const [page, setPage] = useState(1);
+  const router   = useRouter();
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [search, setSearch] = useState('');
+  const [page,   setPage]   = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'users', page],
-    queryFn: () => usersApi.getAll(page, 20),
+    queryFn:  () => usersApi.getAll(page, 25),
   });
 
-  const users = data?.data.items ?? [];
+  const all        = data?.data.items ?? [];
   const totalPages = data?.data.totalPages ?? 1;
+  const totalCount = data?.data.totalCount ?? 0;
+
+  const counts = {
+    all:      totalCount,
+    active:   all.filter(u => u.isActive).length,
+    inactive: all.filter(u => !u.isActive).length,
+    admin:    all.filter(u => u.roles.includes('Admin')).length,
+    staff:    all.filter(u => u.roles.includes('Staff')).length,
+  };
+
+  const filtered = all
+    .filter(u => {
+      if (filter === 'active')   return u.isActive;
+      if (filter === 'inactive') return !u.isActive;
+      if (filter === 'admin')    return u.roles.includes('Admin');
+      if (filter === 'staff')    return u.roles.includes('Staff');
+      return true;
+    })
+    .filter(u => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        u.firstName.toLowerCase().includes(q) ||
+        u.lastName.toLowerCase().includes(q)  ||
+        u.email.toLowerCase().includes(q)     ||
+        (u.companyName ?? '').toLowerCase().includes(q)
+      );
+    });
+
+  const TABS: { key: FilterType; label: string }[] = [
+    { key: 'all',      label: 'All'      },
+    { key: 'active',   label: 'Active'   },
+    { key: 'inactive', label: 'Inactive' },
+    { key: 'admin',    label: 'Admin'    },
+    { key: 'staff',    label: 'Staff'    },
+  ];
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Users</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Manage customer accounts and roles
-          </p>
-        </div>
-        {data && (
-          <p className="text-sm text-muted-foreground">
-            {data.data.totalCount} total users
-          </p>
-        )}
+    <div className="space-y-6 max-w-6xl">
+
+      {/* ── Header ── */}
+      <div>
+        <h1
+          className="font-black tracking-tight leading-[1.1] text-white mb-1.5"
+          style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
+        >
+          Users
+        </h1>
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/25`}>
+          {totalCount} total accounts
+        </p>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-6 space-y-3">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-12 bg-muted animate-pulse rounded" />
-              ))}
-            </div>
-          ) : users.length === 0 ? (
-            <p className="p-6 text-center text-muted-foreground text-sm">
-              No users found.
-            </p>
-          ) : (
-            <>
-              <table className="w-full text-sm">
-                <thead className="border-b bg-muted/50">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-medium">Name</th>
-                    <th className="text-left px-4 py-3 font-medium">Email</th>
-                    <th className="text-left px-4 py-3 font-medium">Company</th>
-                    <th className="text-left px-4 py-3 font-medium">Roles</th>
-                    <th className="text-left px-4 py-3 font-medium">Status</th>
-                    <th className="text-left px-4 py-3 font-medium">Joined</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
-                      onClick={() => router.push(`/admin/users/${user.id}`)}
-                    >
-                      <td className="px-4 py-3 font-medium">
-                        {user.firstName} {user.lastName}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {user.email}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {user.companyName ?? '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1 flex-wrap">
-                          {user.roles.map((role) => (
-                            <Badge
-                              key={role}
-                              variant={ROLE_VARIANTS[role] ?? 'outline'}
-                              className="text-xs"
-                            >
-                              {role}
-                            </Badge>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={user.isActive ? 'default' : 'destructive'}>
-                          {user.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {formatDate(user.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* ── Filter tabs + search ── */}
+      <div className="flex items-center justify-between gap-4 border-b border-white/8 pb-0">
+        <div className="flex items-end gap-0">
+          {TABS.map(({ key, label }) => {
+            const isActive = filter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => { setFilter(key); setSearch(''); setPage(1); }}
+                className={`${mono.className} relative flex items-center gap-1.5 px-4 py-3 text-[9px] uppercase tracking-[0.18em] transition-colors border-b-2 -mb-px ${
+                  isActive
+                    ? 'text-amber-400 border-amber-400'
+                    : 'text-white/30 border-transparent hover:text-white/50'
+                }`}
+              >
+                {label}
+                <span className={`text-[8px] px-1 py-0.5 ${
+                  isActive
+                    ? 'bg-amber-400/15 text-amber-400'
+                    : 'bg-white/[0.06] text-white/25'
+                }`}>
+                  {counts[key]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    Page {page} of {totalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page === 1}
-                      onClick={() => setPage(p => p - 1)}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page === totalPages}
-                      onClick={() => setPage(p => p + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+        <input
+          type="text"
+          value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Search name, email, company..."
+          className={`${mono.className} h-8 w-56 bg-white/[0.03] border border-white/8 px-3 text-[10px] text-white/60 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors mb-1`}
+        />
+      </div>
+
+      {/* ── Table ── */}
+      {isLoading ? (
+        <div className="space-y-px">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-12 bg-white/[0.02] animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Users className="h-8 w-8 text-white/10" />
+          <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/20`}>
+            No users found
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-px bg-white/[0.04]">
+
+          {/* Column headers */}
+          <div
+            className="grid bg-[#0d0a06] px-4 py-2"
+            style={{ gridTemplateColumns: '2fr 2.5fr 1.5fr 1fr 1fr 1fr' }}
+          >
+            {['Name', 'Email', 'Company', 'Roles', 'Status', 'Joined'].map(h => (
+              <p key={h} className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20`}>
+                {h}
+              </p>
+            ))}
+          </div>
+
+          {/* Rows */}
+          {filtered.map(user => (
+            <div
+              key={user.id}
+              onClick={() => router.push(`/admin/users/${user.id}`)}
+              className="grid items-center bg-[#0d0a06] px-4 py-3 cursor-pointer hover:bg-white/[0.03] transition-colors group"
+              style={{ gridTemplateColumns: '2fr 2.5fr 1.5fr 1fr 1fr 1fr' }}
+            >
+              {/* Name */}
+              <p className={`${mono.className} text-[11px] text-white/80 group-hover:text-white transition-colors`}>
+                {user.firstName} {user.lastName}
+              </p>
+
+              {/* Email */}
+              <p className={`${mono.className} text-[10px] text-white/40 truncate pr-4`}>
+                {user.email}
+              </p>
+
+              {/* Company */}
+              <p className={`${mono.className} text-[10px] text-white/30`}>
+                {user.companyName ?? '—'}
+              </p>
+
+              {/* Roles */}
+              <div className="flex flex-wrap gap-1">
+                {user.roles.map(role => (
+                  <span
+                    key={role}
+                    className={`${mono.className} text-[8px] uppercase tracking-[0.12em] px-1.5 py-0.5 border ${ROLE_COLOURS[role] ?? ROLE_COLOURS.Customer}`}
+                  >
+                    {role}
+                  </span>
+                ))}
+              </div>
+
+              {/* Status */}
+              <span className={`${mono.className} inline-flex text-[8px] uppercase tracking-[0.15em] px-2 py-1 w-fit ${
+                user.isActive
+                  ? 'bg-emerald-400/10 text-emerald-400'
+                  : 'bg-white/[0.04] text-white/20'
+              }`}>
+                {user.isActive ? 'Active' : 'Inactive'}
+              </span>
+
+              {/* Joined */}
+              <p className={`${mono.className} text-[9px] text-white/25`}>
+                {formatDate(user.createdAt)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Pagination ── */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/20`}>
+            Page {page} of {totalPages} · {totalCount} users
+          </p>
+          <div className="flex gap-px">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+              className={`${mono.className} flex items-center gap-1.5 px-4 h-8 text-[9px] uppercase tracking-[0.15em] border border-white/8 transition-colors ${
+                page === 1
+                  ? 'text-white/15 cursor-not-allowed'
+                  : 'text-white/40 hover:text-white/70 hover:border-white/20'
+              }`}
+            >
+              <ChevronLeft className="h-3 w-3" /> Prev
+            </button>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage(p => p + 1)}
+              className={`${mono.className} flex items-center gap-1.5 px-4 h-8 text-[9px] uppercase tracking-[0.15em] border border-white/8 transition-colors ${
+                page === totalPages
+                  ? 'text-white/15 cursor-not-allowed'
+                  : 'text-white/40 hover:text-white/70 hover:border-white/20'
+              }`}
+            >
+              Next <ChevronRight className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

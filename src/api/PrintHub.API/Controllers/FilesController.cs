@@ -28,8 +28,8 @@ public class FilesController : ControllerBase
     /// Upload a 3D model file.
     /// </summary>
     [HttpPost("upload")]
-    [RequestSizeLimit(209_715_200)]                              // 200MB
-    [RequestFormLimits(MultipartBodyLengthLimit = 209_715_200)]  // 200MB
+    [RequestSizeLimit(262_144_000)]                              // 250MB
+    [RequestFormLimits(MultipartBodyLengthLimit = 262_144_000)]  // 250MB
     public async Task<ActionResult<FileResponse>> UploadFile(IFormFile file)
     {
         var userId = User.GetUserId();

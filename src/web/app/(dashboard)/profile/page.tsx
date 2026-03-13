@@ -3,24 +3,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { authApi } from '@/lib/api/auth';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
-} from '@/components/ui/form';
-import { toast } from 'sonner';
-import { User, Lock, ShieldCheck } from 'lucide-react';
+import { User, Lock, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-// ─── Schemas ──────────────────────────────────────────────────────────────────
+const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
+const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
+
+// ── Schemas ───────────────────────────────────────────────────────────────────
 
 const profileSchema = z.object({
   firstName:   z.string().min(1, 'First name is required'),
@@ -33,282 +27,268 @@ const passwordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword:     z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
-}).refine((d) => d.newPassword === d.confirmPassword, {
+}).refine(d => d.newPassword === d.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+type ProfileFormValues  = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
-// ─── Profile form ─────────────────────────────────────────────────────────────
+// ── Shared primitives ─────────────────────────────────────────────────────────
 
-function ProfileForm({ user }: { user: { firstName: string; lastName: string; phoneNumber?: string | null; companyName?: string | null } }) {
+const inputCls = `w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors`;
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className={`${mono.className} block text-[9px] uppercase tracking-[0.15em] text-white/30 mb-1.5`}>
+      {children}
+    </label>
+  );
+}
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return <p className={`${mono.className} text-[8px] text-red-400 mt-1`}>{msg}</p>;
+}
+
+function Section({ icon: Icon, title, children }: {
+  icon: React.ComponentType<{ className?: string }>; title: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-white/[0.08]" style={{ background: '#080705' }}>
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06]">
+        <Icon className="h-3.5 w-3.5 text-white/20" />
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+          {title}
+        </span>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+function Toast({ type, msg, onDismiss }: { type: 'success' | 'error'; msg: string; onDismiss: () => void }) {
+  return (
+    <div
+      onClick={onDismiss}
+      className={`cursor-pointer flex items-center gap-2 px-4 py-2.5 border text-[10px] mb-4 ${mono.className} ${
+        type === 'success'
+          ? 'border-emerald-400/20 bg-emerald-400/[0.04] text-emerald-400/80'
+          : 'border-red-400/20 bg-red-400/[0.04] text-red-400/70'
+      }`}
+    >
+      {type === 'success'
+        ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+        : <AlertCircle   className="h-3.5 w-3.5 shrink-0" />
+      }
+      {msg}
+    </div>
+  );
+}
+
+// ── Profile form ──────────────────────────────────────────────────────────────
+
+function ProfileForm({ user }: {
+  user: { firstName: string; lastName: string; phoneNumber?: string | null; companyName?: string | null };
+}) {
   const queryClient = useQueryClient();
+  const { setAuth } = useAuthStore();
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      firstName:   user.firstName,
-      lastName:    user.lastName,
-      phoneNumber: user.phoneNumber ?? '',
-      companyName: user.companyName ?? '',
-    },
-  });
+  const { register, handleSubmit, formState: { errors, isSubmitting } } =
+    useForm<ProfileFormValues>({
+      resolver: zodResolver(profileSchema),
+      defaultValues: {
+        firstName:   user.firstName,
+        lastName:    user.lastName,
+        phoneNumber: user.phoneNumber ?? '',
+        companyName: user.companyName ?? '',
+      },
+    });
 
   const mutation = useMutation({
-    mutationFn: (values: ProfileFormValues) => authApi.updateProfile(values),
-    onSuccess: () => {
+    mutationFn: (data: ProfileFormValues) => authApi.updateProfile(data),
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
-      toast.success('Profile updated successfully.');
+      const token = localStorage.getItem('auth_token') ?? '';
+      setAuth(res.data, token);
+      setToast({ type: 'success', msg: 'Profile updated.' });
     },
-    onError: () => {
-      toast.error('Failed to update profile. Please try again.');
-    },
+    onError: () => setToast({ type: 'error', msg: 'Failed to update profile — please try again.' }),
   });
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+    <Section icon={User} title="Profile">
+      {toast && <Toast type={toast.type} msg={toast.msg} onDismiss={() => setToast(null)} />}
+      <form onSubmit={handleSubmit(v => mutation.mutate(v))} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="firstName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>First name</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="lastName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Last name</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <div>
+            <FieldLabel>First Name</FieldLabel>
+            <input className={`${inputCls} ${mono.className}`} {...register('firstName')} />
+            <FieldError msg={errors.firstName?.message} />
+          </div>
+          <div>
+            <FieldLabel>Last Name</FieldLabel>
+            <input className={`${inputCls} ${mono.className}`} {...register('lastName')} />
+            <FieldError msg={errors.lastName?.message} />
+          </div>
+        </div>
+
+        <div>
+          <FieldLabel>Phone Number</FieldLabel>
+          <input
+            className={`${inputCls} ${mono.className}`}
+            placeholder="+1 (555) 000-0000"
+            {...register('phoneNumber')}
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="phoneNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone number <span className="text-muted-foreground">(optional)</span></FormLabel>
-              <FormControl><Input type="tel" placeholder="+1 (555) 000-0000" {...field} value={field.value ?? ''} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div>
+          <FieldLabel>Company Name</FieldLabel>
+          <input
+            className={`${inputCls} ${mono.className}`}
+            placeholder="Your company (optional)"
+            {...register('companyName')}
+          />
+        </div>
 
-        <FormField
-          control={form.control}
-          name="companyName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Company <span className="text-muted-foreground">(optional)</span></FormLabel>
-              <FormControl><Input placeholder="Acme Inc." {...field} value={field.value ?? ''} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Saving...' : 'Save changes'}
-        </Button>
+        <div className="pt-1">
+          <button
+            type="submit"
+            disabled={isSubmitting || mutation.isPending}
+            className={`${mono.className} h-9 px-6 bg-amber-400/10 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-400/80 hover:bg-amber-400/20 hover:text-amber-400 transition-colors disabled:opacity-40`}
+          >
+            {isSubmitting || mutation.isPending ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
       </form>
-    </Form>
+    </Section>
   );
 }
 
-// ─── Password form ────────────────────────────────────────────────────────────
+// ── Password form ─────────────────────────────────────────────────────────────
 
 function PasswordForm() {
-  const form = useForm<PasswordFormValues>({
-    resolver: zodResolver(passwordSchema),
-    defaultValues: {
-      currentPassword: '',
-      newPassword:     '',
-      confirmPassword: '',
-    },
-  });
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+    useForm<PasswordFormValues>({ resolver: zodResolver(passwordSchema) });
 
   const mutation = useMutation({
-    mutationFn: (values: PasswordFormValues) =>
-      authApi.changePassword({
-        currentPassword: values.currentPassword,
-        newPassword:     values.newPassword,
-      }),
+    mutationFn: (data: PasswordFormValues) =>
+      authApi.changePassword({ currentPassword: data.currentPassword, newPassword: data.newPassword }),
     onSuccess: () => {
-      form.reset();
-      toast.success('Password changed successfully.');
+      reset();
+      setToast({ type: 'success', msg: 'Password changed.' });
     },
-    onError: () => {
-      form.setError('currentPassword', { message: 'Current password is incorrect.' });
-    },
+    onError: () => setToast({ type: 'error', msg: 'Incorrect current password.' }),
   });
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="currentPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Current password</FormLabel>
-              <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="newPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>New password</FormLabel>
-              <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirm new password</FormLabel>
-              <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <Section icon={Lock} title="Change Password">
+      {toast && <Toast type={toast.type} msg={toast.msg} onDismiss={() => setToast(null)} />}
+      <form onSubmit={handleSubmit(v => mutation.mutate(v))} className="space-y-4">
+        <div>
+          <FieldLabel>Current Password</FieldLabel>
+          <input type="password" className={`${inputCls} ${mono.className}`} {...register('currentPassword')} />
+          <FieldError msg={errors.currentPassword?.message} />
+        </div>
 
-        <Button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Changing...' : 'Change password'}
-        </Button>
+        <div>
+          <FieldLabel>New Password</FieldLabel>
+          <input type="password" className={`${inputCls} ${mono.className}`} {...register('newPassword')} />
+          <FieldError msg={errors.newPassword?.message} />
+        </div>
+
+        <div>
+          <FieldLabel>Confirm New Password</FieldLabel>
+          <input type="password" className={`${inputCls} ${mono.className}`} {...register('confirmPassword')} />
+          <FieldError msg={errors.confirmPassword?.message} />
+        </div>
+
+        <div className="pt-1">
+          <button
+            type="submit"
+            disabled={isSubmitting || mutation.isPending}
+            className={`${mono.className} h-9 px-6 bg-white/[0.04] border border-white/10 text-[9px] uppercase tracking-[0.15em] text-white/40 hover:text-white/60 hover:border-white/20 transition-colors disabled:opacity-40`}
+          >
+            {isSubmitting || mutation.isPending ? 'Updating...' : 'Update Password'}
+          </button>
+        </div>
       </form>
-    </Form>
+    </Section>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const { isAuthenticated, isInitialized } = useRequireAuth();
-  const router = useRouter();
-  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const { user: storeUser } = useAuthStore();
 
   const { data, isLoading } = useQuery({
     queryKey: ['me'],
-    queryFn: () => authApi.me(),
-    enabled: isAuthenticated,
+    queryFn:  () => authApi.me(),
+    enabled:  isAuthenticated,
   });
 
-  if (!isInitialized) return null;
-  if (!isAuthenticated) return null;
+  if (!isInitialized || !isAuthenticated) return null;
 
-  const user = data?.data;
+  const user = data?.data ?? storeUser;
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Profile</h1>
-        <p className="text-muted-foreground mt-1">Manage your account settings</p>
+    <div className="p-8 max-w-2xl">
+
+      {/* Header */}
+      <div className="mb-8">
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
+          Account
+        </p>
+        <h1 className={`${bebas.className} text-4xl text-white tracking-wide`}>
+          Profile
+        </h1>
+        <p className={`${mono.className} text-[11px] text-white/30 mt-1`}>
+          Manage your account details and security
+        </p>
       </div>
 
-      <div className="space-y-6">
-        {/* Account summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Account
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            {isLoading ? (
-              <div className="animate-pulse space-y-2">
-                <div className="h-4 bg-muted rounded w-1/2" />
-                <div className="h-4 bg-muted rounded w-1/3" />
-              </div>
-            ) : user ? (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email</span>
-                  <span>{user.email}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Member since</span>
-                  <span>{new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Role</span>
-                  <div className="flex gap-1">
-                    {user.roles.length > 0
-                      ? user.roles.map((r) => <Badge key={r} variant="secondary">{r}</Badge>)
-                      : <Badge variant="outline">Customer</Badge>
-                    }
-                  </div>
-                </div>
-              </>
-            ) : null}
+      {/* Roles chip */}
+      {storeUser?.roles && storeUser.roles.length > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <ShieldCheck className="h-3.5 w-3.5 text-white/15" />
+          <div className="flex gap-1.5">
+            {storeUser.roles.map(role => (
+              <span
+                key={role}
+                className={`${mono.className} text-[8px] uppercase tracking-[0.15em] px-2 py-0.5 border ${
+                  role === 'Admin'
+                    ? 'border-amber-400/30 text-amber-400/60'
+                    : role === 'Staff'
+                    ? 'border-sky-400/30 text-sky-400/60'
+                    : 'border-white/10 text-white/25'
+                }`}
+              >
+                {role}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
-            <Separator />
+      {isLoading && (
+        <div className="space-y-4">
+          <div className="h-40 bg-white/[0.02] animate-pulse" />
+          <div className="h-40 bg-white/[0.02] animate-pulse" />
+        </div>
+      )}
 
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                clearAuth();
-                router.push('/login');
-              }}
-            >
-              Sign out
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Edit profile */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" />
-              Personal Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="animate-pulse space-y-3">
-                <div className="h-8 bg-muted rounded" />
-                <div className="h-8 bg-muted rounded" />
-              </div>
-            ) : user ? (
-              <ProfileForm user={user} />
-            ) : null}
-          </CardContent>
-        </Card>
-
-        {/* Change password */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Lock className="h-4 w-4" />
-              Change Password
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PasswordForm />
-          </CardContent>
-        </Card>
-      </div>
+      {!isLoading && user && (
+        <div className="space-y-4">
+          <ProfileForm user={user as { firstName: string; lastName: string; phoneNumber?: string | null; companyName?: string | null }} />
+          <PasswordForm />
+        </div>
+      )}
     </div>
   );
 }
