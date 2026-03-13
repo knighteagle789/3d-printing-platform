@@ -34,7 +34,7 @@ type FormValues = z.infer<typeof schema>;
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className={`${mono.className} text-[8px] uppercase tracking-[0.22em] text-white/20 pb-2 border-b border-white/6`}>
+    <p className={`${mono.className} text-[8px] uppercase tracking-[0.22em] text-text-muted pb-2 border-b border-border`}>
       {children}
     </p>
   );
@@ -49,11 +49,11 @@ function FormRow({
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline gap-2">
-        <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/40`}>{label}</p>
-        {optional && <p className={`${mono.className} text-[8px] text-white/15`}>optional</p>}
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-secondary`}>{label}</p>
+        {optional && <p className={`${mono.className} text-[8px] text-text-muted`}>optional</p>}
       </div>
       {children}
-      {hint  && <p className={`${mono.className} text-[8px] text-white/20`}>{hint}</p>}
+      {hint  && <p className={`${mono.className} text-[8px] text-text-muted`}>{hint}</p>}
       {error && <p className={`${mono.className} text-[8px] text-red-400`}>{error}</p>}
     </div>
   );
@@ -109,9 +109,9 @@ export default function EditBlogPostPage({
 
   const isPublished = watch('isPublished');
 
-  const inputCls    = `${mono.className} w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors`;
-  const selectCls   = `${mono.className} w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 focus:outline-none focus:border-amber-400/40 transition-colors appearance-none`;
-  const textareaCls = `${mono.className} w-full bg-white/[0.03] border border-white/10 px-3 py-2.5 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors resize-y`;
+  const inputCls    = `${mono.className} w-full h-9 field-input`;
+  const selectCls   = `${mono.className} w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none`;
+  const textareaCls = `${mono.className} w-full bg-surface-alt border border-border px-3 py-2.5 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-y`;
 
   const mutation = useMutation({
     mutationFn: (payload: UpdateBlogPostRequest) => contentApi.updateBlogPost(id, payload),
@@ -141,12 +141,12 @@ export default function EditBlogPostPage({
   if (isLoading) {
     return (
       <div className="space-y-4 max-w-3xl">
-        <div className="h-4 w-16 bg-white/[0.04] animate-pulse" />
-        <div className="h-8 w-48 bg-white/[0.04] animate-pulse" />
-        <div className="h-9 bg-white/[0.02] animate-pulse" />
-        <div className="h-9 bg-white/[0.02] animate-pulse" />
-        <div className="h-64 bg-white/[0.02] animate-pulse" />
-        <div className="h-96 bg-white/[0.02] animate-pulse" />
+        <div className="h-4 w-16 bg-surface-alt animate-pulse" />
+        <div className="h-8 w-48 bg-surface-alt animate-pulse" />
+        <div className="h-9 bg-surface-alt animate-pulse" />
+        <div className="h-9 bg-surface-alt animate-pulse" />
+        <div className="h-64 bg-surface-alt animate-pulse" />
+        <div className="h-96 bg-surface-alt animate-pulse" />
       </div>
     );
   }
@@ -162,8 +162,8 @@ export default function EditBlogPostPage({
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 border ${
           toast.type === 'success'
-            ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
-            : 'bg-red-400/10 border-red-400/20 text-red-400'
+            ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+            : 'bg-red-500 border-red-200 text-red-400'
         }`}>
           {toast.type === 'success'
             ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
@@ -175,7 +175,7 @@ export default function EditBlogPostPage({
       {/* ── Back ── */}
       <button
         onClick={() => router.push('/admin/content')}
-        className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-white/50 transition-colors`}
+        className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-text-muted hover:text-text-secondary transition-colors`}
       >
         <ArrowLeft className="h-3 w-3" /> Content
       </button>
@@ -183,7 +183,7 @@ export default function EditBlogPostPage({
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <h1
-          className="font-black tracking-tight leading-[1.1] text-white"
+          className="page-title"
           style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}
         >
           Edit Blog Post
@@ -191,8 +191,8 @@ export default function EditBlogPostPage({
         {post && (
           <span className={`${mono.className} inline-flex items-center gap-1.5 text-[8px] uppercase tracking-[0.15em] px-3 py-1.5 border shrink-0 ${
             post.isPublished
-              ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
-              : 'bg-white/[0.04] text-white/20 border-white/8'
+              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+              : 'bg-surface-alt text-text-muted border-border'
           }`}>
             {post.isPublished ? <Eye className="h-2.5 w-2.5" /> : <EyeOff className="h-2.5 w-2.5" />}
             {post.isPublished ? 'Published' : 'Draft'}
@@ -202,14 +202,14 @@ export default function EditBlogPostPage({
 
       {/* ── Stats strip ── */}
       {post && (
-        <div className="grid grid-cols-2 gap-px bg-white/[0.04]">
+        <div className="grid grid-cols-2 gap-px bg-surface-alt">
           {[
             { label: 'Views',       value: post.viewCount ?? 0 },
             { label: 'Published',   value: post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
           ].map(({ label, value }) => (
-            <div key={label} className="bg-[#0d0a06] px-4 py-3">
-              <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20 mb-1`}>{label}</p>
-              <p className={`${mono.className} text-[13px] font-semibold text-white/60`}>{value}</p>
+            <div key={label} className="bg-[var(--page-bg)] px-4 py-3">
+              <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-text-muted mb-1`}>{label}</p>
+              <p className={`${mono.className} text-[13px] font-semibold text-text-secondary`}>{value}</p>
             </div>
           ))}
         </div>
@@ -272,12 +272,12 @@ export default function EditBlogPostPage({
         </FormRow>
 
         {/* ── Visibility ── */}
-        <div className="border-t border-white/6 pt-5 flex items-center justify-between">
+        <div className="border-t border-border pt-5 flex items-center justify-between">
           <div>
-            <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-white/50`}>
+            <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-text-secondary`}>
               Published — visible on the public blog
             </p>
-            <p className={`${mono.className} text-[9px] text-white/20 mt-0.5`}>
+            <p className={`${mono.className} text-[9px] text-text-muted mt-0.5`}>
               Toggling off will unpublish the post
             </p>
           </div>
@@ -287,7 +287,7 @@ export default function EditBlogPostPage({
             aria-checked={isPublished}
             onClick={() => setValue('isPublished', !isPublished, { shouldDirty: true })}
             className={`relative w-10 h-5 transition-colors shrink-0 ${
-              isPublished ? 'bg-amber-400' : 'bg-white/10'
+              isPublished ? 'bg-accent' : 'bg-white/10'
             }`}
           >
             <span className={`absolute top-0.5 h-4 w-4 bg-white transition-transform ${
@@ -301,14 +301,14 @@ export default function EditBlogPostPage({
           <button
             type="submit"
             disabled={mutation.isPending}
-            className={`${mono.className} bg-amber-400 text-black text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-40`}
+            className={`${mono.className} bg-accent-light text-accent-dark text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-40`}
           >
             {mutation.isPending ? 'Saving...' : 'Save Changes'}
           </button>
           <button
             type="button"
             onClick={() => router.push('/admin/content')}
-            className={`${mono.className} text-[10px] uppercase tracking-[0.18em] px-6 h-9 border border-white/10 text-white/30 hover:text-white/50 hover:border-white/20 transition-colors`}
+            className={`${mono.className} text-[10px] uppercase tracking-[0.18em] px-6 h-9 border border-border text-text-muted hover:text-text-secondary hover:border-border transition-colors`}
           >
             Cancel
           </button>

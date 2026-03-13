@@ -102,7 +102,7 @@ export default function AdminContentPage() {
   const isDeleting = deletePortfolio.isPending || deleteBlog.isPending;
 
   // ── Shared styles ──
-  const colHdr = `${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20`;
+  const colHdr = `${mono.className} text-[8px] uppercase tracking-[0.2em] text-text-muted`;
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -111,8 +111,8 @@ export default function AdminContentPage() {
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 border ${
           toast.type === 'success'
-            ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
-            : 'bg-red-400/10 border-red-400/20 text-red-400'
+            ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+            : 'bg-red-500 border-red-200 text-red-400'
         }`}>
           {toast.type === 'success'
             ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
@@ -125,12 +125,12 @@ export default function AdminContentPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1
-            className="font-black tracking-tight leading-[1.1] text-white mb-1.5"
+            className="page-title mb-1.5"
             style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
           >
             Content
           </h1>
-          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/25`}>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-text-muted`}>
             {portfolioItems.length} portfolio items · {blogPosts.length} blog posts
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function AdminContentPage() {
           onClick={() => router.push(
             tab === 'portfolio' ? '/admin/content/portfolio/new' : '/admin/content/blog/new'
           )}
-          className={`${mono.className} inline-flex items-center gap-2 bg-amber-400 text-black text-[10px] uppercase tracking-[0.18em] font-semibold px-5 h-9 hover:bg-amber-300 transition-colors shrink-0`}
+          className={`${mono.className} inline-flex items-center gap-2 bg-accent-light text-accent-dark text-[10px] uppercase tracking-[0.18em] font-semibold px-5 h-9 hover:bg-amber-300 transition-colors shrink-0`}
         >
           <Plus className="h-3.5 w-3.5" />
           {tab === 'portfolio' ? 'New Portfolio Item' : 'New Blog Post'}
@@ -146,7 +146,7 @@ export default function AdminContentPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex items-end gap-0 border-b border-white/8">
+      <div className="flex items-end gap-0 border-b border-border">
         {([
           { key: 'portfolio' as Tab, label: 'Portfolio', count: portfolioItems.length, icon: ImageIcon },
           { key: 'blog'      as Tab, label: 'Blog',      count: blogPosts.length,      icon: FileText  },
@@ -158,14 +158,14 @@ export default function AdminContentPage() {
               onClick={() => setTab(key)}
               className={`${mono.className} relative flex items-center gap-1.5 px-5 py-3 text-[9px] uppercase tracking-[0.18em] transition-colors border-b-2 -mb-px ${
                 isActive
-                  ? 'text-amber-400 border-amber-400'
-                  : 'text-white/30 border-transparent hover:text-white/50'
+                  ? 'text-accent border-accent'
+                  : 'text-text-muted border-transparent hover:text-text-secondary'
               }`}
             >
               <Icon className="h-3 w-3" />
               {label}
               <span className={`text-[8px] px-1 py-0.5 ${
-                isActive ? 'bg-amber-400/15 text-amber-400' : 'bg-white/[0.06] text-white/25'
+                isActive ? 'badge-admin' : 'bg-surface-alt text-text-muted'
               }`}>
                 {count}
               </span>
@@ -179,27 +179,27 @@ export default function AdminContentPage() {
         portfolioLoading ? (
           <div className="space-y-px">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-11 bg-white/[0.02] animate-pulse" />
+              <div key={i} className="h-11 bg-surface-alt animate-pulse" />
             ))}
           </div>
         ) : portfolioItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <ImageIcon className="h-8 w-8 text-white/10" />
-            <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/20`}>
+            <ImageIcon className="h-8 w-8 text-text-muted" />
+            <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-text-muted`}>
               No portfolio items yet
             </p>
             <button
               onClick={() => router.push('/admin/content/portfolio/new')}
-              className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-amber-400/60 hover:text-amber-400 transition-colors`}
+              className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-amber-700 hover:text-accent transition-colors`}
             >
               Add your first item →
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-px bg-white/[0.04]">
+          <div className="flex flex-col gap-px bg-surface-alt">
             {/* Header */}
             <div
-              className="grid bg-[#0d0a06] px-4 py-2"
+              className="grid bg-[var(--page-bg)] px-4 py-2"
               style={{ gridTemplateColumns: '2.5fr 1fr 0.5fr 1fr 1fr 5rem' }}
             >
               {['Title', 'Category', 'Order', 'Featured', 'Status', ''].map(h => (
@@ -212,28 +212,28 @@ export default function AdminContentPage() {
               <div
                 key={item.id}
                 onClick={() => router.push(`/admin/content/portfolio/${item.id}/edit`)}
-                className="grid items-center bg-[#0d0a06] px-4 py-3 cursor-pointer hover:bg-white/[0.03] transition-colors group"
+                className="grid items-center bg-[var(--page-bg)] px-4 py-3 cursor-pointer hover:bg-surface-alt transition-colors group"
                 style={{ gridTemplateColumns: '2.5fr 1fr 0.5fr 1fr 1fr 5rem' }}
               >
-                <p className={`${mono.className} text-[11px] text-white/70 group-hover:text-white transition-colors`}>{item.title}</p>
+                <p className={`${mono.className} text-[11px] text-text-primary group-hover:text-text-primary transition-colors`}>{item.title}</p>
 
-                <span className={`${mono.className} text-[8px] uppercase tracking-[0.12em] px-2 py-1 bg-white/[0.05] text-white/35 w-fit`}>
+                <span className={`${mono.className} text-[8px] uppercase tracking-[0.12em] px-2 py-1 bg-surface-alt text-text-muted w-fit`}>
                   {item.category}
                 </span>
 
-                <p className={`${mono.className} text-[10px] text-white/30`}>{item.displayOrder}</p>
+                <p className={`${mono.className} text-[10px] text-text-muted`}>{item.displayOrder}</p>
 
                 <span>
                   {item.isFeatured
-                    ? <span className={`${mono.className} inline-flex items-center gap-1 text-[8px] uppercase tracking-[0.12em] text-amber-400`}><Star className="h-2.5 w-2.5" /> Featured</span>
-                    : <span className={`${mono.className} text-[10px] text-white/15`}>—</span>
+                    ? <span className={`${mono.className} inline-flex items-center gap-1 text-[8px] uppercase tracking-[0.12em] text-accent`}><Star className="h-2.5 w-2.5" /> Featured</span>
+                    : <span className={`${mono.className} text-[10px] text-text-muted`}>—</span>
                   }
                 </span>
 
                 <span className={`${mono.className} inline-flex items-center gap-1 text-[8px] uppercase tracking-[0.12em] w-fit px-2 py-1 ${
                   item.isPublished
-                    ? 'bg-emerald-400/10 text-emerald-400'
-                    : 'bg-white/[0.04] text-white/20'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-surface-alt text-text-muted'
                 }`}>
                   {item.isPublished ? <Eye className="h-2.5 w-2.5" /> : <EyeOff className="h-2.5 w-2.5" />}
                   {item.isPublished ? 'Published' : 'Draft'}
@@ -242,7 +242,7 @@ export default function AdminContentPage() {
                 <div className="flex items-center justify-end gap-1">
                   <button
                     onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: item.id, type: 'portfolio', title: item.title }); }}
-                    className="p-1.5 text-white/20 hover:text-red-400 transition-colors"
+                    className="p-1.5 text-text-muted hover:text-red-400 transition-colors"
                     aria-label="Delete"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -259,27 +259,27 @@ export default function AdminContentPage() {
         blogLoading ? (
           <div className="space-y-px">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-11 bg-white/[0.02] animate-pulse" />
+              <div key={i} className="h-11 bg-surface-alt animate-pulse" />
             ))}
           </div>
         ) : blogPosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <FileText className="h-8 w-8 text-white/10" />
-            <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/20`}>
+            <FileText className="h-8 w-8 text-text-muted" />
+            <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-text-muted`}>
               No blog posts yet
             </p>
             <button
               onClick={() => router.push('/admin/content/blog/new')}
-              className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-amber-400/60 hover:text-amber-400 transition-colors`}
+              className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-amber-700 hover:text-accent transition-colors`}
             >
               Write your first post →
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-px bg-white/[0.04]">
+          <div className="flex flex-col gap-px bg-surface-alt">
             {/* Header */}
             <div
-              className="grid bg-[#0d0a06] px-4 py-2"
+              className="grid bg-[var(--page-bg)] px-4 py-2"
               style={{ gridTemplateColumns: '3fr 1fr 1.5fr 0.5fr 1fr 5rem' }}
             >
               {['Title', 'Category', 'Author', 'Views', 'Status', ''].map(h => (
@@ -292,25 +292,25 @@ export default function AdminContentPage() {
               <div
                 key={post.id}
                 onClick={() => router.push(`/admin/content/blog/${post.id}/edit`)}
-                className="grid items-center bg-[#0d0a06] px-4 py-3 cursor-pointer hover:bg-white/[0.03] transition-colors group"
+                className="grid items-center bg-[var(--page-bg)] px-4 py-3 cursor-pointer hover:bg-surface-alt transition-colors group"
                 style={{ gridTemplateColumns: '3fr 1fr 1.5fr 0.5fr 1fr 5rem' }}
               >
-                <p className={`${mono.className} text-[11px] text-white/70 truncate pr-4 group-hover:text-white transition-colors`}>{post.title}</p>
+                <p className={`${mono.className} text-[11px] text-text-primary truncate pr-4 group-hover:text-text-primary transition-colors`}>{post.title}</p>
 
-                <span className={`${mono.className} text-[8px] uppercase tracking-[0.12em] px-2 py-1 bg-white/[0.05] text-white/35 w-fit`}>
+                <span className={`${mono.className} text-[8px] uppercase tracking-[0.12em] px-2 py-1 bg-surface-alt text-text-muted w-fit`}>
                   {post.category}
                 </span>
 
-                <p className={`${mono.className} text-[10px] text-white/30`}>
+                <p className={`${mono.className} text-[10px] text-text-muted`}>
                   {post.author ? `${post.author.firstName} ${post.author.lastName}` : '—'}
                 </p>
 
-                <p className={`${mono.className} text-[10px] text-white/30`}>{post.viewCount}</p>
+                <p className={`${mono.className} text-[10px] text-text-muted`}>{post.viewCount}</p>
 
                 <span className={`${mono.className} inline-flex items-center gap-1 text-[8px] uppercase tracking-[0.12em] w-fit px-2 py-1 ${
                   post.isPublished
-                    ? 'bg-emerald-400/10 text-emerald-400'
-                    : 'bg-white/[0.04] text-white/20'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-surface-alt text-text-muted'
                 }`}>
                   {post.isPublished ? <Eye className="h-2.5 w-2.5" /> : <EyeOff className="h-2.5 w-2.5" />}
                   {post.isPublished ? 'Published' : 'Draft'}
@@ -319,7 +319,7 @@ export default function AdminContentPage() {
                 <div className="flex items-center justify-end gap-1">
                   <button
                     onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: post.id, type: 'blog', title: post.title }); }}
-                    className="p-1.5 text-white/20 hover:text-red-400 transition-colors"
+                    className="p-1.5 text-text-muted hover:text-red-400 transition-colors"
                     aria-label="Delete"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -334,14 +334,14 @@ export default function AdminContentPage() {
       {/* ── Delete confirmation ── */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-[#0d0a06] border border-white/10 p-6 max-w-sm w-full mx-4 space-y-4">
+          <div className="bg-[var(--page-bg)] border border-border p-6 max-w-sm w-full mx-4 space-y-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
               <div>
-                <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/70 mb-1`}>
+                <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-text-primary mb-1`}>
                   Delete {deleteTarget.type === 'blog' ? 'Blog Post' : 'Portfolio Item'}
                 </p>
-                <p className={`${mono.className} text-[10px] text-white/35 leading-relaxed`}>
+                <p className={`${mono.className} text-[10px] text-text-muted leading-relaxed`}>
                   &ldquo;{deleteTarget.title}&rdquo; will be permanently removed. This cannot be undone.
                 </p>
               </div>
@@ -349,7 +349,7 @@ export default function AdminContentPage() {
             <div className="flex gap-2 justify-end pt-1">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-4 py-2 border border-white/10 text-white/30 hover:text-white/50 transition-colors`}
+                className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-4 py-2 border border-border text-text-muted hover:text-text-secondary transition-colors`}
               >
                 Cancel
               </button>

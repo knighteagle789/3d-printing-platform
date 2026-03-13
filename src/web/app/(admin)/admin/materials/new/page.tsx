@@ -51,8 +51,8 @@ export default function NewMaterialPage() {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border ${
           toast.ok
-            ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
-            : 'bg-red-400/10 border-red-400/30 text-red-400'
+            ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+            : 'bg-red-500 border-red-200 text-red-400'
         }`}>
           {toast.ok
             ? <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -66,21 +66,21 @@ export default function NewMaterialPage() {
       {/* Back */}
       <button
         onClick={() => router.push('/admin/materials')}
-        className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-white transition-colors`}
+        className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-text-muted hover:text-text-primary transition-colors`}
       >
         <ArrowLeft className="h-3 w-3" /> Back to Materials
       </button>
 
       {/* Header */}
       <h1
-        className="font-black tracking-tight leading-[1.1] text-white"
+        className="page-title"
         style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
       >
         New Material
       </h1>
 
       {/* Form */}
-      <div className="border border-white/8 p-6">
+      <div className="border border-border p-6">
         <MaterialForm
           onSubmit={(values) => mutation.mutate(values)}
           isSubmitting={mutation.isPending}

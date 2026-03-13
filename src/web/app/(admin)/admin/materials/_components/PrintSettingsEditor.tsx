@@ -62,15 +62,15 @@ export function PrintSettingsEditor({ pairs, onChange }: Props) {
   const updatePair = (i: number, field: 'key' | 'value', val: string) =>
     onChange(pairs.map((p, idx) => idx === i ? { ...p, [field]: val } : p));
 
-  const inputCls = `${mono.className} w-full h-8 bg-white/[0.03] border border-white/10 px-2.5 text-[10px] text-white/70 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 transition-colors`;
+  const inputCls = `${mono.className} w-full h-8 bg-surface-alt border border-border px-2.5 text-[10px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
 
   return (
     <div className="space-y-2">
       {/* Header row */}
       {pairs.length > 0 && (
         <div className="grid gap-2 pr-8" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20 px-0.5`}>Key</p>
-          <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20 px-0.5`}>Value</p>
+          <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-text-muted px-0.5`}>Key</p>
+          <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-text-muted px-0.5`}>Value</p>
         </div>
       )}
 
@@ -97,7 +97,7 @@ export function PrintSettingsEditor({ pairs, onChange }: Props) {
           <button
             type="button"
             onClick={() => removePair(i)}
-            className="shrink-0 text-white/15 hover:text-red-400 transition-colors p-1"
+            className="shrink-0 text-text-muted hover:text-red-400 transition-colors p-1"
             aria-label="Remove"
           >
             <X className="h-3.5 w-3.5" />
@@ -114,14 +114,14 @@ export function PrintSettingsEditor({ pairs, onChange }: Props) {
       <button
         type="button"
         onClick={addPair}
-        className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-amber-400 transition-colors pt-1`}
+        className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-text-muted hover:text-accent transition-colors pt-1`}
       >
         <Plus className="h-3 w-3" /> Add Setting
       </button>
 
       {/* JSON preview */}
       {pairs.some(p => p.key.trim()) && (
-        <p className={`${mono.className} text-[9px] text-white/15 pt-1 break-all`}>
+        <p className={`${mono.className} text-[9px] text-text-muted pt-1 break-all`}>
           {serialisePrintSettings(pairs)}
         </p>
       )}

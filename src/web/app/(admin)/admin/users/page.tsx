@@ -18,9 +18,9 @@ function formatDate(d: string) {
 }
 
 const ROLE_COLOURS: Record<string, string> = {
-  Admin:    'bg-amber-400/15 text-amber-400 border-amber-400/20',
-  Staff:    'bg-sky-400/15 text-sky-400 border-sky-400/20',
-  Customer: 'bg-white/[0.06] text-white/40 border-white/10',
+  Admin:    'badge-admin',
+  Staff:    'badge-staff',
+  Customer: 'badge-customer',
 };
 
 export default function AdminUsersPage() {
@@ -79,18 +79,18 @@ export default function AdminUsersPage() {
       {/* ── Header ── */}
       <div>
         <h1
-          className="font-black tracking-tight leading-[1.1] text-white mb-1.5"
+          className="page-title mb-1.5"
           style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
         >
           Users
         </h1>
-        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/25`}>
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-text-muted`}>
           {totalCount} total accounts
         </p>
       </div>
 
       {/* ── Filter tabs + search ── */}
-      <div className="flex items-center justify-between gap-4 border-b border-white/8 pb-0">
+      <div className="flex items-center justify-between gap-4 border-b border-border pb-0">
         <div className="flex items-end gap-0">
           {TABS.map(({ key, label }) => {
             const isActive = filter === key;
@@ -100,15 +100,15 @@ export default function AdminUsersPage() {
                 onClick={() => { setFilter(key); setSearch(''); setPage(1); }}
                 className={`${mono.className} relative flex items-center gap-1.5 px-4 py-3 text-[9px] uppercase tracking-[0.18em] transition-colors border-b-2 -mb-px ${
                   isActive
-                    ? 'text-amber-400 border-amber-400'
-                    : 'text-white/30 border-transparent hover:text-white/50'
+                    ? 'text-accent border-accent'
+                    : 'text-text-muted border-transparent hover:text-text-secondary'
                 }`}
               >
                 {label}
                 <span className={`text-[8px] px-1 py-0.5 ${
                   isActive
-                    ? 'bg-amber-400/15 text-amber-400'
-                    : 'bg-white/[0.06] text-white/25'
+                    ? 'badge-admin'
+                    : 'bg-surface-alt text-text-muted'
                 }`}>
                   {counts[key]}
                 </span>
@@ -122,7 +122,7 @@ export default function AdminUsersPage() {
           value={search}
           onChange={e => { setSearch(e.target.value); setPage(1); }}
           placeholder="Search name, email, company..."
-          className={`${mono.className} h-8 w-56 bg-white/[0.03] border border-white/8 px-3 text-[10px] text-white/60 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors mb-1`}
+          className={`${mono.className} h-8 w-56 bg-surface-alt border border-border px-3 text-[10px] text-text-secondary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors mb-1`}
         />
       </div>
 
@@ -130,26 +130,26 @@ export default function AdminUsersPage() {
       {isLoading ? (
         <div className="space-y-px">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-12 bg-white/[0.02] animate-pulse" />
+            <div key={i} className="h-12 bg-surface-alt animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Users className="h-8 w-8 text-white/10" />
-          <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/20`}>
+          <Users className="h-8 w-8 text-text-muted" />
+          <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-text-muted`}>
             No users found
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-px bg-white/[0.04]">
+        <div className="flex flex-col gap-px bg-surface-alt">
 
           {/* Column headers */}
           <div
-            className="grid bg-[#0d0a06] px-4 py-2"
+            className="grid bg-[var(--page-bg)] px-4 py-2"
             style={{ gridTemplateColumns: '2fr 2.5fr 1.5fr 1fr 1fr 1fr' }}
           >
             {['Name', 'Email', 'Company', 'Roles', 'Status', 'Joined'].map(h => (
-              <p key={h} className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20`}>
+              <p key={h} className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-text-muted`}>
                 {h}
               </p>
             ))}
@@ -160,21 +160,21 @@ export default function AdminUsersPage() {
             <div
               key={user.id}
               onClick={() => router.push(`/admin/users/${user.id}`)}
-              className="grid items-center bg-[#0d0a06] px-4 py-3 cursor-pointer hover:bg-white/[0.03] transition-colors group"
+              className="grid items-center bg-[var(--page-bg)] px-4 py-3 cursor-pointer hover:bg-surface-alt transition-colors group"
               style={{ gridTemplateColumns: '2fr 2.5fr 1.5fr 1fr 1fr 1fr' }}
             >
               {/* Name */}
-              <p className={`${mono.className} text-[11px] text-white/80 group-hover:text-white transition-colors`}>
+              <p className={`${mono.className} text-[11px] text-text-primary group-hover:text-text-primary transition-colors`}>
                 {user.firstName} {user.lastName}
               </p>
 
               {/* Email */}
-              <p className={`${mono.className} text-[10px] text-white/40 truncate pr-4`}>
+              <p className={`${mono.className} text-[10px] text-text-secondary truncate pr-4`}>
                 {user.email}
               </p>
 
               {/* Company */}
-              <p className={`${mono.className} text-[10px] text-white/30`}>
+              <p className={`${mono.className} text-[10px] text-text-muted`}>
                 {user.companyName ?? '—'}
               </p>
 
@@ -193,14 +193,14 @@ export default function AdminUsersPage() {
               {/* Status */}
               <span className={`${mono.className} inline-flex text-[8px] uppercase tracking-[0.15em] px-2 py-1 w-fit ${
                 user.isActive
-                  ? 'bg-emerald-400/10 text-emerald-400'
-                  : 'bg-white/[0.04] text-white/20'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-surface-alt text-text-muted'
               }`}>
                 {user.isActive ? 'Active' : 'Inactive'}
               </span>
 
               {/* Joined */}
-              <p className={`${mono.className} text-[9px] text-white/25`}>
+              <p className={`${mono.className} text-[9px] text-text-muted`}>
                 {formatDate(user.createdAt)}
               </p>
             </div>
@@ -211,17 +211,17 @@ export default function AdminUsersPage() {
       {/* ── Pagination ── */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/20`}>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
             Page {page} of {totalPages} · {totalCount} users
           </p>
           <div className="flex gap-px">
             <button
               disabled={page === 1}
               onClick={() => setPage(p => p - 1)}
-              className={`${mono.className} flex items-center gap-1.5 px-4 h-8 text-[9px] uppercase tracking-[0.15em] border border-white/8 transition-colors ${
+              className={`${mono.className} flex items-center gap-1.5 px-4 h-8 text-[9px] uppercase tracking-[0.15em] border border-border transition-colors ${
                 page === 1
-                  ? 'text-white/15 cursor-not-allowed'
-                  : 'text-white/40 hover:text-white/70 hover:border-white/20'
+                  ? 'text-text-muted cursor-not-allowed'
+                  : 'text-text-secondary hover:text-text-primary hover:border-border'
               }`}
             >
               <ChevronLeft className="h-3 w-3" /> Prev
@@ -229,10 +229,10 @@ export default function AdminUsersPage() {
             <button
               disabled={page === totalPages}
               onClick={() => setPage(p => p + 1)}
-              className={`${mono.className} flex items-center gap-1.5 px-4 h-8 text-[9px] uppercase tracking-[0.15em] border border-white/8 transition-colors ${
+              className={`${mono.className} flex items-center gap-1.5 px-4 h-8 text-[9px] uppercase tracking-[0.15em] border border-border transition-colors ${
                 page === totalPages
-                  ? 'text-white/15 cursor-not-allowed'
-                  : 'text-white/40 hover:text-white/70 hover:border-white/20'
+                  ? 'text-text-muted cursor-not-allowed'
+                  : 'text-text-secondary hover:text-text-primary hover:border-border'
               }`}
             >
               Next <ChevronRight className="h-3 w-3" />

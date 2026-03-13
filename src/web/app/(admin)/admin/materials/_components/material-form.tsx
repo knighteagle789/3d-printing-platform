@@ -52,7 +52,7 @@ interface MaterialFormProps {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-white/25 mb-4 pt-2`}>
+    <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-text-muted mb-4 pt-2`}>
       {children}
     </p>
   );
@@ -69,13 +69,13 @@ function FormRow({
 }) {
   return (
     <div>
-      <label className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/35 block mb-1.5`}>
+      <label className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted block mb-1.5`}>
         {label}
-        {optional && <span className="text-white/18 ml-1.5 normal-case tracking-normal">optional</span>}
+        {optional && <span className="text-text-muted ml-1.5 normal-case tracking-normal">optional</span>}
       </label>
       {children}
       {hint && !error && (
-        <p className={`${mono.className} text-[9px] text-white/20 mt-1`}>{hint}</p>
+        <p className={`${mono.className} text-[9px] text-text-muted mt-1`}>{hint}</p>
       )}
       {error && (
         <p className={`${mono.className} text-[9px] text-red-400 mt-1`}>{error}</p>
@@ -84,9 +84,9 @@ function FormRow({
   );
 }
 
-const inputCls = `${mono.className} w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 transition-colors`;
-const selectCls = `${mono.className} w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 focus:outline-none focus:border-amber-400/40 transition-colors appearance-none`;
-const textareaCls = `${mono.className} w-full bg-white/[0.03] border border-white/10 px-3 py-2.5 text-[11px] text-white/70 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 transition-colors resize-none`;
+const inputCls = `${mono.className} w-full h-9 field-input`;
+const selectCls = `${mono.className} w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none`;
+const textareaCls = `${mono.className} w-full bg-surface-alt border border-border px-3 py-2.5 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-none`;
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
 
@@ -182,7 +182,7 @@ export function MaterialForm({
       </div>
 
       {/* ── Customer-facing ── */}
-      <div className="border-t border-white/6 pt-4">
+      <div className="border-t border-border pt-4">
         <SectionLabel>Customer-facing</SectionLabel>
       </div>
 
@@ -217,7 +217,7 @@ export function MaterialForm({
       </div>
 
       {/* ── Inventory ── */}
-      <div className="border-t border-white/6 pt-4">
+      <div className="border-t border-border pt-4">
         <SectionLabel>Inventory</SectionLabel>
       </div>
 
@@ -251,7 +251,7 @@ export function MaterialForm({
       </div>
 
       {/* ── Internal ── */}
-      <div className="border-t border-white/6 pt-4">
+      <div className="border-t border-border pt-4">
         <SectionLabel>Internal</SectionLabel>
       </div>
 
@@ -285,12 +285,12 @@ export function MaterialForm({
       </FormRow>
 
       {/* ── Visibility ── */}
-      <div className="border-t border-white/6 pt-5 flex items-center justify-between">
+      <div className="border-t border-border pt-5 flex items-center justify-between">
         <div>
-          <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-white/50`}>
+          <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-text-secondary`}>
             Active — visible to customers
           </p>
-          <p className={`${mono.className} text-[9px] text-white/20 mt-0.5`}>
+          <p className={`${mono.className} text-[9px] text-text-muted mt-0.5`}>
             Inactive materials are hidden from the order form
           </p>
         </div>
@@ -300,7 +300,7 @@ export function MaterialForm({
           aria-checked={isActive}
           onClick={() => setValue('isActive', !isActive)}
           className={`relative w-10 h-5 transition-colors shrink-0 ${
-            isActive ? 'bg-amber-400' : 'bg-white/10'
+            isActive ? 'bg-accent' : 'bg-white/10'
           }`}
         >
           <span className={`absolute top-0.5 h-4 w-4 bg-white transition-transform ${
@@ -314,7 +314,7 @@ export function MaterialForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className={`${mono.className} inline-flex items-center gap-2 bg-amber-400 text-black text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
+          className={`${mono.className} inline-flex items-center gap-2 bg-accent-light text-accent-dark text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
         >
           {isSubmitting ? 'Saving...' : submitLabel}
         </button>

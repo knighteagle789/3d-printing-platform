@@ -16,12 +16,12 @@ const STATUSES = [
 ];
 
 const STATUS_COLOUR: Record<string, string> = {
-  Pending:       'text-amber-400 bg-amber-400/8 border-amber-400/20',
-  UnderReview:   'text-amber-400 bg-amber-400/8 border-amber-400/20',
-  QuoteProvided: 'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Accepted:      'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Expired:       'text-red-400 bg-red-400/8 border-red-400/20',
-  Cancelled:     'text-red-400 bg-red-400/8 border-red-400/20',
+  Pending:       'badge-pending',
+  UnderReview:   'badge-pending',
+  QuoteProvided: 'badge-success',
+  Accepted:      'badge-success',
+  Expired:       'badge-danger',
+  Cancelled:     'badge-danger',
 };
 
 const URGENT_STATUSES = new Set(['Pending', 'UnderReview']);
@@ -43,7 +43,7 @@ function isDeadlineUrgent(quote: QuoteRequest): boolean {
 }
 
 function StatusPill({ status }: { status: string }) {
-  const colours = STATUS_COLOUR[status] ?? 'text-white/30 bg-white/[0.04] border-white/8';
+  const colours = STATUS_COLOUR[status] ?? 'badge-neutral';
   return (
     <span className={`${mono.className} inline-flex items-center border text-[8px] uppercase tracking-[0.15em] px-2 py-0.5 ${colours}`}>
       {status}
@@ -98,12 +98,12 @@ export default function AdminQuotesPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1
-            className="font-black tracking-tight leading-[1.1] text-white"
+            className="page-title"
             style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
           >
             Quotes
           </h1>
-          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/25 mt-1`}>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-text-muted mt-1`}>
             {isLoading
               ? '—'
               : needle
@@ -115,13 +115,13 @@ export default function AdminQuotesPage() {
 
         {/* Search */}
         <div className="relative shrink-0 w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-white/25 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-text-muted pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Request #, customer, or file..."
-            className={`${mono.className} w-full h-8 bg-white/[0.03] border border-white/10 pl-8 pr-3 text-[10px] uppercase tracking-[0.1em] text-white/60 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 transition-colors`}
+            className={`${mono.className} w-full h-8 bg-surface-alt border border-border pl-8 pr-3 text-[10px] uppercase tracking-[0.1em] text-text-secondary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`}
           />
         </div>
       </div>
@@ -140,11 +140,11 @@ export default function AdminQuotesPage() {
                 ${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 h-7 border transition-colors
                 ${active
                   ? urgent
-                    ? 'bg-amber-400 text-black border-amber-400'
+                    ? 'bg-accent-light text-accent-dark border-accent'
                     : 'bg-white text-black border-white'
                   : urgent
-                    ? 'text-amber-400/60 border-amber-400/20 hover:border-amber-400/40 hover:text-amber-400'
-                    : 'text-white/30 border-white/10 hover:border-white/25 hover:text-white/60'
+                    ? 'text-amber-700 border-amber-200 hover:border-amber-200 hover:text-accent'
+                    : 'text-text-muted border-border hover:border-border hover:text-text-secondary'
                 }
               `}
             >
@@ -160,10 +160,10 @@ export default function AdminQuotesPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="border border-white/8">
+      <div className="border border-border">
 
         {/* Header row */}
-        <div className={`${mono.className} grid grid-cols-[2fr_2fr_2fr_1fr_1fr_1.5fr_1.5fr_auto_auto] gap-4 px-6 py-3 border-b border-white/8 bg-white/[0.02] text-[8px] uppercase tracking-[0.18em] text-white/25`}>
+        <div className={`${mono.className} grid grid-cols-[2fr_2fr_2fr_1fr_1fr_1.5fr_1.5fr_auto_auto] gap-4 px-6 py-3 border-b border-border bg-surface-alt text-[8px] uppercase tracking-[0.18em] text-text-muted`}>
           <span>Request</span>
           <span>Customer</span>
           <span>File</span>
@@ -179,20 +179,20 @@ export default function AdminQuotesPage() {
           <div className="p-6 space-y-3">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="flex items-center gap-4">
-                <div className="h-3 bg-white/[0.05] animate-pulse w-28" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-36" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-40" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-8" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-16" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-20" />
-                <div className="h-5 bg-white/[0.05] animate-pulse w-20" />
+                <div className="h-3 bg-surface-alt animate-pulse w-28" />
+                <div className="h-3 bg-surface-alt animate-pulse w-36" />
+                <div className="h-3 bg-surface-alt animate-pulse w-40" />
+                <div className="h-3 bg-surface-alt animate-pulse w-8" />
+                <div className="h-3 bg-surface-alt animate-pulse w-16" />
+                <div className="h-3 bg-surface-alt animate-pulse w-20" />
+                <div className="h-5 bg-surface-alt animate-pulse w-20" />
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center">
-            <FileText className="h-6 w-6 text-white/10 mx-auto mb-3" />
-            <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-white/20`}>
+            <FileText className="h-6 w-6 text-text-muted mx-auto mb-3" />
+            <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-text-muted`}>
               {needle
                 ? `No quotes matching "${search}"`
                 : `No ${status !== 'All' ? status.toLowerCase() : ''} quotes`}
@@ -206,43 +206,43 @@ export default function AdminQuotesPage() {
                 <div
                   key={quote.id}
                   onClick={() => router.push(`/admin/quotes/${quote.id}`)}
-                  className={`grid grid-cols-[2fr_2fr_2fr_1fr_1fr_1.5fr_1.5fr_auto_auto] gap-4 items-center px-6 py-4 cursor-pointer hover:bg-white/[0.025] transition-colors group ${
-                    i < filtered.length - 1 ? 'border-b border-white/5' : ''
-                  } ${urgent ? 'bg-amber-400/[0.03]' : ''}`}
+                  className={`grid grid-cols-[2fr_2fr_2fr_1fr_1fr_1.5fr_1.5fr_auto_auto] gap-4 items-center px-6 py-4 cursor-pointer hover:bg-surface-alt transition-colors group ${
+                    i < filtered.length - 1 ? 'border-b border-border' : ''
+                  } ${urgent ? 'bg-amber-50.03]' : ''}`}
                 >
                   {/* Request number */}
                   <span
-                    className="text-white/80 text-sm font-medium truncate"
+                    className="text-text-primary text-sm font-medium truncate"
                     style={{ fontFamily: 'var(--font-epilogue)' }}
                   >
                     {quote.requestNumber}
                   </span>
 
                   {/* Customer */}
-                  <span className={`${mono.className} text-[10px] uppercase tracking-[0.12em] text-white/35 truncate`}>
+                  <span className={`${mono.className} text-[10px] uppercase tracking-[0.12em] text-text-muted truncate`}>
                     {quote.user
                       ? `${quote.user.firstName} ${quote.user.lastName}`
                       : '—'}
                   </span>
 
                   {/* File */}
-                  <span className={`${mono.className} text-[10px] text-white/30 truncate`}>
+                  <span className={`${mono.className} text-[10px] text-text-muted truncate`}>
                     {quote.file?.originalFileName ?? '—'}
                   </span>
 
                   {/* Quantity */}
-                  <span className={`${mono.className} text-[10px] text-white/35`}>
+                  <span className={`${mono.className} text-[10px] text-text-muted`}>
                     {quote.quantity}
                   </span>
 
                   {/* Budget */}
-                  <span className={`${mono.className} text-[10px] text-white/30`}>
+                  <span className={`${mono.className} text-[10px] text-text-muted`}>
                     {quote.budgetDisplay ?? '—'}
                   </span>
 
                   {/* Required by */}
                   <span className={`${mono.className} text-[10px] uppercase tracking-[0.1em] ${
-                    urgent ? 'text-amber-400' : 'text-white/30'
+                    urgent ? 'text-accent' : 'text-text-muted'
                   }`}>
                     {formatDate(quote.requiredByDate)}
                   </span>
@@ -256,13 +256,13 @@ export default function AdminQuotesPage() {
                   <div className="w-5 flex items-center justify-center">
                     {urgent && (
                       <span title={`Required by ${formatDate(quote.requiredByDate)}`}>
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                        <AlertTriangle className="h-3.5 w-3.5 text-accent" />
                       </span>
                     )}
                   </div>
 
                   {/* Arrow */}
-                  <ArrowRight className="h-3.5 w-3.5 text-white/10 group-hover:text-white/40 transition-colors" />
+                  <ArrowRight className="h-3.5 w-3.5 text-text-muted group-hover:text-text-primary/40 transition-colors" />
                 </div>
               );
             })}

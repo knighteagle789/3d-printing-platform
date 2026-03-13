@@ -20,21 +20,21 @@ const STATUSES = [
 ];
 
 const STATUS_COLOUR: Record<string, string> = {
-  Draft:          'text-white/30 bg-white/[0.04] border-white/8',
-  Submitted:      'text-amber-400 bg-amber-400/8 border-amber-400/20',
-  InReview:       'text-amber-400 bg-amber-400/8 border-amber-400/20',
-  QuoteProvided:  'text-amber-400 bg-amber-400/8 border-amber-400/20',
-  Approved:       'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  InProduction:   'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Printing:       'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  PostProcessing: 'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  Draft:          'badge-neutral',
+  Submitted:      'badge-pending',
+  InReview:       'badge-pending',
+  QuoteProvided:  'badge-pending',
+  Approved:       'badge-success',
+  InProduction:   'badge-success',
+  Printing:       'badge-success',
+  PostProcessing: 'badge-success',
   QualityCheck:   'text-blue-400 bg-blue-400/8 border-blue-400/20',
-  Packaging:      'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Shipped:        'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Delivered:      'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Completed:      'text-white/40 bg-white/[0.04] border-white/8',
-  Cancelled:      'text-red-400 bg-red-400/8 border-red-400/20',
-  OnHold:         'text-amber-400 bg-amber-400/8 border-amber-400/20',
+  Packaging:      'badge-success',
+  Shipped:        'badge-success',
+  Delivered:      'badge-success',
+  Completed:      'text-text-secondary bg-surface-alt border-border',
+  Cancelled:      'badge-danger',
+  OnHold:         'badge-pending',
 };
 
 // Statuses that signal action needed — used to style the filter tab
@@ -59,7 +59,7 @@ function isDeadlineUrgent(order: Order): boolean {
 }
 
 function StatusPill({ status }: { status: string }) {
-  const colours = STATUS_COLOUR[status] ?? 'text-white/30 bg-white/[0.04] border-white/8';
+  const colours = STATUS_COLOUR[status] ?? 'badge-neutral';
   return (
     <span className={`${mono.className} inline-flex items-center border text-[8px] uppercase tracking-[0.15em] px-2 py-0.5 ${colours}`}>
       {status}
@@ -114,12 +114,12 @@ export default function AdminOrdersPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1
-            className="font-black tracking-tight leading-[1.1] text-white"
+            className="page-title"
             style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
           >
             Orders
           </h1>
-          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-white/25 mt-1`}>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-text-muted mt-1`}>
             {isLoading ? '—' : `${needle ? filteredOrders.length : totalCount} order${totalCount !== 1 ? 's' : ''}`}
             {status !== 'All' && !needle ? ` · ${status}` : ''}
             {needle ? ` matching "${search}"` : ''}
@@ -128,13 +128,13 @@ export default function AdminOrdersPage() {
 
         {/* Search */}
         <div className="relative shrink-0 w-56">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-white/25 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-text-muted pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Order # or customer..."
-            className={`${mono.className} w-full h-8 bg-white/[0.03] border border-white/10 pl-8 pr-3 text-[10px] uppercase tracking-[0.1em] text-white/60 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 transition-colors`}
+            className={`${mono.className} w-full h-8 bg-surface-alt border border-border pl-8 pr-3 text-[10px] uppercase tracking-[0.1em] text-text-secondary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`}
           />
         </div>
       </div>
@@ -152,11 +152,11 @@ export default function AdminOrdersPage() {
                 ${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 h-7 border transition-colors
                 ${active
                   ? urgent
-                    ? 'bg-amber-400 text-black border-amber-400'
+                    ? 'bg-accent-light text-accent-dark border-accent'
                     : 'bg-white text-black border-white'
                   : urgent
-                    ? 'text-amber-400/60 border-amber-400/20 hover:border-amber-400/40 hover:text-amber-400'
-                    : 'text-white/30 border-white/10 hover:border-white/25 hover:text-white/60'
+                    ? 'text-amber-700 border-amber-200 hover:border-amber-200 hover:text-accent'
+                    : 'text-text-muted border-border hover:border-border hover:text-text-secondary'
                 }
               `}
             >
@@ -167,10 +167,10 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="border border-white/8">
+      <div className="border border-border">
 
         {/* Table header */}
-        <div className={`${mono.className} grid grid-cols-[2fr_2fr_1fr_1fr_1.5fr_1.5fr_auto_auto] gap-4 px-6 py-3 border-b border-white/8 bg-white/[0.02] text-[8px] uppercase tracking-[0.18em] text-white/25`}>
+        <div className={`${mono.className} grid grid-cols-[2fr_2fr_1fr_1fr_1.5fr_1.5fr_auto_auto] gap-4 px-6 py-3 border-b border-border bg-surface-alt text-[8px] uppercase tracking-[0.18em] text-text-muted`}>
           <span>Order</span>
           <span>Customer</span>
           <span>Items</span>
@@ -185,19 +185,19 @@ export default function AdminOrdersPage() {
           <div className="p-6 space-y-3">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="flex items-center gap-4">
-                <div className="h-3 bg-white/[0.05] animate-pulse w-32" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-40" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-8" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-16" />
-                <div className="h-3 bg-white/[0.04] animate-pulse w-24" />
-                <div className="h-5 bg-white/[0.05] animate-pulse w-20" />
+                <div className="h-3 bg-surface-alt animate-pulse w-32" />
+                <div className="h-3 bg-surface-alt animate-pulse w-40" />
+                <div className="h-3 bg-surface-alt animate-pulse w-8" />
+                <div className="h-3 bg-surface-alt animate-pulse w-16" />
+                <div className="h-3 bg-surface-alt animate-pulse w-24" />
+                <div className="h-5 bg-surface-alt animate-pulse w-20" />
               </div>
             ))}
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="py-16 text-center">
-            <Package className="h-6 w-6 text-white/10 mx-auto mb-3" />
-            <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-white/20`}>
+            <Package className="h-6 w-6 text-text-muted mx-auto mb-3" />
+            <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-text-muted`}>
               {needle ? `No orders matching "${search}"` : `No ${status !== 'All' ? status.toLowerCase() : ''} orders`}
             </p>
           </div>
@@ -209,40 +209,40 @@ export default function AdminOrdersPage() {
                 <div
                   key={order.id}
                   onClick={() => router.push(`/admin/orders/${order.id}`)}
-                  className={`grid grid-cols-[2fr_2fr_1fr_1fr_1.5fr_1.5fr_auto_auto] gap-4 items-center px-6 py-4 cursor-pointer hover:bg-white/[0.025] transition-colors group ${
-                    i < filteredOrders.length - 1 ? 'border-b border-white/5' : ''
-                  } ${urgent ? 'bg-amber-400/[0.03]' : ''}`}
+                  className={`grid grid-cols-[2fr_2fr_1fr_1fr_1.5fr_1.5fr_auto_auto] gap-4 items-center px-6 py-4 cursor-pointer hover:bg-surface-alt transition-colors group ${
+                    i < filteredOrders.length - 1 ? 'border-b border-border' : ''
+                  } ${urgent ? 'bg-amber-50.03]' : ''}`}
                 >
                   {/* Order number */}
                   <span
-                    className="text-white/80 text-sm font-medium truncate"
+                    className="text-text-primary text-sm font-medium truncate"
                     style={{ fontFamily: 'var(--font-epilogue)' }}
                   >
                     {order.orderNumber}
                   </span>
 
                   {/* Customer */}
-                  <span className={`${mono.className} text-[10px] uppercase tracking-[0.12em] text-white/35 truncate`}>
+                  <span className={`${mono.className} text-[10px] uppercase tracking-[0.12em] text-text-muted truncate`}>
                     {order.user
                       ? `${order.user.firstName} ${order.user.lastName}`
                       : '—'}
                   </span>
 
                   {/* Item count */}
-                  <span className={`${mono.className} text-[10px] text-white/35`}>
+                  <span className={`${mono.className} text-[10px] text-text-muted`}>
                     {order.items?.length ?? 0}
                   </span>
 
                   {/* Total */}
                   <span
-                    className="text-white/60 text-sm font-medium"
+                    className="text-text-secondary text-sm font-medium"
                     style={{ fontFamily: 'var(--font-epilogue)' }}
                   >
                     ${order.totalPrice.toFixed(2)}
                   </span>
 
                   {/* Date */}
-                  <span className={`${mono.className} text-[10px] uppercase tracking-[0.1em] text-white/30`}>
+                  <span className={`${mono.className} text-[10px] uppercase tracking-[0.1em] text-text-muted`}>
                     {formatDate(order.createdAt)}
                   </span>
 
@@ -255,13 +255,13 @@ export default function AdminOrdersPage() {
                   <div className="w-5 flex items-center justify-center">
                     {urgent && (
                       <span title={`Required by ${formatDate(order.requiredByDate!)}`}>
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                        <AlertTriangle className="h-3.5 w-3.5 text-accent" />
                       </span>
                     )}
                   </div>
 
                   {/* Arrow */}
-                  <ArrowRight className="h-3.5 w-3.5 text-white/10 group-hover:text-white/40 transition-colors" />
+                  <ArrowRight className="h-3.5 w-3.5 text-text-muted group-hover:text-text-primary/40 transition-colors" />
                 </div>
               );
             })}
@@ -270,15 +270,15 @@ export default function AdminOrdersPage() {
 
         {/* ── Pagination ── */}
         {!isLoading && totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-white/8">
-            <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/20`}>
+          <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+            <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
               Page {page} of {totalPages}
             </p>
             <div className="flex gap-1">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="w-7 h-7 border border-white/10 flex items-center justify-center text-white/30 hover:text-white hover:border-white/25 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                className="w-7 h-7 border border-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
@@ -291,7 +291,7 @@ export default function AdminOrdersPage() {
                 }, [])
                 .map((n, i) =>
                   n === 'ellipsis' ? (
-                    <span key={`e-${i}`} className={`${mono.className} w-7 h-7 flex items-center justify-center text-[9px] text-white/15`}>
+                    <span key={`e-${i}`} className={`${mono.className} w-7 h-7 flex items-center justify-center text-[9px] text-text-muted`}>
                       ···
                     </span>
                   ) : (
@@ -300,8 +300,8 @@ export default function AdminOrdersPage() {
                       onClick={() => setPage(n as number)}
                       className={`${mono.className} w-7 h-7 border text-[9px] transition-colors ${
                         page === n
-                          ? 'bg-amber-400 border-amber-400 text-black font-semibold'
-                          : 'border-white/10 text-white/30 hover:border-white/25 hover:text-white/60'
+                          ? 'bg-accent border-accent text-black font-semibold'
+                          : 'border-border text-text-muted hover:border-border hover:text-text-secondary'
                       }`}
                     >
                       {n}
@@ -312,7 +312,7 @@ export default function AdminOrdersPage() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="w-7 h-7 border border-white/10 flex items-center justify-center text-white/30 hover:text-white hover:border-white/25 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                className="w-7 h-7 border border-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>

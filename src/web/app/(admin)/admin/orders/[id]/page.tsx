@@ -15,21 +15,21 @@ const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_COLOUR: Record<string, string> = {
-  Draft:          'text-white/30 bg-white/[0.04] border-white/8',
-  Submitted:      'text-amber-400 bg-amber-400/8 border-amber-400/20',
-  InReview:       'text-amber-400 bg-amber-400/8 border-amber-400/20',
-  QuoteProvided:  'text-amber-400 bg-amber-400/8 border-amber-400/20',
-  Approved:       'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  InProduction:   'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Printing:       'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  PostProcessing: 'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
+  Draft:          'badge-neutral',
+  Submitted:      'badge-pending',
+  InReview:       'badge-pending',
+  QuoteProvided:  'badge-pending',
+  Approved:       'badge-success',
+  InProduction:   'badge-success',
+  Printing:       'badge-success',
+  PostProcessing: 'badge-success',
   QualityCheck:   'text-blue-400 bg-blue-400/8 border-blue-400/20',
-  Packaging:      'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Shipped:        'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Delivered:      'text-emerald-400 bg-emerald-400/8 border-emerald-400/20',
-  Completed:      'text-white/40 bg-white/[0.04] border-white/8',
-  Cancelled:      'text-red-400 bg-red-400/8 border-red-400/20',
-  OnHold:         'text-amber-400 bg-amber-400/8 border-amber-400/20',
+  Packaging:      'badge-success',
+  Shipped:        'badge-success',
+  Delivered:      'badge-success',
+  Completed:      'text-text-secondary bg-surface-alt border-border',
+  Cancelled:      'badge-danger',
+  OnHold:         'badge-pending',
 };
 
 // Valid transitions matching backend logic
@@ -76,7 +76,7 @@ function isDeadlineUrgent(requiredByDate: string | null, status: string): boolea
 }
 
 function StatusPill({ status, large }: { status: string; large?: boolean }) {
-  const colours = STATUS_COLOUR[status] ?? 'text-white/30 bg-white/[0.04] border-white/8';
+  const colours = STATUS_COLOUR[status] ?? 'badge-neutral';
   return (
     <span className={`${mono.className} inline-flex items-center border uppercase tracking-[0.15em] ${
       large ? 'text-[10px] px-3 py-1' : 'text-[8px] px-2 py-0.5'
@@ -88,7 +88,7 @@ function StatusPill({ status, large }: { status: string; large?: boolean }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-white/25 mb-4`}>
+    <p className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-text-muted mb-4`}>
       {children}
     </p>
   );
@@ -135,11 +135,11 @@ export default function AdminOrderDetailPage({
   if (isLoading) {
     return (
       <div className="space-y-6 max-w-5xl">
-        <div className="h-6 bg-white/[0.05] animate-pulse w-32" />
-        <div className="h-24 bg-white/[0.04] animate-pulse" />
+        <div className="h-6 bg-surface-alt animate-pulse w-32" />
+        <div className="h-24 bg-surface-alt animate-pulse" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-px bg-white/8">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-[#0d0a06] h-40" />
+            <div key={i} className="bg-[var(--page-bg)] h-40" />
           ))}
         </div>
       </div>
@@ -158,8 +158,8 @@ export default function AdminOrderDetailPage({
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border ${
           toast.ok
-            ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
-            : 'bg-red-400/10 border-red-400/30 text-red-400'
+            ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+            : 'bg-red-500 border-red-200 text-red-400'
         }`}>
           {toast.ok
             ? <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -173,16 +173,16 @@ export default function AdminOrderDetailPage({
       {/* ── Back link ── */}
       <button
         onClick={() => router.push('/admin/orders')}
-        className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-white transition-colors`}
+        className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-text-muted hover:text-text-primary transition-colors`}
       >
         <ArrowLeft className="h-3 w-3" /> Back to Orders
       </button>
 
       {/* ── Urgency banner ── */}
       {isDeadlineUrgent(order.requiredByDate, order.status) && (
-        <div className="flex items-center gap-3 px-5 py-3.5 border border-amber-400/30 bg-amber-400/[0.05]">
-          <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
-          <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-amber-400`}>
+        <div className="flex items-center gap-3 px-5 py-3.5 border border-amber-200 bg-amber-50.05]">
+          <AlertCircle className="h-4 w-4 text-accent shrink-0" />
+          <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-accent`}>
             Required by {formatDate(order.requiredByDate)} — deadline within 48 hours
           </p>
         </div>
@@ -192,30 +192,30 @@ export default function AdminOrderDetailPage({
       <div className="flex items-start justify-between gap-6">
         <div>
           <h1
-            className="font-black tracking-tight leading-[1.1] text-white mb-2"
+            className="page-title mb-2"
             style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
           >
             {order.orderNumber}
           </h1>
-          <div className={`${mono.className} flex flex-wrap items-center gap-3 text-[9px] uppercase tracking-[0.18em] text-white/30`}>
+          <div className={`${mono.className} flex flex-wrap items-center gap-3 text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
             <span className="flex items-center gap-1.5">
               <User className="h-3 w-3" />
               {order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Unknown'}
             </span>
             {order.user?.email && (
               <>
-                <span className="text-white/12">·</span>
+                <span className="text-text-muted">·</span>
                 <a
                   href={`mailto:${order.user.email}`}
                   onClick={e => e.stopPropagation()}
-                  className="flex items-center gap-1.5 text-white/30 hover:text-amber-400 transition-colors"
+                  className="flex items-center gap-1.5 text-text-muted hover:text-accent transition-colors"
                 >
                   <Mail className="h-3 w-3" />
                   {order.user.email}
                 </a>
               </>
             )}
-            <span className="text-white/12">·</span>
+            <span className="text-text-muted">·</span>
             <span>{formatDate(order.createdAt)}</span>
           </div>
         </div>
@@ -224,7 +224,7 @@ export default function AdminOrderDetailPage({
 
       {/* ── Status update panel ── */}
       {availableTransitions.length > 0 && (
-        <div className="border border-amber-400/20 bg-amber-400/[0.03] p-6">
+        <div className="border border-amber-200 bg-amber-50.03] p-6">
           <SectionLabel>Update Status</SectionLabel>
           <div className="flex flex-wrap gap-2 mb-4">
             {availableTransitions.map((s) => {
@@ -238,10 +238,10 @@ export default function AdminOrderDetailPage({
                     active
                       ? isDanger
                         ? 'bg-red-400 border-red-400 text-black'
-                        : 'bg-amber-400 border-amber-400 text-black font-semibold'
+                        : 'bg-accent border-accent text-black font-semibold'
                       : isDanger
-                        ? 'text-red-400/60 border-red-400/20 hover:border-red-400/40 hover:text-red-400'
-                        : 'text-white/40 border-white/12 hover:border-white/25 hover:text-white'
+                        ? 'text-red-600 border-red-200 hover:border-red-200 hover:text-red-400'
+                        : 'text-text-secondary border-border hover:border-border hover:text-text-primary'
                   }`}
                 >
                   {s}
@@ -254,12 +254,12 @@ export default function AdminOrderDetailPage({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add a note (optional)..."
             rows={2}
-            className={`${mono.className} w-full bg-white/[0.03] border border-white/10 text-white/70 placeholder:text-white/20 text-[10px] px-4 py-3 resize-none focus:outline-none focus:border-amber-400/40 transition-colors`}
+            className={`${mono.className} w-full bg-surface-alt border border-border text-text-primary placeholder:text-text-muted text-[10px] px-4 py-3 resize-none focus:outline-none focus:border-accent transition-colors`}
           />
           <button
             disabled={!newStatus || mutation.isPending}
             onClick={() => mutation.mutate()}
-            className={`${mono.className} mt-3 inline-flex items-center gap-2 bg-amber-400 text-black text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
+            className={`${mono.className} mt-3 inline-flex items-center gap-2 bg-accent-light text-accent-dark text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
           >
             {mutation.isPending ? 'Updating...' : `Move to ${newStatus || '...'}`}
           </button>
@@ -270,7 +270,7 @@ export default function AdminOrderDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-px bg-white/8">
 
         {/* Items */}
-        <div className="bg-[#0d0a06] p-6">
+        <div className="bg-[var(--page-bg)] p-6">
           <SectionLabel>
             <span className="flex items-center gap-2">
               <Package className="h-3 w-3" />
@@ -280,12 +280,12 @@ export default function AdminOrderDetailPage({
 
           <div className="space-y-px bg-white/5">
             {order.items.map((item) => (
-              <div key={item.id} className="bg-[#0d0a06] p-5">
+              <div key={item.id} className="bg-[var(--page-bg)] p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-3">
                       <p
-                        className="text-white/80 font-medium truncate"
+                        className="text-text-primary font-medium truncate"
                         style={{ fontFamily: 'var(--font-epilogue)' }}
                       >
                         {item.file?.originalFileName ?? 'Unknown file'}
@@ -296,14 +296,14 @@ export default function AdminOrderDetailPage({
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={e => e.stopPropagation()}
-                          className="shrink-0 flex items-center gap-1 text-white/20 hover:text-amber-400 transition-colors"
+                          className="shrink-0 flex items-center gap-1 text-text-muted hover:text-accent transition-colors"
                           title="Download file"
                         >
                           <Download className="h-3.5 w-3.5" />
                         </a>
                       )}
                     </div>
-                    <div className={`${mono.className} flex flex-wrap gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.12em] text-white/30`}>
+                    <div className={`${mono.className} flex flex-wrap gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
                       {item.material && (
                         <span>{item.material.type} · {item.material.color}</span>
                       )}
@@ -316,19 +316,19 @@ export default function AdminOrderDetailPage({
                       )}
                     </div>
                     {item.specialInstructions && (
-                      <p className={`${mono.className} text-[9px] text-white/25 italic`}>
+                      <p className={`${mono.className} text-[9px] text-text-muted italic`}>
                         &quot;{item.specialInstructions}&quot;
                       </p>
                     )}
                   </div>
                   <div className="text-right shrink-0">
                     <p
-                      className="text-white/70 font-medium"
+                      className="text-text-primary font-medium"
                       style={{ fontFamily: 'var(--font-epilogue)' }}
                     >
                       ${item.totalPrice.toFixed(2)}
                     </p>
-                    <p className={`${mono.className} text-[9px] uppercase tracking-[0.1em] text-white/25 mt-0.5`}>
+                    <p className={`${mono.className} text-[9px] uppercase tracking-[0.1em] text-text-muted mt-0.5`}>
                       {item.quantity} × ${item.unitPrice.toFixed(2)}
                     </p>
                   </div>
@@ -338,25 +338,25 @@ export default function AdminOrderDetailPage({
           </div>
 
           {/* Totals */}
-          <div className="mt-4 pt-4 border-t border-white/8 space-y-2">
+          <div className="mt-4 pt-4 border-t border-border space-y-2">
             {order.shippingCost != null && (
-              <div className={`${mono.className} flex justify-between text-[10px] uppercase tracking-[0.15em] text-white/30`}>
+              <div className={`${mono.className} flex justify-between text-[10px] uppercase tracking-[0.15em] text-text-muted`}>
                 <span>Shipping</span>
                 <span>${order.shippingCost.toFixed(2)}</span>
               </div>
             )}
             {order.tax != null && (
-              <div className={`${mono.className} flex justify-between text-[10px] uppercase tracking-[0.15em] text-white/30`}>
+              <div className={`${mono.className} flex justify-between text-[10px] uppercase tracking-[0.15em] text-text-muted`}>
                 <span>Tax</span>
                 <span>${order.tax.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between items-baseline pt-1">
-              <span className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-white/40`}>
+              <span className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-text-secondary`}>
                 Total
               </span>
               <span
-                className="text-white font-black"
+                className="text-text-primary font-black"
                 style={{ fontFamily: 'var(--font-epilogue)', fontSize: '1.4rem' }}
               >
                 ${order.totalPrice.toFixed(2)}
@@ -366,7 +366,7 @@ export default function AdminOrderDetailPage({
         </div>
 
         {/* Sidebar */}
-        <div className="bg-[#0d0a06] divide-y divide-white/8">
+        <div className="bg-[var(--page-bg)] divide-y divide-border">
 
           {/* Dates */}
           <div className="p-6">
@@ -383,10 +383,10 @@ export default function AdminOrderDetailPage({
                 { label: 'Completed',   value: formatDate(order.completedAt) },
               ].filter(r => r.value !== '—').map(({ label, value }) => (
                 <div key={label} className="flex justify-between items-baseline gap-2">
-                  <span className={`${mono.className} text-[9px] uppercase tracking-[0.15em] text-white/25`}>
+                  <span className={`${mono.className} text-[9px] uppercase tracking-[0.15em] text-text-muted`}>
                     {label}
                   </span>
-                  <span className={`${mono.className} text-[10px] text-white/55 text-right`}>
+                  <span className={`${mono.className} text-[10px] text-text-secondary text-right`}>
                     {value}
                   </span>
                 </div>
@@ -402,7 +402,7 @@ export default function AdminOrderDetailPage({
                   <MapPin className="h-3 w-3" /> Ship To
                 </span>
               </SectionLabel>
-              <p className={`${mono.className} text-[10px] leading-relaxed text-white/40 whitespace-pre-line`}>
+              <p className={`${mono.className} text-[10px] leading-relaxed text-text-secondary whitespace-pre-line`}>
                 {order.shippingAddress}
               </p>
             </div>
@@ -412,7 +412,7 @@ export default function AdminOrderDetailPage({
           {order.notes && (
             <div className="p-6">
               <SectionLabel>Notes</SectionLabel>
-              <p className={`${mono.className} text-[10px] leading-relaxed text-white/40`}>
+              <p className={`${mono.className} text-[10px] leading-relaxed text-text-secondary`}>
                 {order.notes}
               </p>
             </div>
@@ -421,10 +421,10 @@ export default function AdminOrderDetailPage({
       </div>
 
       {/* ── Status history ── */}
-      <div className="border border-white/8">
-        <div className="flex items-center gap-2.5 px-6 py-4 border-b border-white/8">
-          <Clock className="h-3.5 w-3.5 text-white/25" />
-          <span className={`${mono.className} text-[10px] uppercase tracking-[0.2em] text-white/40`}>
+      <div className="border border-border">
+        <div className="flex items-center gap-2.5 px-6 py-4 border-b border-border">
+          <Clock className="h-3.5 w-3.5 text-text-muted" />
+          <span className={`${mono.className} text-[10px] uppercase tracking-[0.2em] text-text-secondary`}>
             Status History
           </span>
         </div>
@@ -450,10 +450,10 @@ function StatusHistory({ orderId, monoClass }: { orderId: string; monoClass: str
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="flex gap-4">
-            <div className="w-2 h-2 bg-white/[0.06] animate-pulse mt-1 shrink-0" />
+            <div className="w-2 h-2 bg-surface-alt animate-pulse mt-1 shrink-0" />
             <div className="space-y-1.5 flex-1">
-              <div className="h-3 bg-white/[0.05] animate-pulse w-24" />
-              <div className="h-2 bg-white/[0.03] animate-pulse w-40" />
+              <div className="h-3 bg-surface-alt animate-pulse w-24" />
+              <div className="h-2 bg-surface-alt animate-pulse w-40" />
             </div>
           </div>
         ))}
@@ -465,7 +465,7 @@ function StatusHistory({ orderId, monoClass }: { orderId: string; monoClass: str
 
   if (history.length === 0) {
     return (
-      <p className={`${monoClass} text-[9px] uppercase tracking-[0.2em] text-white/20`}>
+      <p className={`${monoClass} text-[9px] uppercase tracking-[0.2em] text-text-muted`}>
         No history yet
       </p>
     );
@@ -478,7 +478,7 @@ function StatusHistory({ orderId, monoClass }: { orderId: string; monoClass: str
           {/* Timeline spine */}
           <div className="flex flex-col items-center">
             <div className={`w-1.5 h-1.5 border mt-1 shrink-0 ${
-              i === 0 ? 'bg-amber-400 border-amber-400' : 'bg-white/20 border-white/20'
+              i === 0 ? 'bg-accent border-accent' : 'bg-gray-300 border-border'
             }`} />
             {i < history.length - 1 && (
               <div className="w-px flex-1 bg-white/8 mt-1" />
@@ -489,23 +489,23 @@ function StatusHistory({ orderId, monoClass }: { orderId: string; monoClass: str
           <div className={`pb-5 ${i === history.length - 1 ? 'pb-0' : ''}`}>
             <div className="flex items-center gap-2 mb-0.5">
               <span
-                className="text-white/70 font-medium text-sm"
+                className="text-text-primary font-medium text-sm"
                 style={{ fontFamily: 'var(--font-epilogue)' }}
               >
                 {entry.status}
               </span>
               {i === 0 && (
-                <span className={`${monoClass} text-[8px] uppercase tracking-[0.15em] text-amber-400`}>
+                <span className={`${monoClass} text-[8px] uppercase tracking-[0.15em] text-accent`}>
                   Current
                 </span>
               )}
             </div>
             {entry.notes && (
-              <p className={`${monoClass} text-[10px] text-white/35 mb-1`}>
+              <p className={`${monoClass} text-[10px] text-text-muted mb-1`}>
                 {entry.notes}
               </p>
             )}
-            <p className={`${monoClass} text-[9px] uppercase tracking-[0.12em] text-white/20`}>
+            <p className={`${monoClass} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
               {formatDateTime(entry.changedAt)}
               {entry.changedBy && ` · ${entry.changedBy.firstName} ${entry.changedBy.lastName}`}
             </p>

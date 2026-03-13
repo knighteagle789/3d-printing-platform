@@ -4,134 +4,85 @@
 @custom-variant dark (&:is(.dark *));
 
 /**
- * NoCo Make Lab — Design Tokens (CSS layer)
+ * NoCo Make Lab — Design Tokens
  *
- * To retheme: update the values in :root below AND the matching
- * values in src/web/lib/theme.ts.
+ * TO RETHEME: Change the hex values in BOTH sections below.
+ * - @theme inline  → generates Tailwind utility classes (bg-page, text-accent, etc.)
+ * - :root          → CSS custom properties used by inline style={{}} props and the sidebar
  *
- * Tailwind v4 picks up --color-* from @theme inline and generates
- * utility classes automatically:
- *   --color-page        → bg-page, text-page, border-page …
- *   --color-sidebar     → bg-sidebar …
- *   --color-accent      → bg-accent, text-accent …
- *   etc.
+ * Both sections must stay in sync. The companion file src/web/lib/theme.ts
+ * holds the same values for use in JS.
  */
 
-/* ── Raw palette ─────────────────────────────────────────────────────────── */
-:root {
-  /* Page surfaces */
-  --page-bg:        #f9fafb;
-  --surface:        #ffffff;
-  --surface-alt:    #f3f4f6;
-
-  /* Sidebar */
-  --sidebar-bg:     #134e4a;
-  --sidebar-hover:  #1a6b66;
-  --sidebar-active: #0f3d3a;
-
-  /* Accent */
-  --accent:         #0d9488;
-  --accent-dark:    #0f766e;
-  --accent-light:   #f0fdfa;
-  --accent-border:  #99f6e4;
-
-  /* Text */
-  --text-primary:   #111827;
-  --text-secondary: #6b7280;
-  --text-muted:     #9ca3af;
-
-  /* Borders */
-  --border:         #e5e7eb;
-  --border-strong:  #d1d5db;
-
-  /* Nav (on dark sidebar) */
-  --nav-text-active:   #ffffff;
-  --nav-text-inactive: rgba(255,255,255,0.40);
-  --nav-accent:        #99f6e4;
-
-  /* Semantic status */
-  --success:        #0f766e;
-  --success-bg:     #f0fdfa;
-  --success-border: #99f6e4;
-  --warning:        #b45309;
-  --warning-bg:     #fffbeb;
-  --warning-border: #fcd34d;
-  --danger:         #dc2626;
-  --danger-bg:      #fee2e2;
-  --danger-border:  #fca5a5;
-  --info:           #1d4ed8;
-  --info-bg:        #eff6ff;
-  --info-border:    #bfdbfe;
-
-  /* Misc */
-  --radius: 0.5rem;
-}
-
-/* ── Tailwind v4 theme registration ─────────────────────────────────────── */
-/* Exposes raw vars as Tailwind color utilities via --color-* convention.    */
-/* bg-page, text-accent, border-sidebar, ring-accent, etc. all work.        */
+/* ── Tailwind utility classes ────────────────────────────────────────────── */
+/* Static hex values only — Tailwind v4 cannot resolve var() at build time.  */
 @theme inline {
-  /* Surfaces */
-  --color-page:           var(--page-bg);
-  --color-surface:        var(--surface);
-  --color-surface-alt:    var(--surface-alt);
-
-  /* Sidebar */
-  --color-sidebar:        var(--sidebar-bg);
-  --color-sidebar-hover:  var(--sidebar-hover);
-  --color-sidebar-active: var(--sidebar-active);
+  /* Page surfaces */
+  --color-page:           #f9fafb;
+  --color-surface:        #ffffff;
+  --color-surface-alt:    #f3f4f6;
 
   /* Accent */
-  --color-accent:         var(--accent);
-  --color-accent-dark:    var(--accent-dark);
-  --color-accent-light:   var(--accent-light);
-  --color-accent-border:  var(--accent-border);
+  --color-accent:         #0d9488;
+  --color-accent-dark:    #0f766e;
+  --color-accent-light:   #f0fdfa;
+  --color-accent-border:  #99f6e4;
 
   /* Text */
-  --color-text-primary:   var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted:     var(--text-muted);
+  --color-text-primary:   #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted:     #9ca3af;
 
   /* Borders */
-  --color-border:         var(--border);
-  --color-border-strong:  var(--border-strong);
+  --color-border:         #e5e7eb;
+  --color-border-strong:  #d1d5db;
 
   /* Status */
-  --color-success:        var(--success);
-  --color-success-bg:     var(--success-bg);
-  --color-warning:        var(--warning);
-  --color-warning-bg:     var(--warning-bg);
-  --color-danger:         var(--danger);
-  --color-danger-bg:      var(--danger-bg);
-  --color-info:           var(--info);
-  --color-info-bg:        var(--info-bg);
+  --color-success:        #0f766e;
+  --color-success-bg:     #f0fdfa;
+  --color-warning:        #b45309;
+  --color-warning-bg:     #fffbeb;
+  --color-danger:         #dc2626;
+  --color-danger-bg:      #fee2e2;
+  --color-info:           #1d4ed8;
+  --color-info-bg:        #eff6ff;
 
-  /* Keep existing shadcn/system tokens intact */
-  --color-background:           var(--page-bg);
-  --color-foreground:           var(--text-primary);
-  --color-card:                 var(--surface);
-  --color-card-foreground:      var(--text-primary);
-  --color-popover:              var(--surface);
-  --color-popover-foreground:   var(--text-primary);
-  --color-primary:              var(--accent);
+  /* shadcn/system token aliases */
+  --color-background:           #f9fafb;
+  --color-foreground:           #111827;
+  --color-card:                 #ffffff;
+  --color-card-foreground:      #111827;
+  --color-popover:              #ffffff;
+  --color-popover-foreground:   #111827;
+  --color-primary:              #0d9488;
   --color-primary-foreground:   #ffffff;
-  --color-secondary:            var(--surface-alt);
-  --color-secondary-foreground: var(--text-primary);
-  --color-muted:                var(--surface-alt);
-  --color-muted-foreground:     var(--text-secondary);
-  --color-destructive:          var(--danger);
-  --color-input:                var(--border);
-  --color-ring:                 var(--accent);
+  --color-secondary:            #f3f4f6;
+  --color-secondary-foreground: #111827;
+  --color-muted:                #f3f4f6;
+  --color-muted-foreground:     #6b7280;
+  --color-destructive:          #dc2626;
+  --color-input:                #e5e7eb;
+  --color-ring:                 #0d9488;
 
   /* Radius */
-  --radius-sm:  calc(var(--radius) - 4px);
-  --radius-md:  calc(var(--radius) - 2px);
-  --radius-lg:  var(--radius);
-  --radius-xl:  calc(var(--radius) + 4px);
+  --radius: 0.5rem;
+  --radius-sm:  calc(0.5rem - 4px);
+  --radius-md:  calc(0.5rem - 2px);
+  --radius-lg:  0.5rem;
+  --radius-xl:  calc(0.5rem + 4px);
 
   /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/* ── CSS custom properties (for inline styles & sidebar) ─────────────────── */
+/* These are used via style={{ background: 'var(--sidebar-bg)' }} etc.       */
+:root {
+  --sidebar-bg:     #134e4a;
+  --sidebar-hover:  #1a6b66;
+  --sidebar-active: #0f3d3a;
+  --nav-accent:     #99f6e4;
 }
 
 @layer base {
@@ -141,4 +92,83 @@
   body {
     @apply bg-page text-text-primary;
   }
+}
+
+/* ── Component classes ───────────────────────────────────────────────────── */
+/* Semantic building blocks used across admin and dashboard pages.           */
+/* To retheme badges, headings, inputs etc: change only this file.          */
+
+@layer components {
+
+  /* Page heading (Epilogue font-black titles) */
+  .page-title {
+    @apply text-text-primary font-black tracking-tight leading-[1.1];
+  }
+
+  /* Status / role badges — pill shape, pastel bg + dark readable text */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase border;
+  }
+  .badge-success  { @apply bg-emerald-100 text-emerald-800 border-emerald-300; }
+  .badge-info     { @apply bg-sky-100     text-sky-800     border-sky-200;     }
+  .badge-warning  { @apply bg-amber-100   text-amber-800   border-amber-200;   }
+  .badge-danger   { @apply bg-red-100     text-red-700     border-red-200;     }
+  .badge-neutral  { @apply bg-surface-alt text-text-muted  border-border;      }
+  /* Role-specific */
+  .badge-admin    { @apply bg-amber-100   text-amber-800   border-amber-200;   }
+  .badge-staff    { @apply bg-sky-100     text-sky-800     border-sky-200;     }
+  .badge-customer { @apply bg-surface-alt text-text-secondary border-border;   }
+  .badge-pending  { @apply bg-amber-100   text-amber-800   border-amber-200;   }
+
+  /* Form inputs, selects, textareas */
+  .field-input {
+    @apply w-full h-9 bg-surface border border-border px-3 text-[11px] text-text-primary
+           placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors;
+  }
+  .field-select {
+    @apply w-full h-9 bg-surface border border-border px-3 text-[11px] text-text-primary
+           focus:outline-none focus:border-accent transition-colors appearance-none;
+  }
+  .field-textarea {
+    @apply w-full bg-surface border border-border px-3 py-2.5 text-[11px] text-text-primary
+           placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-y;
+  }
+
+  /* Primary action button */
+  .btn-primary {
+    @apply bg-accent text-white text-[10px] uppercase tracking-[0.15em] font-medium
+           px-4 h-9 hover:bg-accent-dark transition-colors disabled:opacity-40;
+  }
+  /* Ghost / back button */
+  .btn-ghost {
+    @apply inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em]
+           text-text-muted hover:text-text-primary transition-colors;
+  }
+  /* Destructive button */
+  .btn-danger {
+    @apply bg-red-500 text-white text-[10px] uppercase tracking-[0.15em] font-medium
+           px-4 h-9 hover:bg-red-400 transition-colors disabled:opacity-40;
+  }
+
+  /* Section / card container */
+  .admin-card {
+    @apply border border-border bg-surface;
+  }
+  .admin-card-header {
+    @apply px-5 py-3 border-b border-border bg-surface-alt
+           text-[9px] uppercase tracking-[0.2em] text-text-muted;
+  }
+
+  /* Table */
+  .admin-th {
+    @apply text-[8px] uppercase tracking-[0.18em] text-text-muted px-4 py-3 text-left;
+  }
+  .admin-tr {
+    @apply border-b border-border last:border-0 cursor-pointer hover:bg-accent-light transition-colors;
+  }
+  .admin-td        { @apply px-4 py-3 text-[11px] text-text-primary; }
+  .admin-td-muted  { @apply px-4 py-3 text-[11px] text-text-secondary; }
+
+  /* Skeleton pulse */
+  .skeleton { @apply bg-surface-alt animate-pulse; }
 }

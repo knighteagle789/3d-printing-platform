@@ -41,7 +41,7 @@ type FormValues = z.infer<typeof schema>;
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className={`${mono.className} text-[8px] uppercase tracking-[0.22em] text-white/20 pb-2 border-b border-white/6`}>
+    <p className={`${mono.className} text-[8px] uppercase tracking-[0.22em] text-text-muted pb-2 border-b border-border`}>
       {children}
     </p>
   );
@@ -56,11 +56,11 @@ function FormRow({
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline gap-2">
-        <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-white/40`}>{label}</p>
-        {optional && <p className={`${mono.className} text-[8px] text-white/15`}>optional</p>}
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-secondary`}>{label}</p>
+        {optional && <p className={`${mono.className} text-[8px] text-text-muted`}>optional</p>}
       </div>
       {children}
-      {hint  && <p className={`${mono.className} text-[8px] text-white/20`}>{hint}</p>}
+      {hint  && <p className={`${mono.className} text-[8px] text-text-muted`}>{hint}</p>}
       {error && <p className={`${mono.className} text-[8px] text-red-400`}>{error}</p>}
     </div>
   );
@@ -84,9 +84,9 @@ export default function NewPortfolioItemPage() {
   const isFeatured  = watch('isFeatured');
   const isPublished = watch('isPublished');
 
-  const inputCls    = `${mono.className} w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors`;
-  const selectCls   = `${mono.className} w-full h-9 bg-white/[0.03] border border-white/10 px-3 text-[11px] text-white/70 focus:outline-none focus:border-amber-400/40 transition-colors appearance-none`;
-  const textareaCls = `${mono.className} w-full bg-white/[0.03] border border-white/10 px-3 py-2.5 text-[11px] text-white/70 placeholder:text-white/15 focus:outline-none focus:border-amber-400/40 transition-colors resize-y`;
+  const inputCls    = `${mono.className} w-full h-9 field-input`;
+  const selectCls   = `${mono.className} w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary focus:outline-none focus:border-accent transition-colors appearance-none`;
+  const textareaCls = `${mono.className} w-full bg-surface-alt border border-border px-3 py-2.5 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-y`;
 
   const mutation = useMutation({
     mutationFn: (data: CreatePortfolioItemRequest) => contentApi.createPortfolioItem(data),
@@ -120,8 +120,8 @@ export default function NewPortfolioItemPage() {
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 border ${
           toast.type === 'success'
-            ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
-            : 'bg-red-400/10 border-red-400/20 text-red-400'
+            ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+            : 'bg-red-500 border-red-200 text-red-400'
         }`}>
           {toast.type === 'success' ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> : <AlertCircle className="h-3.5 w-3.5 shrink-0" />}
           <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em]`}>{toast.msg}</p>
@@ -130,13 +130,13 @@ export default function NewPortfolioItemPage() {
 
       <button
         onClick={() => router.push('/admin/content')}
-        className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-white/50 transition-colors`}
+        className={`${mono.className} inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.18em] text-text-muted hover:text-text-secondary transition-colors`}
       >
         <ArrowLeft className="h-3 w-3" /> Content
       </button>
 
       <h1
-        className="font-black tracking-tight leading-[1.1] text-white"
+        className="page-title"
         style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}
       >
         New Portfolio Item
@@ -219,17 +219,17 @@ export default function NewPortfolioItemPage() {
           { field: 'isFeatured'  as const, val: isFeatured,  label: 'Featured',  desc: 'Show on homepage featured section' },
           { field: 'isPublished' as const, val: isPublished, label: 'Published', desc: 'Visible on the public portfolio page' },
         ].map(({ field, val, label, desc }) => (
-          <div key={field} className="flex items-center justify-between border-t border-white/6 pt-4">
+          <div key={field} className="flex items-center justify-between border-t border-border pt-4">
             <div>
-              <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-white/50`}>{label}</p>
-              <p className={`${mono.className} text-[9px] text-white/20 mt-0.5`}>{desc}</p>
+              <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-text-secondary`}>{label}</p>
+              <p className={`${mono.className} text-[9px] text-text-muted mt-0.5`}>{desc}</p>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={val}
               onClick={() => setValue(field, !val)}
-              className={`relative w-10 h-5 transition-colors shrink-0 ${val ? 'bg-amber-400' : 'bg-white/10'}`}
+              className={`relative w-10 h-5 transition-colors shrink-0 ${val ? 'bg-accent' : 'bg-white/10'}`}
             >
               <span className={`absolute top-0.5 h-4 w-4 bg-white transition-transform ${val ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
@@ -240,14 +240,14 @@ export default function NewPortfolioItemPage() {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className={`${mono.className} bg-amber-400 text-black text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-40`}
+            className={`${mono.className} bg-accent-light text-accent-dark text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-40`}
           >
             {mutation.isPending ? 'Creating...' : 'Create Item'}
           </button>
           <button
             type="button"
             onClick={() => router.push('/admin/content')}
-            className={`${mono.className} text-[10px] uppercase tracking-[0.18em] px-6 h-9 border border-white/10 text-white/30 hover:text-white/50 hover:border-white/20 transition-colors`}
+            className={`${mono.className} text-[10px] uppercase tracking-[0.18em] px-6 h-9 border border-border text-text-muted hover:text-text-secondary hover:border-border transition-colors`}
           >
             Cancel
           </button>

@@ -86,9 +86,9 @@ export default function EditMaterialPage({
   if (isLoading) {
     return (
       <div className="space-y-6 max-w-2xl">
-        <div className="h-5 bg-white/[0.05] animate-pulse w-28" />
-        <div className="h-20 bg-white/[0.04] animate-pulse" />
-        <div className="h-96 bg-white/[0.03] animate-pulse" />
+        <div className="h-5 bg-surface-alt animate-pulse w-28" />
+        <div className="h-20 bg-surface-alt animate-pulse" />
+        <div className="h-96 bg-surface-alt animate-pulse" />
       </div>
     );
   }
@@ -108,8 +108,8 @@ export default function EditMaterialPage({
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border ${
           toast.ok
-            ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
-            : 'bg-red-400/10 border-red-400/30 text-red-400'
+            ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+            : 'bg-red-500 border-red-200 text-red-400'
         }`}>
           {toast.ok
             ? <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -123,7 +123,7 @@ export default function EditMaterialPage({
       {/* ── Back ── */}
       <button
         onClick={() => router.push('/admin/materials')}
-        className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-white/25 hover:text-white transition-colors`}
+        className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.18em] text-text-muted hover:text-text-primary transition-colors`}
       >
         <ArrowLeft className="h-3 w-3" /> Back to Materials
       </button>
@@ -132,28 +132,28 @@ export default function EditMaterialPage({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1
-            className="font-black tracking-tight leading-[1.1] text-white mb-2"
+            className="page-title mb-2"
             style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
           >
             {material.type} — {material.color}
           </h1>
           <div className={`${mono.className} flex items-center flex-wrap gap-3 text-[9px] uppercase tracking-[0.15em]`}>
             {material.brand && (
-              <span className="text-white/30">{material.brand}</span>
+              <span className="text-text-muted">{material.brand}</span>
             )}
             {material.finish && (
               <>
-                <span className="text-white/12">·</span>
-                <span className="text-white/25">{material.finish}</span>
+                <span className="text-text-muted">·</span>
+                <span className="text-text-muted">{material.finish}</span>
               </>
             )}
             {material.grade && (
               <>
-                <span className="text-white/12">·</span>
-                <span className="text-white/25">{material.grade}</span>
+                <span className="text-text-muted">·</span>
+                <span className="text-text-muted">{material.grade}</span>
               </>
             )}
-            <span className="text-white/12">·</span>
+            <span className="text-text-muted">·</span>
             <span className={material.isActive ? 'text-emerald-400' : 'text-red-400'}>
               {material.isActive ? 'Active' : 'Inactive'}
             </span>
@@ -164,19 +164,19 @@ export default function EditMaterialPage({
         {material.isActive && (
           confirmDeactivate ? (
             <div className="flex items-center gap-2 shrink-0">
-              <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-white/30`}>
+              <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
                 Are you sure?
               </span>
               <button
                 onClick={() => deleteMutation.mutate()}
                 disabled={deleteMutation.isPending}
-                className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 h-8 border border-red-400/40 text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-30`}
+                className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 h-8 border border-red-200 text-red-400 hover:bg-red-500 transition-colors disabled:opacity-30`}
               >
                 {deleteMutation.isPending ? 'Deactivating...' : 'Confirm'}
               </button>
               <button
                 onClick={() => setConfirmDeactivate(false)}
-                className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 h-8 border border-white/10 text-white/30 hover:text-white transition-colors`}
+                className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-3 h-8 border border-border text-text-muted hover:text-text-primary transition-colors`}
               >
                 Cancel
               </button>
@@ -184,7 +184,7 @@ export default function EditMaterialPage({
           ) : (
             <button
               onClick={() => setConfirmDeactivate(true)}
-              className={`${mono.className} shrink-0 text-[9px] uppercase tracking-[0.15em] px-3 h-8 border border-white/10 text-white/25 hover:border-red-400/40 hover:text-red-400 transition-colors`}
+              className={`${mono.className} shrink-0 text-[9px] uppercase tracking-[0.15em] px-3 h-8 border border-border text-text-muted hover:border-red-200 hover:text-red-400 transition-colors`}
             >
               Deactivate
             </button>
@@ -194,9 +194,9 @@ export default function EditMaterialPage({
 
       {/* ── Low stock banner ── */}
       {material.isLowStock && material.isActive && (
-        <div className="flex items-center gap-3 px-5 py-3.5 border border-amber-400/30 bg-amber-400/[0.05]">
-          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-          <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-amber-400`}>
+        <div className="flex items-center gap-3 px-5 py-3.5 border border-amber-200 bg-amber-50.05]">
+          <AlertTriangle className="h-4 w-4 text-accent shrink-0" />
+          <p className={`${mono.className} text-[10px] uppercase tracking-[0.18em] text-accent`}>
             Low stock — {gramsDisplay(material.stockGrams)} remaining
             {material.lowStockThresholdGrams && ` (threshold: ${gramsDisplay(material.lowStockThresholdGrams)})`}
           </p>
@@ -210,18 +210,18 @@ export default function EditMaterialPage({
           { icon: Package,  label: 'Price / g',  value: usd.format(material.pricePerGram) },
           { icon: Clock,    label: 'Updated',    value: material.updatedAt ? formatDateTime(material.updatedAt) : formatDateTime(material.createdAt) },
         ].map(({ icon: Icon, label, value }) => (
-          <div key={label} className="bg-[#0d0a06] px-5 py-4">
+          <div key={label} className="bg-[var(--page-bg)] px-5 py-4">
             <div className="flex items-center gap-1.5 mb-1.5">
-              <Icon className="h-3 w-3 text-white/15" />
-              <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-white/20`}>{label}</p>
+              <Icon className="h-3 w-3 text-text-muted" />
+              <p className={`${mono.className} text-[8px] uppercase tracking-[0.2em] text-text-muted`}>{label}</p>
             </div>
-            <p className={`${mono.className} text-[13px] text-white/70`}>{value}</p>
+            <p className={`${mono.className} text-[13px] text-text-primary`}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* ── Form ── */}
-      <div className="border border-white/8 p-6">
+      <div className="border border-border p-6">
         <MaterialForm
           defaultValues={{
             type:                   material.type,
