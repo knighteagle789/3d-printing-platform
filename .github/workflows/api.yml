@@ -50,7 +50,6 @@ jobs:
       - name: Test
         run: >
           dotnet test ${{ env.TEST_PROJECT }}
-          --no-build
           --configuration Release
           --logger "trx;LogFileName=test-results.trx"
           --collect:"XPlat Code Coverage"
