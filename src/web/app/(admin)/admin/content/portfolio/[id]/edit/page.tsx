@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -81,7 +81,8 @@ export default function EditPortfolioItemPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router  = useRouter();
+  const router      = useRouter();
+  const queryClient = useQueryClient();
   const [toast,       setToast]       = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [detailPairs, setDetailPairs] = useState<ProjectDetailPair[]>([]);
 
@@ -130,6 +131,7 @@ export default function EditPortfolioItemPage({
   const mutation = useMutation({
     mutationFn: (payload: UpdatePortfolioItemRequest) => contentApi.updatePortfolioItem(id, payload),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-portfolio'] });
       showToast('success', 'Portfolio item saved.');
       setTimeout(() => router.push('/admin/content'), 800);
     },

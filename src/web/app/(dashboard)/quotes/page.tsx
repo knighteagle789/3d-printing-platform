@@ -86,7 +86,7 @@ export default function QuotesPage() {
         {/* Column headers */}
         <div
           className="grid px-4 py-2.5 border-b border-border"
-          style={{ background: '#080705', gridTemplateColumns: '1fr 1fr 2fr 4rem 8rem' }}
+          style={{ gridTemplateColumns: '1fr 1fr 2fr 4rem 8rem' }}
         >
           {['Request #', 'Date', 'File', 'Qty', 'Status'].map(h => (
             <span key={h} className={`${mono.className} text-[8px] uppercase tracking-[0.18em] text-text-muted`}>

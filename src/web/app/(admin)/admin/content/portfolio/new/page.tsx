@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -67,7 +67,8 @@ function FormRow({
 }
 
 export default function NewPortfolioItemPage() {
-  const router = useRouter();
+  const router      = useRouter();
+  const queryClient = useQueryClient();
   const [toast,       setToast]       = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [detailPairs, setDetailPairs] = useState<ProjectDetailPair[]>([]);
 
@@ -91,6 +92,7 @@ export default function NewPortfolioItemPage() {
   const mutation = useMutation({
     mutationFn: (data: CreatePortfolioItemRequest) => contentApi.createPortfolioItem(data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-portfolio'] });
       showToast('success', 'Portfolio item created.');
       setTimeout(() => router.push('/admin/content'), 800);
     },

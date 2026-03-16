@@ -53,6 +53,7 @@ public record BlogPostSummaryResponse(
     string? FeaturedImageUrl,
     string Category,
     string[]? Tags,
+    bool IsPublished,
     DateTime? PublishedAt,
     int ViewCount,
     UserSummaryResponse? Author)
@@ -65,6 +66,7 @@ public record BlogPostSummaryResponse(
         FeaturedImageUrl: post.FeaturedImageUrl,
         Category: post.Category.ToString(),
         Tags: post.Tags,
+        IsPublished: post.IsPublished,
         PublishedAt: post.PublishedAt,
         ViewCount: post.ViewCount,
         Author: post.Author != null
