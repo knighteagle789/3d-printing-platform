@@ -47,6 +47,9 @@ namespace PrintHub.Infrastructure.Data.Configurations
 
             builder.HasIndex(u => u.CreatedAt);
 
+            builder.Property(u => u.PasswordResetToken)
+                .HasMaxLength(200);
+
             // Navigation configurations
             builder.HasMany(u => u.Orders)
                 .WithOne(o => o.User)

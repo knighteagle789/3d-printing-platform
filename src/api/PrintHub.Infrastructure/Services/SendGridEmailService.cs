@@ -243,6 +243,28 @@ public class SendGridEmailService : IEmailService
         );
     }
 
+    public async Task SendPasswordResetEmailAsync(
+        string toEmail, string firstName, string resetLink)
+    {
+        await SendAsync(
+            toEmail,
+            firstName,
+            "Reset your NoCo Make Lab password",
+            $@"<h2>Password reset request</h2>
+            <p>Hi {firstName},</p>
+            <p>We received a request to reset the password for your NoCo Make Lab account.</p>
+            <p>Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+            <p style='margin: 32px 0;'>
+              <a href='{resetLink}' style='background:#0d9488;color:white;padding:12px 24px;
+                 text-decoration:none;font-weight:600;display:inline-block;'>
+                Reset Password
+              </a>
+            </p>
+            <p>If you didn't request this, you can safely ignore this email — your password won't change.</p>
+            <p>— NoCo Make Lab</p>"
+        );
+    }
+
     private static string WrapInTemplate(string title, string content) => $@"
         <!DOCTYPE html>
         <html>

@@ -227,6 +227,52 @@ public class AuthService : IAuthService
         _logger.LogInformation("User deactivated: {UserId}", id);
     }
 
+    public async Task ForgotPasswordAsync(string email, string resetBaseUrl)
+    {
+        // Always return without error even if email not found — prevents enumeration
+        var user = await _userRepo.GetByEmailAsync(email);
+        if (user == null || !user.IsActive)
+        {
+            _logger.LogInformation(
+                "Password reset requested for unknown/inactive email: {Email}", email);
+            return;
+        }
+
+        // Generate a secure random token
+        var token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+
+        user.PasswordResetToken = token;
+        user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
+        _userRepo.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+
+        var resetLink = $"{resetBaseUrl.TrimEnd('/')}/reset-password?token={token}";
+
+        _ = Task.Run(async () =>
+        {
+            await _emailService.SendPasswordResetEmailAsync(
+                user.Email, user.FirstName, resetLink);
+        });
+
+        _logger.LogInformation("Password reset token generated for user: {UserId}", user.Id);
+    }
+
+    public async Task ResetPasswordAsync(string token, string newPassword)
+    {
+        var user = await _userRepo.GetByResetTokenAsync(token);
+        if (user == null)
+            throw new BusinessRuleException(
+                "This reset link is invalid or has expired. Please request a new one.");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiry = null;
+        _userRepo.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Password reset completed for user: {UserId}", user.Id);
+    }
+
     // --- Private helpers ---
 
     private (string Token, DateTime ExpiresAt) GenerateJwtToken(User user)

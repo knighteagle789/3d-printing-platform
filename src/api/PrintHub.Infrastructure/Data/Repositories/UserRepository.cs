@@ -16,6 +16,14 @@ public class UserRepository : Repository<User>, IUserRepository
             .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
     }
 
+    public async Task<User?> GetByResetTokenAsync(string token)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(u =>
+                u.PasswordResetToken == token &&
+                u.PasswordResetTokenExpiry > DateTime.UtcNow);
+    }
+
     public async Task<bool> EmailExistsAsync(string email)
     {
         return await _dbSet

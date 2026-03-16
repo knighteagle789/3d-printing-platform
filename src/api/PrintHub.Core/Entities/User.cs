@@ -33,7 +33,11 @@ namespace PrintHub.Core.Entities
         public bool IsActive { get; set; } = true;
         
         public bool EmailConfirmed { get; set; }
-        
+
+        // Password reset
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiry { get; set; }
+
         // Navigation properties
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         

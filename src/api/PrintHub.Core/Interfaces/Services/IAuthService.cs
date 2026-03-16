@@ -19,4 +19,8 @@ public interface IAuthService
     Task<UserResponse> UpdateUserAsync(Guid id, UpdateUserRequest request);
     Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
     Task DeactivateUserAsync(Guid id);
+
+    // --- Password reset ---
+    Task ForgotPasswordAsync(string email, string resetBaseUrl);
+    Task ResetPasswordAsync(string token, string newPassword);
 }

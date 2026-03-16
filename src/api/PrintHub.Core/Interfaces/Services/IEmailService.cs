@@ -10,4 +10,5 @@ public interface IEmailService
     Task SendNewQuoteRequestAdminAsync(string requestNumber, string customerName, string? fileName);
     Task SendNewOrderAdminAsync(string orderNumber, string customerName, decimal totalPrice);
     Task SendContactFormAsync(string fromName, string fromEmail, string subject, string message);
+    Task SendPasswordResetEmailAsync(string toEmail, string firstName, string resetLink);
 }

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using PrintHub.Core.DTOs.Users;
 using PrintHub.Core.Interfaces.Services;
 using PrintHub.API.Extensions;
@@ -14,10 +15,12 @@ namespace PrintHub.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IConfiguration configuration)
     {
         _authService = authService;
+        _configuration = configuration;
     }
 
     // ─── Public endpoints ─────────────────────────────────────────────────
@@ -94,6 +97,27 @@ public class AuthController : ControllerBase
         var userId = User.GetUserId();
         await _authService.ChangePasswordAsync(userId, request);
         return Ok(new { message = "Password changed successfully." });
+    }
+
+    /// <summary>
+    /// Request a password reset email. Always returns 200 to prevent email enumeration.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        var resetBaseUrl = _configuration["WebAppUrl"] ?? "http://localhost:3000";
+        await _authService.ForgotPasswordAsync(request.Email, resetBaseUrl);
+        return Ok(new { message = "If an account with that email exists, a reset link has been sent." });
+    }
+
+    /// <summary>
+    /// Reset password using a token from the reset email.
+    /// </summary>
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        await _authService.ResetPasswordAsync(request.Token, request.NewPassword);
+        return Ok(new { message = "Password reset successfully. You can now sign in." });
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────
