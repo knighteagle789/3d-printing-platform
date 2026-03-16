@@ -14,16 +14,16 @@ const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
-  Pending:       { dot: 'bg-gray-300',       text: 'text-text-muted'       },
-  UnderReview:   { dot: 'bg-sky-500',     text: 'text-sky-700'     },
-  QuoteProvided: { dot: 'bg-amber-500',   text: 'text-amber-700'   },
-  Accepted:      { dot: 'bg-emerald-500', text: 'text-emerald-700' },
-  Expired:       { dot: 'bg-red-500',     text: 'text-red-600'     },
-  Cancelled:     { dot: 'bg-red-500',     text: 'text-red-600'     },
+  Pending:       { dot: 'bg-border', text: 'text-text-muted'       },
+  UnderReview:   { dot: 'bg-sky-400/60',     text: 'text-sky-400/70'     },
+  QuoteProvided: { dot: 'bg-accent/60', text: 'text-accent/70'   },
+  Accepted:      { dot: 'bg-emerald-400/60', text: 'text-emerald-400/70' },
+  Expired:       { dot: 'bg-red-400/40',     text: 'text-red-400/50'     },
+  Cancelled:     { dot: 'bg-red-400/40',     text: 'text-red-400/50'     },
 };
 
 function StatusPill({ status }: { status: string }) {
-  const s = STATUS_STYLES[status] ?? { dot: 'bg-gray-300', text: 'text-text-muted' };
+  const s = STATUS_STYLES[status] ?? { dot: 'bg-border', text: 'text-text-muted' };
   return (
     <span className="flex items-center gap-1.5">
       <span className={`inline-block h-1.5 w-1.5 rounded-full ${s.dot}`} />
@@ -63,7 +63,7 @@ export default function QuotesPage() {
 
       {/* Header */}
       <div className="mb-8">
-        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-2`}>
+        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-accent/70 mb-2`}>
           Quotes
         </p>
         <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
@@ -76,7 +76,7 @@ export default function QuotesPage() {
 
       {/* Flash */}
       {flash && (
-        <div className={`${mono.className} mb-4 border border-emerald-400/20 bg-emerald-400/[0.04] px-4 py-2.5 text-[10px] text-emerald-700`}>
+        <div className={`${mono.className} mb-4 border border-emerald-400/20 bg-emerald-400/[0.04] px-4 py-2.5 text-[10px] text-emerald-400/80`}>
           {flash}
         </div>
       )}
@@ -86,7 +86,7 @@ export default function QuotesPage() {
         {/* Column headers */}
         <div
           className="grid px-4 py-2.5 border-b border-border"
-          style={{ gridTemplateColumns: '1fr 1fr 2fr 4rem 8rem' }}
+          style={{ background: '#080705', gridTemplateColumns: '1fr 1fr 2fr 4rem 8rem' }}
         >
           {['Request #', 'Date', 'File', 'Qty', 'Status'].map(h => (
             <span key={h} className={`${mono.className} text-[8px] uppercase tracking-[0.18em] text-text-muted`}>
@@ -104,7 +104,7 @@ export default function QuotesPage() {
         )}
 
         {isError && (
-          <p className={`${mono.className} text-[10px] text-red-600 px-4 py-6`}>
+          <p className={`${mono.className} text-[10px] text-red-400/70 px-4 py-6`}>
             Failed to load quotes — please refresh.
           </p>
         )}
@@ -125,7 +125,7 @@ export default function QuotesPage() {
             className={`grid items-center px-4 py-3 cursor-pointer hover:bg-surface-alt transition-colors group ${i < quotes.length - 1 ? 'border-b border-border' : ''}`}
             style={{ gridTemplateColumns: '1fr 1fr 2fr 4rem 8rem' }}
           >
-            <span className={`${mono.className} text-[11px] text-text-secondary group-hover:text-text-primary transition-colors`}>
+            <span className={`${mono.className} text-[11px] text-text-primary group-hover:text-accent transition-colors`}>
               {quote.requestNumber}
             </span>
             <span className={`${mono.className} text-[10px] text-text-muted`}>

@@ -204,7 +204,7 @@ export default function EditMaterialPage({
       )}
 
       {/* ── Stats strip ── */}
-      <div className="grid grid-cols-3 gap-px bg-white/8">
+      <div className="grid grid-cols-3 gap-px bg-border">
         {[
           { icon: Package,  label: 'Stock',      value: gramsDisplay(material.stockGrams) },
           { icon: Package,  label: 'Price / g',  value: usd.format(material.pricePerGram) },

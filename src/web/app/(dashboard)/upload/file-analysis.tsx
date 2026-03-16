@@ -26,15 +26,15 @@ export function FileAnalysisPanel({ file }: FileAnalysisProps) {
   const a = file.analysis;
 
   return (
-    <div className="border border-border bg-surface" >
+    <div className="border border-border" style={{ background: 'var(--color-surface)' }}>
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
-        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
+        <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-secondary`}>
           File Analysis
         </span>
         {a ? (
-          <span className={`${mono.className} flex items-center gap-1.5 text-[9px] text-emerald-700`}>
+          <span className={`${mono.className} flex items-center gap-1.5 text-[9px] text-emerald-400/70`}>
             <CheckCircle className="h-3 w-3" />
             Analyzed
           </span>
@@ -90,17 +90,17 @@ export function FileAnalysisPanel({ file }: FileAnalysisProps) {
           {/* Flags */}
           <div className="px-4 py-3 flex flex-wrap gap-2">
             {a.isManifold === true && (
-              <span className={`${mono.className} text-[9px] text-emerald-700 border border-emerald-400/20 px-2 py-0.5`}>
+              <span className={`${mono.className} text-[9px] text-emerald-400/60 border border-emerald-400/20 px-2 py-0.5`}>
                 Manifold ✓
               </span>
             )}
             {a.isManifold === false && (
-              <span className={`${mono.className} text-[9px] text-red-600 border border-red-400/20 px-2 py-0.5`}>
+              <span className={`${mono.className} text-[9px] text-red-400/70 border border-red-400/20 px-2 py-0.5`}>
                 Non-manifold
               </span>
             )}
             {a.requiresSupport && (
-              <span className={`${mono.className} flex items-center gap-1 text-[9px] text-amber-700 border border-amber-400/20 px-2 py-0.5`}>
+              <span className={`${mono.className} flex items-center gap-1 text-[9px] text-accent/70 border border-accent/20 px-2 py-0.5`}>
                 <AlertTriangle className="h-2.5 w-2.5" />
                 Requires supports
               </span>
@@ -114,7 +114,7 @@ export function FileAnalysisPanel({ file }: FileAnalysisProps) {
               return parsed.length > 0 ? (
                 <div className="px-4 pb-3 space-y-1">
                   {parsed.map((w, i) => (
-                    <p key={i} className={`${mono.className} text-[9px] text-amber-700 border border-amber-400/10 bg-amber-400/[0.03] px-3 py-2`}>
+                    <p key={i} className={`${mono.className} text-[9px] text-accent/70 border border-accent/15 bg-accent-light px-3 py-2`}>
                       {w}
                     </p>
                   ))}
@@ -122,7 +122,7 @@ export function FileAnalysisPanel({ file }: FileAnalysisProps) {
               ) : null;
             } catch {
               return (
-                <p className={`${mono.className} text-[9px] text-amber-700 border border-amber-400/10 bg-amber-400/[0.03] mx-4 mb-3 px-3 py-2`}>
+                <p className={`${mono.className} text-[9px] text-accent/70 border border-accent/15 bg-accent-light mx-4 mb-3 px-3 py-2`}>
                   {a.warnings}
                 </p>
               );

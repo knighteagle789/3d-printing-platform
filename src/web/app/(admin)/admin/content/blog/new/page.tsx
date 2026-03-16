@@ -209,7 +209,7 @@ export default function NewBlogPostPage() {
             aria-checked={isPublished}
             onClick={() => setValue('isPublished', !isPublished)}
             className={`relative w-10 h-5 transition-colors shrink-0 ${
-              isPublished ? 'bg-accent' : 'bg-white/10'
+              isPublished ? 'bg-accent' : 'bg-border'
             }`}
           >
             <span className={`absolute top-0.5 h-4 w-4 bg-white transition-transform ${

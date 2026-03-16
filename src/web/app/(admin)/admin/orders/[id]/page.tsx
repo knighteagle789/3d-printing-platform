@@ -137,7 +137,7 @@ export default function AdminOrderDetailPage({
       <div className="space-y-6 max-w-5xl">
         <div className="h-6 bg-surface-alt animate-pulse w-32" />
         <div className="h-24 bg-surface-alt animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-px bg-white/8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-px bg-border">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-[var(--page-bg)] h-40" />
           ))}
@@ -267,7 +267,7 @@ export default function AdminOrderDetailPage({
       )}
 
       {/* ── Main grid: items + sidebar ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-px bg-white/8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-px bg-border">
 
         {/* Items */}
         <div className="bg-[var(--page-bg)] p-6">
@@ -278,7 +278,7 @@ export default function AdminOrderDetailPage({
             </span>
           </SectionLabel>
 
-          <div className="space-y-px bg-white/5">
+          <div className="space-y-px bg-border">
             {order.items.map((item) => (
               <div key={item.id} className="bg-[var(--page-bg)] p-5">
                 <div className="flex items-start justify-between gap-4">
@@ -481,7 +481,7 @@ function StatusHistory({ orderId, monoClass }: { orderId: string; monoClass: str
               i === 0 ? 'bg-accent border-accent' : 'bg-gray-300 border-border'
             }`} />
             {i < history.length - 1 && (
-              <div className="w-px flex-1 bg-white/8 mt-1" />
+              <div className="w-px flex-1 bg-border mt-1" />
             )}
           </div>
 

@@ -55,10 +55,10 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
   // ── File selected ──
   if (selectedFile) {
     return (
-      <div className="border border-amber-400/20 bg-amber-400/[0.02]">
+      <div className="border border-accent/20 bg-accent-light">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <File className="h-4 w-4 text-amber-700 shrink-0" />
+            <File className="h-4 w-4 text-accent/60 shrink-0" />
             <div>
               <p className={`${mono.className} text-[11px] text-text-primary`}>
                 {selectedFile.name}
@@ -71,7 +71,7 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
           {!isUploading && (
             <button
               onClick={clearFile}
-              className="text-text-muted hover:text-red-600 transition-colors p-1"
+              className="text-text-muted hover:text-danger transition-colors p-1"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -80,10 +80,10 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
 
         {isUploading && (
           <div className="px-4 pb-3">
-            <div className="h-[2px] w-full bg-surface-alt overflow-hidden">
-              <div className="h-full bg-amber-500 animate-pulse w-3/4 transition-all" />
+            <div className="h-[2px] w-full bg-border overflow-hidden">
+              <div className="h-full bg-accent/60 animate-pulse w-3/4 transition-all" />
             </div>
-            <p className={`${mono.className} text-[9px] text-amber-700 mt-1.5 animate-pulse`}>
+            <p className={`${mono.className} text-[9px] text-accent/50 mt-1.5 animate-pulse`}>
               Uploading...
             </p>
           </div>
@@ -103,12 +103,12 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
         className={`
           border-2 border-dashed p-14 text-center cursor-pointer transition-colors
           ${dragOver
-            ? 'border-amber-400/50 bg-amber-400/[0.04]'
-            : 'border-border hover:border-border hover:bg-surface-alt'
+            ? 'border-accent/50 bg-accent-light'
+            : 'border-border hover:border-border-strong hover:bg-surface-alt'
           }
         `}
       >
-        <Upload className={`h-8 w-8 mx-auto mb-4 ${dragOver ? 'text-amber-700' : 'text-text-muted'}`} />
+        <Upload className={`h-8 w-8 mx-auto mb-4 ${dragOver ? 'text-accent/60' : 'text-text-muted'}`} />
         <p className={`${mono.className} text-[11px] text-text-secondary mb-1`}>
           Drag and drop your 3D model here
         </p>

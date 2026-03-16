@@ -300,7 +300,7 @@ export function MaterialForm({
           aria-checked={isActive}
           onClick={() => setValue('isActive', !isActive)}
           className={`relative w-10 h-5 transition-colors shrink-0 ${
-            isActive ? 'bg-accent' : 'bg-white/10'
+            isActive ? 'bg-accent' : 'bg-border'
           }`}
         >
           <span className={`absolute top-0.5 h-4 w-4 bg-white transition-transform ${

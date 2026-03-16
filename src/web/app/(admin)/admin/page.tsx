@@ -222,7 +222,7 @@ export default function AdminDashboardPage() {
         <>
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border">
         <StatCard
           icon={AlertCircle}
           label="Needs Attention"
@@ -252,7 +252,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ── Tables ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-white/8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-border">
 
         {/* Recent Orders */}
         <div className="bg-[var(--page-bg)]">

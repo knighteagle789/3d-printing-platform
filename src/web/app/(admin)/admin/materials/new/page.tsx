@@ -51,8 +51,8 @@ export default function NewMaterialPage() {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border ${
           toast.ok
-            ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
-            : 'bg-red-500 border-red-200 text-red-400'
+            ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
+            : 'bg-red-400/10 border-red-400/30 text-red-400'
         }`}>
           {toast.ok
             ? <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -73,7 +73,7 @@ export default function NewMaterialPage() {
 
       {/* Header */}
       <h1
-        className="page-title"
+        className="font-black tracking-tight leading-[1.1] text-text-primary"
         style={{ fontFamily: 'var(--font-epilogue)', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}
       >
         New Material

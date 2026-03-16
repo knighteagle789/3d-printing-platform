@@ -203,7 +203,7 @@ export default function AdminQuoteDetailPage({
       <div className="space-y-6 max-w-5xl">
         <div className="h-6 bg-surface-alt animate-pulse w-32" />
         <div className="h-24 bg-surface-alt animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-white/8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-border">
           {[...Array(2)].map((_, i) => (
             <div key={i} className="bg-[var(--page-bg)] h-48" />
           ))}
@@ -295,7 +295,7 @@ export default function AdminQuoteDetailPage({
       </div>
 
       {/* ── Main grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-px bg-white/8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-px bg-border">
 
         {/* Request details */}
         <div className="bg-[var(--page-bg)] p-6">

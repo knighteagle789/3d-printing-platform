@@ -62,7 +62,7 @@ export function PrintSettingsEditor({ pairs, onChange }: Props) {
   const updatePair = (i: number, field: 'key' | 'value', val: string) =>
     onChange(pairs.map((p, idx) => idx === i ? { ...p, [field]: val } : p));
 
-  const inputCls = `${mono.className} w-full h-8 bg-surface-alt border border-border px-2.5 text-[10px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
+  const inputCls = `${mono.className} w-full h-8 bg-surface border border-border px-2.5 text-[10px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
 
   return (
     <div className="space-y-2">
@@ -97,7 +97,7 @@ export function PrintSettingsEditor({ pairs, onChange }: Props) {
           <button
             type="button"
             onClick={() => removePair(i)}
-            className="shrink-0 text-text-muted hover:text-red-400 transition-colors p-1"
+            className="shrink-0 text-text-muted hover:text-danger transition-colors p-1"
             aria-label="Remove"
           >
             <X className="h-3.5 w-3.5" />

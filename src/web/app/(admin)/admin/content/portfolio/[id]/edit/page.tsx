@@ -298,7 +298,7 @@ export default function EditPortfolioItemPage({
               role="switch"
               aria-checked={val}
               onClick={() => setValue(field, !val)}
-              className={`relative w-10 h-5 transition-colors shrink-0 ${val ? 'bg-accent' : 'bg-white/10'}`}
+              className={`relative w-10 h-5 transition-colors shrink-0 ${val ? 'bg-accent' : 'bg-border'}`}
             >
               <span className={`absolute top-0.5 h-4 w-4 bg-white transition-transform ${val ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
