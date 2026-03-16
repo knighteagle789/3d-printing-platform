@@ -14,7 +14,8 @@ on:
 
 env:
   DOTNET_VERSION: '10.0.x'
-  SOLUTION_PATH: 'src/api'
+  API_PROJECT: 'src/api/PrintHub.API/PrintHub.API.csproj'
+  TEST_PROJECT: 'src/api/PrintHub.Tests/PrintHub.Tests.csproj'
 
 jobs:
   build-and-test:
@@ -38,22 +39,22 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore dependencies
-        run: dotnet restore
-        working-directory: ${{ env.SOLUTION_PATH }}
+        run: dotnet restore ${{ env.API_PROJECT }}
+
+      - name: Restore test dependencies
+        run: dotnet restore ${{ env.TEST_PROJECT }}
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
-        working-directory: ${{ env.SOLUTION_PATH }}
+        run: dotnet build ${{ env.API_PROJECT }} --no-restore --configuration Release
 
       - name: Test
         run: >
-          dotnet test
+          dotnet test ${{ env.TEST_PROJECT }}
           --no-build
           --configuration Release
           --logger "trx;LogFileName=test-results.trx"
           --collect:"XPlat Code Coverage"
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
-        working-directory: ${{ env.SOLUTION_PATH }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
