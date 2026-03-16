@@ -1,42 +1,41 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PrintHub.Core.Interfaces.Services;
-using SendGrid;
-using SendGrid.Helpers.Mail;
+using Resend;
 
 namespace PrintHub.Infrastructure.Services;
 
-public class SendGridEmailService : IEmailService
+public class ResendEmailService : IEmailService
 {
-    private readonly IConfiguration _config;
-    private readonly ILogger<SendGridEmailService> _logger;
+    private readonly IResend _resend;
+    private readonly ILogger<ResendEmailService> _logger;
     private readonly string _fromEmail;
     private readonly string _fromName;
     private readonly string _adminEmail;
     private readonly bool _isEnabled;
 
-    public SendGridEmailService(
+    public ResendEmailService(
+        IResend resend,
         IConfiguration config,
-        ILogger<SendGridEmailService> logger)
+        ILogger<ResendEmailService> logger)
     {
-        _config = config;
+        _resend = resend;
         _logger = logger;
-        _fromEmail = config["Email:FromAddress"] ?? "noreply@printhub.com";
-        _fromName  = config["Email:FromName"]    ?? "PrintHub";
-        _adminEmail = config["Email:AdminAddress"] ?? "admin@printhub.com";
-        _isEnabled = !string.IsNullOrEmpty(config["Email:SendGridApiKey"]);
+        _fromEmail  = config["Email:FromAddress"]  ?? "noreply@nocomakeleb.com";
+        _fromName   = config["Email:FromName"]     ?? "NoCo Make Lab";
+        _adminEmail = config["Email:AdminAddress"] ?? "admin@nocomakeleb.com";
+        _isEnabled  = !string.IsNullOrEmpty(config["Email:ResendApiKey"]);
     }
 
     public async Task SendWelcomeEmailAsync(string toEmail, string firstName)
     {
         await SendAsync(
-            toEmail,
-            firstName,
-            "Welcome to PrintHub!",
+            toEmail, firstName,
+            "Welcome to NoCo Make Lab!",
             $@"<h2>Welcome, {firstName}!</h2>
-               <p>Your PrintHub account has been created. You can now upload 3D models, request quotes, and place orders.</p>
+               <p>Your NoCo Make Lab account has been created. You can now upload 3D models, request quotes, and place orders.</p>
                <p>We're excited to help bring your designs to life.</p>
-               <p>— The PrintHub Team</p>"
+               <p>— The NoCo Make Lab Team</p>"
         );
     }
 
@@ -44,14 +43,13 @@ public class SendGridEmailService : IEmailService
         string toEmail, string firstName, string requestNumber)
     {
         await SendAsync(
-            toEmail,
-            firstName,
+            toEmail, firstName,
             $"Quote Request Received — {requestNumber}",
             $@"<h2>We received your quote request</h2>
                <p>Hi {firstName},</p>
-               <p>Your quote request <strong>{requestNumber}</strong> has been received and is being reviewed by our team.</p>
+               <p>Your quote request <strong>{requestNumber}</strong> has been received and is being reviewed.</p>
                <p>We'll get back to you with pricing shortly.</p>
-               <p>— The PrintHub Team</p>"
+               <p>— The NoCo Make Lab Team</p>"
         );
     }
 
@@ -60,8 +58,7 @@ public class SendGridEmailService : IEmailService
         decimal price, int estimatedDays)
     {
         await SendAsync(
-            toEmail,
-            firstName,
+            toEmail, firstName,
             $"Your Quote is Ready — {requestNumber}",
             $@"<h2>Your quote is ready!</h2>
                <p>Hi {firstName},</p>
@@ -71,7 +68,7 @@ public class SendGridEmailService : IEmailService
                  <li><strong>Estimated time:</strong> {estimatedDays} business days</li>
                </ul>
                <p>Log in to your account to review and accept the quote.</p>
-               <p>— The PrintHub Team</p>"
+               <p>— The NoCo Make Lab Team</p>"
         );
     }
 
@@ -79,14 +76,13 @@ public class SendGridEmailService : IEmailService
         string toEmail, string firstName, string requestNumber)
     {
         await SendAsync(
-            toEmail,
-            firstName,
+            toEmail, firstName,
             $"Quote Accepted — {requestNumber}",
             $@"<h2>Quote accepted!</h2>
                <p>Hi {firstName},</p>
                <p>You've accepted the quote for request <strong>{requestNumber}</strong>.</p>
                <p>You can now convert it to an order from your quotes page.</p>
-               <p>— The PrintHub Team</p>"
+               <p>— The NoCo Make Lab Team</p>"
         );
     }
 
@@ -100,7 +96,7 @@ public class SendGridEmailService : IEmailService
                 $"Order Received — {orderNumber}",
                 $@"<h2>We received your order!</h2>
                    <p>Hi {firstName},</p>
-                   <p>Your order <strong>{orderNumber}</strong> has been submitted and is being reviewed by our team.</p>
+                   <p>Your order <strong>{orderNumber}</strong> has been submitted and is being reviewed.</p>
                    <p>We'll update you as it progresses through production.</p>"
             ),
             "Printing" => (
@@ -113,9 +109,9 @@ public class SendGridEmailService : IEmailService
             "Approved" => (
                 $"Payment Confirmed — {orderNumber}",
                 $@"<h2>Payment confirmed!</h2>
-                <p>Hi {firstName},</p>
-                <p>We've received your payment for order <strong>{orderNumber}</strong>. 
-                Your order has been approved and will enter production shortly.</p>"
+                   <p>Hi {firstName},</p>
+                   <p>We've received your payment for order <strong>{orderNumber}</strong>.
+                   Your order has been approved and will enter production shortly.</p>"
             ),
             "Shipped" => (
                 $"Your Order Has Shipped — {orderNumber}",
@@ -123,31 +119,30 @@ public class SendGridEmailService : IEmailService
                    <p>Hi {firstName},</p>
                    <p>Your order <strong>{orderNumber}</strong> has been shipped.</p>
                    {(notes != null ? $"<p>{notes}</p>" : "")}
-                   <p>— The PrintHub Team</p>"
+                   <p>— The NoCo Make Lab Team</p>"
             ),
             "Completed" => (
                 $"Order Complete — {orderNumber}",
                 $@"<h2>Order complete!</h2>
                    <p>Hi {firstName},</p>
-                   <p>Your order <strong>{orderNumber}</strong> has been marked as complete. Thank you for choosing PrintHub!</p>
+                   <p>Your order <strong>{orderNumber}</strong> has been marked as complete. Thank you for choosing NoCo Make Lab!</p>
                    <p>We'd love to hear about your experience.</p>
-                   <p>— The PrintHub Team</p>"
+                   <p>— The NoCo Make Lab Team</p>"
             ),
             _ => (null, null)
         };
 
-        if (subject == null) return; // Not a customer-facing status
+        if (subject == null) return;
 
         await SendAsync(toEmail, firstName, subject,
-            body + "<p>— The PrintHub Team</p>");
+            body + "<p>— The NoCo Make Lab Team</p>");
     }
 
     public async Task SendNewQuoteRequestAdminAsync(
         string requestNumber, string customerName, string? fileName)
     {
         await SendAsync(
-            _adminEmail,
-            "Admin",
+            _adminEmail, "Admin",
             $"New Quote Request — {requestNumber}",
             $@"<h2>New quote request received</h2>
                <p><strong>Request:</strong> {requestNumber}</p>
@@ -161,8 +156,7 @@ public class SendGridEmailService : IEmailService
         string orderNumber, string customerName, decimal totalPrice)
     {
         await SendAsync(
-            _adminEmail,
-            "Admin",
+            _adminEmail, "Admin",
             $"New Order — {orderNumber}",
             $@"<h2>New order placed</h2>
                <p><strong>Order:</strong> {orderNumber}</p>
@@ -171,6 +165,54 @@ public class SendGridEmailService : IEmailService
                <p>Log in to the admin panel to manage this order.</p>"
         );
     }
+
+    public async Task SendContactFormAsync(
+        string fromName, string fromEmail, string subject, string message)
+    {
+        await SendAsync(
+            _adminEmail, "Admin",
+            $"Contact Form: {subject}",
+            $@"<h2>New contact form submission</h2>
+               <p><strong>Name:</strong> {fromName}</p>
+               <p><strong>Email:</strong> {fromEmail}</p>
+               <p><strong>Subject:</strong> {subject}</p>
+               <p><strong>Message:</strong></p>
+               <p>{message.Replace("\n", "<br>")}</p>"
+        );
+
+        await SendAsync(
+            fromEmail, fromName,
+            "We received your message — NoCo Make Lab",
+            $@"<h2>Thanks for reaching out, {fromName}!</h2>
+               <p>We've received your message and will get back to you within 1-2 business days.</p>
+               <p><strong>Your message:</strong></p>
+               <p>{message.Replace("\n", "<br>")}</p>
+               <p>— The NoCo Make Lab Team</p>"
+        );
+    }
+
+    public async Task SendPasswordResetEmailAsync(
+        string toEmail, string firstName, string resetLink)
+    {
+        await SendAsync(
+            toEmail, firstName,
+            "Reset your NoCo Make Lab password",
+            $@"<h2>Password reset request</h2>
+               <p>Hi {firstName},</p>
+               <p>We received a request to reset the password for your NoCo Make Lab account.</p>
+               <p>Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+               <p style='margin: 32px 0;'>
+                 <a href='{resetLink}' style='background:#0d9488;color:white;padding:12px 24px;
+                    text-decoration:none;font-weight:600;display:inline-block;'>
+                   Reset Password
+                 </a>
+               </p>
+               <p>If you didn't request this, you can safely ignore this email — your password won't change.</p>
+               <p>— NoCo Make Lab</p>"
+        );
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
 
     private async Task SendAsync(
         string toEmail, string toName, string subject, string htmlContent)
@@ -184,28 +226,18 @@ public class SendGridEmailService : IEmailService
 
         try
         {
-            var client = new SendGridClient(_config["Email:SendGridApiKey"]);
-            var msg = new SendGridMessage
+            var message = new EmailMessage
             {
-                From = new EmailAddress(_fromEmail, _fromName),
+                From    = $"{_fromName} <{_fromEmail}>",
                 Subject = subject,
-                HtmlContent = WrapInTemplate(subject, htmlContent),
+                HtmlBody = WrapInTemplate(subject, htmlContent),
             };
-            msg.AddTo(new EmailAddress(toEmail, toName));
+            message.To.Add(toEmail);
 
-            var response = await client.SendEmailAsync(msg);
+            await _resend.EmailSendAsync(message);
 
-            if ((int)response.StatusCode >= 400)
-            {
-                _logger.LogError(
-                    "SendGrid error {StatusCode} sending '{Subject}' to {Email}",
-                    response.StatusCode, subject, toEmail);
-            }
-            else
-            {
-                _logger.LogInformation(
-                    "Email sent: '{Subject}' to {Email}", subject, toEmail);
-            }
+            _logger.LogInformation(
+                "Email sent: '{Subject}' to {Email}", subject, toEmail);
         }
         catch (Exception ex)
         {
@@ -213,56 +245,6 @@ public class SendGridEmailService : IEmailService
             _logger.LogError(ex,
                 "Failed to send email '{Subject}' to {Email}", subject, toEmail);
         }
-    }
-
-    public async Task SendContactFormAsync(
-        string fromName, string fromEmail, string subject, string message)
-    {
-        await SendAsync(
-            _adminEmail,
-            "Admin",
-            $"Contact Form: {subject}",
-            $@"<h2>New contact form submission</h2>
-            <p><strong>Name:</strong> {fromName}</p>
-            <p><strong>Email:</strong> {fromEmail}</p>
-            <p><strong>Subject:</strong> {subject}</p>
-            <p><strong>Message:</strong></p>
-            <p>{message.Replace("\n", "<br>")}</p>"
-        );
-
-        // Send confirmation to the person who contacted
-        await SendAsync(
-            fromEmail,
-            fromName,
-            "We received your message — PrintHub",
-            $@"<h2>Thanks for reaching out, {fromName}!</h2>
-            <p>We've received your message and will get back to you within 1-2 business days.</p>
-            <p><strong>Your message:</strong></p>
-            <p>{message.Replace("\n", "<br>")}</p>
-            <p>— The PrintHub Team</p>"
-        );
-    }
-
-    public async Task SendPasswordResetEmailAsync(
-        string toEmail, string firstName, string resetLink)
-    {
-        await SendAsync(
-            toEmail,
-            firstName,
-            "Reset your NoCo Make Lab password",
-            $@"<h2>Password reset request</h2>
-            <p>Hi {firstName},</p>
-            <p>We received a request to reset the password for your NoCo Make Lab account.</p>
-            <p>Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
-            <p style='margin: 32px 0;'>
-              <a href='{resetLink}' style='background:#0d9488;color:white;padding:12px 24px;
-                 text-decoration:none;font-weight:600;display:inline-block;'>
-                Reset Password
-              </a>
-            </p>
-            <p>If you didn't request this, you can safely ignore this email — your password won't change.</p>
-            <p>— NoCo Make Lab</p>"
-        );
     }
 
     private static string WrapInTemplate(string title, string content) => $@"
@@ -284,9 +266,9 @@ public class SendGridEmailService : IEmailService
         </head>
         <body>
           <div class='container'>
-            <div class='header'><h1>Print<span style='color:#a1a1aa'>Hub</span></h1></div>
+            <div class='header'><h1>NoCo Make Lab</h1></div>
             <div class='body'>{content}</div>
-            <div class='footer'>© {DateTime.UtcNow.Year} PrintHub. All rights reserved.</div>
+            <div class='footer'>© {DateTime.UtcNow.Year} NoCo Make Lab. All rights reserved.</div>
           </div>
         </body>
         </html>";

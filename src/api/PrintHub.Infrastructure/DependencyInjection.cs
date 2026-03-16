@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
@@ -6,6 +7,7 @@ using PrintHub.Infrastructure.Data;
 using PrintHub.Infrastructure.Data.Repositories;
 using PrintHub.Infrastructure.Services;
 using PrintHub.Infrastructure.Services.Extraction;
+using Resend;
 
 namespace PrintHub.Infrastructure;
 
@@ -36,8 +38,13 @@ public static class DependencyInjection
         // Infrastructure services
         services.AddSingleton<IFileStorageService, BlobStorageService>();
         services.AddScoped<IStlAnalyzerService, StlAnalyzerService>();
-        services.AddScoped<IEmailService, SendGridEmailService>();
         services.AddScoped<IPaymentService, StripePaymentService>();
+        services.AddOptions();
+        services.AddHttpClient<IResend, ResendClient>();
+        services.Configure<ResendClientOptions>(o =>
+            o.ApiToken = configuration["Email:ResendApiKey"] ?? string.Empty);
+        services.AddOptions();
+        services.AddScoped<IEmailService, ResendEmailService>();
 
         // Extraction provider — selected by Intake:Extractor:Provider config value
         var extractorProvider = configuration["Intake:Extractor:Provider"] ?? "Mock";
