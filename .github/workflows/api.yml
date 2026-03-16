@@ -75,31 +75,31 @@ jobs:
   #
   #   Secret name: AZURE_API_PUBLISH_PROFILE
   #   Value: contents of the .PublishSettings file downloaded from Azure Portal
-  #
-  # deploy:
-  #   name: Deploy to Azure App Service
-  #   runs-on: ubuntu-latest
-  #   needs: build-and-test
-  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Setup .NET ${{ env.DOTNET_VERSION }}
-  #       uses: actions/setup-dotnet@v4
-  #       with:
-  #         dotnet-version: ${{ env.DOTNET_VERSION }}
-  #
-  #     - name: Publish
-  #       run: >
-  #         dotnet publish src/api/PrintHub.API/PrintHub.API.csproj
-  #         --configuration Release
-  #         --output ./publish
-  #
-  #     - name: Deploy to Azure Web App
-  #       uses: azure/webapps-deploy@v3
-  #       with:
-  #         app-name: noco-make-lab-api        # update to your Azure app name
-  #         publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
-  #         package: ./publish
+  
+  deploy:
+    name: Deploy to Azure App Service
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+  
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+  
+      - name: Publish
+        run: >
+          dotnet publish src/api/PrintHub.API/PrintHub.API.csproj
+          --configuration Release
+          --output ./publish
+  
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: noco-make-lab-api        # update to your Azure app name
+          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+          package: ./publish

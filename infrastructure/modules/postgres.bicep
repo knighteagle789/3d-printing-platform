@@ -68,4 +68,5 @@ resource database 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-12-0
 }
 
 output serverFqdn string = postgresServer.properties.fullyQualifiedDomainName
+@secure()
 output connectionString string = 'Host=${postgresServer.properties.fullyQualifiedDomainName};Database=${databaseName};Username=${adminUsername};Password=${adminPassword};SSL Mode=Require;Trust Server Certificate=true'

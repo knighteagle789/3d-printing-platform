@@ -56,11 +56,11 @@ DEPLOYMENT_OUTPUT=$(az deployment group create \
   --query "properties.outputs" \
   --output json)
 
-API_URL=$(echo "$DEPLOYMENT_OUTPUT"       | python3 -c "import sys,json; print(json.load(sys.stdin)['apiUrl']['value'])")
-WEB_URL=$(echo "$DEPLOYMENT_OUTPUT"       | python3 -c "import sys,json; print(json.load(sys.stdin)['webUrl']['value'])")
-POSTGRES_HOST=$(echo "$DEPLOYMENT_OUTPUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['postgresHost']['value'])")
-SWA_TOKEN=$(echo "$DEPLOYMENT_OUTPUT"     | python3 -c "import sys,json; print(json.load(sys.stdin)['staticWebAppDeployToken']['value'])")
-API_APP_NAME=$(echo "$DEPLOYMENT_OUTPUT"  | python3 -c "import sys,json; print(json.load(sys.stdin)['apiWebAppName']['value'])")
+API_URL=$(echo "$DEPLOYMENT_OUTPUT"       | powershell -Command "$input | ConvertFrom-Json | Select-Object -ExpandProperty apiUrl | Select-Object -ExpandProperty value")
+WEB_URL=$(echo "$DEPLOYMENT_OUTPUT"       | powershell -Command "$input | ConvertFrom-Json | Select-Object -ExpandProperty webUrl | Select-Object -ExpandProperty value")
+POSTGRES_HOST=$(echo "$DEPLOYMENT_OUTPUT" | powershell -Command "$input | ConvertFrom-Json | Select-Object -ExpandProperty postgresHost | Select-Object -ExpandProperty value")
+SWA_TOKEN=$(echo "$DEPLOYMENT_OUTPUT"     | powershell -Command "$input | ConvertFrom-Json | Select-Object -ExpandProperty staticWebAppDeployToken | Select-Object -ExpandProperty value")
+API_APP_NAME=$(echo "$DEPLOYMENT_OUTPUT"  | powershell -Command "$input | ConvertFrom-Json | Select-Object -ExpandProperty apiWebAppName | Select-Object -ExpandProperty value")
 
 green "\n✅  Deployment complete!\n"
 bold "API:      ${API_URL}"
