@@ -100,6 +100,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: noco-make-lab-api        # update to your Azure app name
+          app-name: noco-make-lab-api-dev        # update to your Azure app name
           publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
           package: ./publish
