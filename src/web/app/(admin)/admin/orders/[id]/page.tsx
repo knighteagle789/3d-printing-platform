@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { ordersApi, type OrderStatusHistory } from '@/lib/api/orders';
 import { JetBrains_Mono } from 'next/font/google';
+import { formatStatus } from '@/lib/utils';
 import {
   ArrowLeft, Package, Calendar, MapPin, Clock,
   CheckCircle2, AlertCircle, User, Download, Mail,
@@ -75,13 +76,15 @@ function isDeadlineUrgent(requiredByDate: string | null, status: string): boolea
   return hoursLeft <= 48;
 }
 
+
+
 function StatusPill({ status, large }: { status: string; large?: boolean }) {
   const colours = STATUS_COLOUR[status] ?? 'badge-neutral';
   return (
     <span className={`${mono.className} inline-flex items-center border uppercase tracking-[0.15em] ${
       large ? 'text-[10px] px-3 py-1' : 'text-[8px] px-2 py-0.5'
     } ${colours}`}>
-      {status}
+      {formatStatus(status)}
     </span>
   );
 }
@@ -126,7 +129,7 @@ export default function AdminOrderDetailPage({
       queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
       setNewStatus('');
       setNotes('');
-      showToast(`Order moved to ${res.data.status}`, true);
+      showToast(`Order moved to ${formatStatus(res.data.status)}`, true);
     },
     onError: () => showToast('Failed to update status.', false),
   });
@@ -244,7 +247,7 @@ export default function AdminOrderDetailPage({
                         : 'text-text-secondary border-border hover:border-border hover:text-text-primary'
                   }`}
                 >
-                  {s}
+                  {formatStatus(s)}
                 </button>
               );
             })}
@@ -261,7 +264,7 @@ export default function AdminOrderDetailPage({
             onClick={() => mutation.mutate()}
             className={`${mono.className} mt-3 inline-flex items-center gap-2 bg-accent-light text-accent-dark text-[10px] uppercase tracking-[0.18em] font-semibold px-6 h-9 hover:bg-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
           >
-            {mutation.isPending ? 'Updating...' : `Move to ${newStatus || '...'}`}
+            {mutation.isPending ? 'Updating...' : `Move to ${newStatus ? formatStatus(newStatus) : '...'}`}
           </button>
         </div>
       )}
@@ -492,7 +495,7 @@ function StatusHistory({ orderId, monoClass }: { orderId: string; monoClass: str
                 className="text-text-primary font-medium text-sm"
                 style={{ fontFamily: 'var(--font-epilogue)' }}
               >
-                {entry.status}
+                {formatStatus(entry.status)}
               </span>
               {i === 0 && (
                 <span className={`${monoClass} text-[8px] uppercase tracking-[0.15em] text-accent`}>

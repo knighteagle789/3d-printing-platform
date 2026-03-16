@@ -160,6 +160,11 @@ public class OrderService : IOrderService
         return orders.Select(OrderResponse.FromEntity).ToList();
     }
 
+    public async Task<Dictionary<string, int>> GetStatusCountsAsync()
+    {
+        return await _orderRepo.GetStatusCountsAsync();
+    }
+
     public async Task<OrderResponse> UpdateOrderStatusAsync(
         Guid orderId, string newStatus, Guid changedByUserId, string? notes = null)
     {

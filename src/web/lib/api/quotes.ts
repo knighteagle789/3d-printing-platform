@@ -59,8 +59,8 @@ export interface CreateQuoteResponseRequest {
 }
 
 export const quotesApi = {
-  // GET /Quotes?userId=&page=&pageSize= — StaffOrAdmin only (GH #11 resolved)
-  getAll: (params?: { userId?: string; page?: number; pageSize?: number }) =>
+  // GET /Quotes?userId=&status=&page=&pageSize= — StaffOrAdmin only (GH #11)
+  getAll: (params?: { userId?: string; status?: string; page?: number; pageSize?: number }) =>
     apiClient.get<PagedResponse<QuoteRequest>>('/Quotes', { params }),
 
   getMine: (page = 1, pageSize = 20) =>
@@ -83,6 +83,9 @@ export const quotesApi = {
     apiClient.get<PagedResponse<QuoteRequest>>('/Quotes/pending', {
       params: { page, pageSize },
     }),
+
+  getStatusCounts: () =>
+    apiClient.get<Record<string, number>>('/Quotes/status-counts'),
 
   addResponse: (quoteId: string, data: CreateQuoteResponseRequest) =>
     apiClient.post<QuoteResponseDto>(`/Quotes/${quoteId}/responses`, data),

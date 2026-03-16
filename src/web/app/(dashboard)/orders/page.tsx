@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { Package } from 'lucide-react';
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+import { formatStatus } from '@/lib/utils';
 
 const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
 const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
@@ -25,13 +26,15 @@ const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
   Cancelled:    { dot: 'bg-red-400/60',     text: 'text-red-400/70'    },
 };
 
+
+
 function StatusPill({ status }: { status: string }) {
   const s = STATUS_STYLES[status] ?? { dot: 'bg-border', text: 'text-text-muted' };
   return (
     <span className="flex items-center gap-1.5">
       <span className={`inline-block h-1.5 w-1.5 rounded-full ${s.dot}`} />
       <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] ${s.text}`}>
-        {status}
+        {formatStatus(status)}
       </span>
     </span>
   );

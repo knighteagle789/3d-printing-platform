@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { quotesApi } from '@/lib/api/quotes';
 import { materialsApi } from '@/lib/api/materials';
 import { JetBrains_Mono } from 'next/font/google';
+import { formatStatus } from '@/lib/utils';
 import {
   ArrowLeft, FileText, Calendar, DollarSign,
   CheckCircle2, AlertCircle, User, Mail, Download, Clock,
@@ -65,11 +66,13 @@ function isDeadlineUrgent(requiredByDate: string | null, status: string): boolea
   return hoursLeft <= 48;
 }
 
+
+
 function StatusPill({ status }: { status: string }) {
   const colours = STATUS_COLOUR[status] ?? 'badge-neutral';
   return (
     <span className={`${mono.className} inline-flex items-center border text-[10px] uppercase tracking-[0.15em] px-3 py-1 ${colours}`}>
-      {status}
+      {formatStatus(status)}
     </span>
   );
 }

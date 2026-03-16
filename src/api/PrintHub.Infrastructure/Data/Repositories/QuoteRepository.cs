@@ -11,14 +11,19 @@ public class QuoteRepository : Repository<QuoteRequest>, IQuoteRepository
     public QuoteRepository(ApplicationDbContext context) : base(context) { }
 
     public async Task<PagedResult<QuoteRequest>> GetAllQuotesAsync(
-        Guid? userId, int page = 1, int pageSize = 20)
+        Guid? userId, string? status = null, int page = 1, int pageSize = 20)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var query = userId.HasValue
-            ? _dbSet.Where(q => q.UserId == userId.Value)
-            : _dbSet.AsQueryable();
+        var query = _dbSet.AsQueryable();
+
+        if (userId.HasValue)
+            query = query.Where(q => q.UserId == userId.Value);
+
+        if (!string.IsNullOrWhiteSpace(status) &&
+            Enum.TryParse<QuoteStatus>(status, ignoreCase: true, out var parsedStatus))
+            query = query.Where(q => q.Status == parsedStatus);
 
         var totalCount = await query.CountAsync();
         var items = await query
@@ -96,6 +101,14 @@ public class QuoteRepository : Repository<QuoteRequest>, IQuoteRepository
                             r.ExpiresAt > DateTime.UtcNow))
             .OrderBy(q => q.Responses.Min(r => r.ExpiresAt))
             .ToListAsync();
+    }
+
+    public async Task<Dictionary<string, int>> GetStatusCountsAsync()
+    {
+        return await _dbSet
+            .GroupBy(q => q.Status)
+            .Select(g => new { Status = g.Key.ToString(), Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count);
     }
 
     public async Task AddQuoteResponseAsync(QuoteResponse response)

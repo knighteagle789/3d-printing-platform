@@ -22,17 +22,20 @@ public interface IQuoteService
     // --- Admin operations ---
 
     /// <summary>
-    /// All quotes, optionally filtered to a specific user. Requires StaffOrAdmin.
-    /// Backing GH #11: GET /Quotes?userId=&page=&pageSize=
+    /// All quotes, optionally filtered by user and/or status.
+    /// Backs GET /Quotes?userId=&amp;status=
     /// </summary>
     Task<PagedResponse<QuoteRequestResponse>> GetAllQuotesAsync(
-        Guid? userId, int page = 1, int pageSize = 20);
+        Guid? userId, string? status = null, int page = 1, int pageSize = 20);
 
     Task<PagedResponse<QuoteRequestResponse>> GetPendingQuotesAsync(
         int page = 1, int pageSize = 20);
     Task<QuoteRequestResponse> AddQuoteResponseAsync(
         Guid quoteRequestId, CreateQuoteResponseRequest request, Guid adminUserId);
     Task<IReadOnlyList<QuoteRequestResponse>> GetExpiringQuotesAsync(int withinDays = 7);
+
+    /// <summary>Count per status in a single query. Backs GET /Quotes/status-counts.</summary>
+    Task<Dictionary<string, int>> GetStatusCountsAsync();
 
     Task<OrderResponse> ConvertToOrderAsync(Guid quoteRequestId, Guid userId);
 }

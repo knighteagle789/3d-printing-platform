@@ -12,6 +12,7 @@ import {
   Layers, RefreshCw, Plus, TrendingUp,
 } from 'lucide-react';
 import { JetBrains_Mono } from 'next/font/google';
+import { formatStatus } from '@/lib/utils';
 
 const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
@@ -51,11 +52,13 @@ function formatDate(d: string) {
   });
 }
 
+
+
 function StatusPill({ status, colourMap }: { status: string; colourMap: Record<string, string> }) {
   const colours = colourMap[status] ?? 'badge-neutral';
   return (
     <span className={`${mono.className} inline-flex items-center border text-[8px] uppercase tracking-[0.15em] px-2 py-0.5 ${colours}`}>
-      {status}
+      {formatStatus(status)}
     </span>
   );
 }

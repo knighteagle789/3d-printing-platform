@@ -87,6 +87,9 @@ export const ordersApi = {
   getRecent: (count = 10) =>
     apiClient.get<Order[]>(`/Orders/recent?count=${count}`),
 
+  getStatusCounts: () =>
+    apiClient.get<Record<string, number>>('/Orders/status-counts'),
+
   updateStatus: (id: string, status: string, notes?: string) =>
     apiClient.patch<Order>(`/Orders/${id}/status`, { status, notes }),
 

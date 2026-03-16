@@ -97,6 +97,18 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// Count of orders per status. Single query. Requires Staff or Admin role.
+    /// Backs admin status filter tab badges. GH #10.
+    /// </summary>
+    [HttpGet("status-counts")]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<Dictionary<string, int>>> GetStatusCounts()
+    {
+        var counts = await _orderService.GetStatusCountsAsync();
+        return Ok(counts);
+    }
+
+    /// <summary>
     /// Get orders filtered by status. Requires Staff or Admin role.
     /// </summary>
     [HttpGet("status/{status}")]

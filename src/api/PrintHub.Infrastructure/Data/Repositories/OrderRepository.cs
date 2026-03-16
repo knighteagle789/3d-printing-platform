@@ -95,6 +95,14 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .ToListAsync();
     }
 
+    public async Task<Dictionary<string, int>> GetStatusCountsAsync()
+    {
+        return await _dbSet
+            .GroupBy(o => o.Status)
+            .Select(g => new { Status = g.Key.ToString(), Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count);
+    }
+
     public async Task AddStatusHistoryAsync(OrderStatusHistory statusHistory)
     {
         await _context.OrderStatusHistory.AddAsync(statusHistory);

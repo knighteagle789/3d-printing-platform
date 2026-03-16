@@ -21,6 +21,9 @@ public interface IOrderRepository : IRepository<Order>
 
     Task<IReadOnlyList<Order>> GetRecentOrdersAsync(int count = 10);
 
+    /// <summary>Single GROUP BY query returning count per status. Backs GET /Orders/status-counts.</summary>
+    Task<Dictionary<string, int>> GetStatusCountsAsync();
+
     Task AddStatusHistoryAsync(OrderStatusHistory statusHistory);
 
     Task<IReadOnlyList<OrderStatusHistory>> GetStatusHistoryAsync(Guid orderId);

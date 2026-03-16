@@ -7,6 +7,7 @@ import { ordersApi } from '@/lib/api/orders';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2 } from 'lucide-react';
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+import { formatStatus } from '@/lib/utils';
 
 const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
 const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
@@ -25,13 +26,15 @@ const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
   Cancelled:    { dot: 'bg-red-500',     text: 'text-red-600'     },
 };
 
+
+
 function StatusPill({ status }: { status: string }) {
   const s = STATUS_STYLES[status] ?? { dot: 'bg-gray-300', text: 'text-text-muted' };
   return (
     <span className="inline-flex items-center gap-2">
       <span className={`h-2 w-2 rounded-full ${s.dot}`} />
       <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em] ${s.text}`}>
-        {status}
+        {formatStatus(status)}
       </span>
     </span>
   );

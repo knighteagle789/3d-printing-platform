@@ -262,11 +262,16 @@ public class QuoteService : IQuoteService
     /// All quotes, optionally scoped to a specific user. Backs GH #11: GET /Quotes?userId=
     /// </summary>
     public async Task<PagedResponse<QuoteRequestResponse>> GetAllQuotesAsync(
-        Guid? userId, int page = 1, int pageSize = 20)
+        Guid? userId, string? status = null, int page = 1, int pageSize = 20)
     {
-        var quotes = await _quoteRepo.GetAllQuotesAsync(userId, page, pageSize);
+        var quotes = await _quoteRepo.GetAllQuotesAsync(userId, status, page, pageSize);
         return PagedResponse<QuoteRequestResponse>.FromPagedResult(
             quotes, QuoteRequestResponse.FromEntity);
+    }
+
+    public async Task<Dictionary<string, int>> GetStatusCountsAsync()
+    {
+        return await _quoteRepo.GetStatusCountsAsync();
     }
 
     public async Task<PagedResponse<QuoteRequestResponse>> GetPendingQuotesAsync(

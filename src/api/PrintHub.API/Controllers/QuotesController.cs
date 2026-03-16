@@ -96,17 +96,30 @@ public class QuotesController : ControllerBase
     /// <summary>
     /// Get all quote requests, optionally filtered to a specific user.
     /// Requires Staff or Admin role.
-    /// GH #11: GET /Quotes?userId=&page=&pageSize=
+    /// GH #11: GET /Quotes?userId=&status=&page=&pageSize=
     /// </summary>
     [HttpGet]
     [Authorize(Policy = "StaffOrAdmin")]
     public async Task<ActionResult<PagedResponse<QuoteRequestResponse>>> GetAllQuotes(
         [FromQuery] Guid? userId,
+        [FromQuery] string? status,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var quotes = await _quoteService.GetAllQuotesAsync(userId, page, pageSize);
+        var quotes = await _quoteService.GetAllQuotesAsync(userId, status, page, pageSize);
         return Ok(quotes);
+    }
+
+    /// <summary>
+    /// Count of quotes per status. Single query. Requires Staff or Admin role.
+    /// Backs admin status filter tab badges. GH #11.
+    /// </summary>
+    [HttpGet("status-counts")]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<Dictionary<string, int>>> GetStatusCounts()
+    {
+        var counts = await _quoteService.GetStatusCountsAsync();
+        return Ok(counts);
     }
 
     /// <summary>

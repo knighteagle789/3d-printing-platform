@@ -17,10 +17,7 @@ public interface IOrderService
 
     // --- Admin operations ---
 
-    /// <summary>
-    /// All orders, optionally filtered to a specific user. Requires StaffOrAdmin.
-    /// Backing GH #10: GET /Orders?userId=&page=&pageSize=
-    /// </summary>
+    /// <summary>All orders, optionally filtered to a specific user. GET /Orders?userId=</summary>
     Task<PagedResponse<OrderResponse>> GetAllOrdersAsync(
         Guid? userId, int page = 1, int pageSize = 20);
 
@@ -29,6 +26,9 @@ public interface IOrderService
     Task<IReadOnlyList<OrderResponse>> GetRecentOrdersAsync(int count = 10);
     Task<OrderResponse> UpdateOrderStatusAsync(
         Guid orderId, string newStatus, Guid changedByUserId, string? notes = null);
+
+    /// <summary>Count per status in a single query. Backs GET /Orders/status-counts.</summary>
+    Task<Dictionary<string, int>> GetStatusCountsAsync();
 
     // --- Order history ---
     Task<IReadOnlyList<OrderStatusHistoryResponse>> GetOrderHistoryAsync(Guid orderId);
