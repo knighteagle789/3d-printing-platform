@@ -165,10 +165,18 @@ try
             Log.Information("Applying database migrations...");
             await context.Database.MigrateAsync();
 
-            // MY VERSION: Resolves from DI (matches new instance-based seeder)
-            Log.Information("Seeding database...");
             var seeder = services.GetRequiredService<DatabaseSeeder>();
-            await seeder.SeedAsync();
+
+            if (app.Environment.IsDevelopment())
+            {
+                Log.Information("Seeding database (development)...");
+                await seeder.SeedAsync();
+            }
+            else
+            {
+                Log.Information("Seeding production essentials...");
+                await seeder.SeedProductionAsync();
+            }
 
             Log.Information("Database initialization completed successfully.");
         }

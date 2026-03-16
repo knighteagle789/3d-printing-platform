@@ -84,6 +84,56 @@ namespace PrintHub.Infrastructure.Data
             }
         }
 
+        public async Task SeedProductionAsync()
+        {
+            try
+            {
+                if (!await _context.Users.AnyAsync())
+                {
+                    _logger.LogInformation("Seeding production admin user...");
+                    var adminId = new Guid("11111111-1111-1111-1111-111111111111");
+                    await _context.Users.AddAsync(new User
+                    {
+                        Id = adminId,
+                        Email = "jwoods@nocowoods.com", // ← change this
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword("ChangeMe123!"),
+                        FirstName = "Admin",
+                        LastName = "User",
+                        IsActive = true,
+                        EmailConfirmed = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await _context.UserRoles.AddAsync(new UserRole
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = adminId,
+                        Role = Role.Admin,
+                        AssignedAt = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync();
+                }
+
+                if (!await _context.PrintingTechnologies.AnyAsync())
+                {
+                    _logger.LogInformation("Seeding production printing technologies...");
+                    await SeedPrintingTechnologiesAsync();
+                    await _context.SaveChangesAsync();
+                }
+
+                if (!await _context.Materials.AnyAsync())
+                {
+                    _logger.LogInformation("Seeding production materials...");
+                    await SeedMaterialsAsync();
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while seeding the production database.");
+                throw;
+            }
+        }
+
         // ─── Users ────────────────────────────────────────────────────────────
 
         private async Task SeedUsersAsync()
