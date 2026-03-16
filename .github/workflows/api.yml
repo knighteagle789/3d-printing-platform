@@ -1,0 +1,105 @@
+name: API — Build, Test & Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/api/**'
+      - '.github/workflows/api.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/api/**'
+      - '.github/workflows/api.yml'
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION_PATH: 'src/api'
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore dependencies
+        run: dotnet restore
+        working-directory: ${{ env.SOLUTION_PATH }}
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+        working-directory: ${{ env.SOLUTION_PATH }}
+
+      - name: Test
+        run: >
+          dotnet test
+          --no-build
+          --configuration Release
+          --logger "trx;LogFileName=test-results.trx"
+          --collect:"XPlat Code Coverage"
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+        working-directory: ${{ env.SOLUTION_PATH }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: src/api/**/TestResults/*.trx
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: src/api/**/TestResults/**/coverage.cobertura.xml
+
+  # ── Deploy ─────────────────────────────────────────────────────────────────
+  # Uncomment this job once Azure App Service is provisioned and the publish
+  # profile secret is added to the repo (Settings → Secrets → Actions):
+  #
+  #   Secret name: AZURE_API_PUBLISH_PROFILE
+  #   Value: contents of the .PublishSettings file downloaded from Azure Portal
+  #
+  # deploy:
+  #   name: Deploy to Azure App Service
+  #   runs-on: ubuntu-latest
+  #   needs: build-and-test
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup .NET ${{ env.DOTNET_VERSION }}
+  #       uses: actions/setup-dotnet@v4
+  #       with:
+  #         dotnet-version: ${{ env.DOTNET_VERSION }}
+  #
+  #     - name: Publish
+  #       run: >
+  #         dotnet publish src/api/PrintHub.API/PrintHub.API.csproj
+  #         --configuration Release
+  #         --output ./publish
+  #
+  #     - name: Deploy to Azure Web App
+  #       uses: azure/webapps-deploy@v3
+  #       with:
+  #         app-name: noco-make-lab-api        # update to your Azure app name
+  #         publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+  #         package: ./publish
