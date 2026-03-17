@@ -74,3 +74,5 @@ jobs:
           app_location: /src/web
           api_location: ''
           output_location: .next
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
