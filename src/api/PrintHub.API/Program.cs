@@ -133,24 +133,24 @@ try
     {
         options.AddPolicy("AllowWebApp", policy =>
         {
-            // policy.WithOrigins(
-            //         "https://purple-mushroom-0cf080e0f6.azurestaticapps.net",
-            //         builder.Configuration["WebAppUrl"] ?? "http://localhost:3000",
-            //         // Next.js dev server bumps port if 3000 is already taken
-            //         "http://localhost:3000",
-            //         "https://localhost:3000",
-            //         "http://localhost:3001",
-            //         "https://localhost:3001",
-            //         "http://localhost:3002",
-            //         "https://localhost:3002"
-            //     )
-            //     .AllowAnyMethod()
-            //     .AllowAnyHeader()
-            //     .AllowCredentials();
-            policy.SetIsOriginAllowed(_ => true)  // ← temporary diagnostic
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+            policy.WithOrigins(
+                    "https://purple-mushroom-0cf080e0f6.azurestaticapps.net",
+                    builder.Configuration["WebAppUrl"] ?? "http://localhost:3000",
+                    // Next.js dev server bumps port if 3000 is already taken
+                    "http://localhost:3000",
+                    "https://localhost:3000",
+                    "http://localhost:3001",
+                    "https://localhost:3001",
+                    "http://localhost:3002",
+                    "https://localhost:3002"
+                )
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+            // policy.SetIsOriginAllowed(_ => true)  // ← temporary diagnostic
+            // .AllowAnyMethod()
+            // .AllowAnyHeader()
+            // .AllowCredentials();
         });
     });
 

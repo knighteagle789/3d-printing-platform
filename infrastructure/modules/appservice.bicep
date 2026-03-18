@@ -30,6 +30,8 @@ param stripeSecretKey string
 @secure()
 param stripeWebhookSecret string
 
+param webAppRul string
+
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: 'plan-${appName}-${environmentName}'
   location: location
@@ -57,7 +59,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
       appSettings: [
-        { name: 'ASPNETCORE_ENVIRONMENT',        value: environmentName == 'prod' ? 'Production' : 'Development' }
+        { name: 'ASPNETCORE_ENVIRONMENT',        value: environmentName == 'prod' ? 'Production' : 'Staging' }
         { name: 'BlobStorage__ConnectionString', value: blobConnectionString }
         { name: 'BlobStorage__ContainerName',    value: blobContainerName }
         { name: 'Jwt__Key',                      value: jwtKey }
@@ -66,6 +68,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'Email__ResendApiKey',           value: resendApiKey }
         { name: 'Stripe__SecretKey',             value: stripeSecretKey }
         { name: 'Stripe__WebhookSecret',         value: stripeWebhookSecret }
+        { name: 'WebAppUrl',                     value: webAppUrl }
       ]
       connectionStrings: [
         {

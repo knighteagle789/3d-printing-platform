@@ -68,7 +68,7 @@ module postgres 'modules/postgres.bicep' = {
 // ── App Service (API) ─────────────────────────────────────────────────────────
 
 var apiHostname = '${appName}-api-${environmentName}.azurewebsites.net'
-var apiUrl = 'https://${apiHostname}/api'
+var apiUrl = 'https://${apiHostname}/api/v1'
 var webHostname = '${appName}-web-${environmentName}.azurestaticapps.net'
 var webUrl = 'https://${webHostname}'
 
@@ -87,6 +87,7 @@ module appService 'modules/appservice.bicep' = {
     resendApiKey: resendApiKey
     stripeSecretKey: stripeSecretKey
     stripeWebhookSecret: stripeWebhookSecret
+    webAppUrl = webUrl
   }
 }
 
