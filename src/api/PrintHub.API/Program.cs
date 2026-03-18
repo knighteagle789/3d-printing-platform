@@ -217,6 +217,8 @@ try
         app.UseHttpsRedirection();      // HTTP → HTTPS    
     }
 
+    app.UseRouting();
+
     app.UseCors("AllowWebApp");     // CORS headers (must be before auth!)
 
     app.UseAuthentication();        // Who are you? (NEW - was missing!)
