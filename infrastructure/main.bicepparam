@@ -5,6 +5,7 @@ param appName           = 'noco-make-lab'
 param dbAdminUsername   = 'nocomakelab_admin'
 param databaseName      = 'nocoMakeLab'
 param blobContainerName = '3d-models'
+param webHostname       = 'purple-mushroom-0cf080e0f6.azurestaticapps.net'
 
 // Secrets — pass these on the CLI or let deploy.sh prompt for them. Never fill in here.
 param dbAdminPassword     = ''
