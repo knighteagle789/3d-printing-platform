@@ -87,7 +87,7 @@ module appService 'modules/appservice.bicep' = {
     resendApiKey: resendApiKey
     stripeSecretKey: stripeSecretKey
     stripeWebhookSecret: stripeWebhookSecret
-    webAppUrl = webUrl
+    webAppUrl: webUrl
   }
 }
 
@@ -109,5 +109,6 @@ output apiUrl string = apiUrl
 output webUrl string = webUrl
 output postgresHost string = postgres.outputs.serverFqdn
 output storageAccountName string = storage.outputs.storageAccountName
+@secure()
 output staticWebAppDeployToken string = staticWebApp.outputs.deploymentToken
 output apiWebAppName string = appService.outputs.webAppName
