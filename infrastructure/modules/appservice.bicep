@@ -30,7 +30,7 @@ param stripeSecretKey string
 @secure()
 param stripeWebhookSecret string
 
-param webAppRul string
+param webAppUrl string
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: 'plan-${appName}-${environmentName}'
