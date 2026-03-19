@@ -217,7 +217,7 @@ try
 
     app.UseSerilogRequestLogging(); // Log all requests
 
-    if (!app.Environment.IsDevelopment())
+    if (app.Environment.IsProduction())
     {
         app.UseHttpsRedirection();      // HTTP → HTTPS    
     }
