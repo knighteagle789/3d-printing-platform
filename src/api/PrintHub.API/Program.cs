@@ -134,6 +134,7 @@ try
         options.AddPolicy("AllowWebApp", policy =>
         {
             policy.WithOrigins(
+                    "https://purple-mushroom-0cf080e0f6.azurestaticapps.net",
                     builder.Configuration["WebAppUrl"] ?? "http://localhost:3000",
                     // Next.js dev server bumps port if 3000 is already taken
                     "http://localhost:3000",
