@@ -10,6 +10,7 @@ import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { ArrowRight } from 'lucide-react';
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+import { PasswordInput } from '@/components/ui/password-input';
 
 const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
 const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
@@ -138,8 +139,7 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <input
-                type="password"
+              <PasswordInput
                 placeholder="••••••••"
                 {...register('password')}
                 className={inputCls}

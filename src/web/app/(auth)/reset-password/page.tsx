@@ -10,6 +10,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { authApi } from '@/lib/api/auth';
+import { PasswordInput } from '@/components/ui/password-input';
 
 const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
 const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
@@ -148,8 +149,7 @@ export default function ResetPasswordPage() {
                 <label className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-text-secondary`}>
                   New Password
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="At least 8 characters"
                   {...register('newPassword')}
                   className={inputCls}
@@ -165,8 +165,7 @@ export default function ResetPasswordPage() {
                 <label className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-text-secondary`}>
                   Confirm Password
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Repeat your new password"
                   {...register('confirmPassword')}
                   className={inputCls}

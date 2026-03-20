@@ -10,6 +10,7 @@ import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { User, Lock, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+import { PasswordInput } from '@/components/ui/password-input';
 
 const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
 const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
@@ -191,19 +192,19 @@ function PasswordForm() {
       <form onSubmit={handleSubmit(v => mutation.mutate(v))} className="space-y-4">
         <div>
           <FieldLabel>Current Password</FieldLabel>
-          <input type="password" className={`${inputCls} ${mono.className}`} {...register('currentPassword')} />
+          <PasswordInput className={`${inputCls} ${mono.className}`} {...register('currentPassword')} />
           <FieldError msg={errors.currentPassword?.message} />
         </div>
 
         <div>
           <FieldLabel>New Password</FieldLabel>
-          <input type="password" className={`${inputCls} ${mono.className}`} {...register('newPassword')} />
+          <PasswordInput className={`${inputCls} ${mono.className}`} {...register('newPassword')} />
           <FieldError msg={errors.newPassword?.message} />
         </div>
 
         <div>
           <FieldLabel>Confirm New Password</FieldLabel>
-          <input type="password" className={`${inputCls} ${mono.className}`} {...register('confirmPassword')} />
+          <PasswordInput className={`${inputCls} ${mono.className}`} {...register('confirmPassword')} />
           <FieldError msg={errors.confirmPassword?.message} />
         </div>
 

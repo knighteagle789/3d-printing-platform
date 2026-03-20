@@ -10,6 +10,7 @@ import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { ArrowRight } from 'lucide-react';
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+import { PasswordInput } from '@/components/ui/password-input';
 
 const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
 const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
@@ -195,8 +196,7 @@ export default function RegisterPage() {
               <label className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-text-muted`}>
                 Password
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 placeholder="Min. 8 characters"
                 {...register('password')}
                 className={inputCls}
@@ -211,8 +211,7 @@ export default function RegisterPage() {
               <label className={`${mono.className} text-[9px] uppercase tracking-[0.22em] text-text-muted`}>
                 Confirm Password
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 placeholder="••••••••"
                 {...register('confirmPassword')}
                 className={inputCls}
