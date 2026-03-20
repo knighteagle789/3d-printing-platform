@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<IContentService, ContentService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
+        services.AddScoped<IMaterialIntakeService, MaterialIntakeService>();
 
         return services;
     }
