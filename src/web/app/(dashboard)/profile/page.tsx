@@ -26,7 +26,13 @@ const profileSchema = z.object({
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword:     z.string().min(8, 'Password must be at least 8 characters'),
+  newPassword:     z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must be at most 128 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
 }).refine(d => d.newPassword === d.confirmPassword, {
   message: 'Passwords do not match',
@@ -183,7 +189,18 @@ function PasswordForm() {
       reset();
       setToast({ type: 'success', msg: 'Password changed.' });
     },
-    onError: () => setToast({ type: 'error', msg: 'Incorrect current password.' }),
+    onError: (error: unknown) => {
+      const axiosError = error as { response?: { status?: number; data?: { errors?: Record<string, string[]>; detail?: string } } };
+      const validationErrors = axiosError?.response?.data?.errors;
+      if (validationErrors) {
+        const messages = Object.values(validationErrors).flat().join(' ');
+        setToast({ type: 'error', msg: messages });
+      } else if (axiosError?.response?.status === 400) {
+        setToast({ type: 'error', msg: axiosError.response?.data?.detail || 'Current password is incorrect.' });
+      } else {
+        setToast({ type: 'error', msg: 'Failed to change password. Please try again.' });
+      }
+    },
   });
 
   return (
