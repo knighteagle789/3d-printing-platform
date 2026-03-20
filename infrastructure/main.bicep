@@ -69,7 +69,7 @@ module postgres 'modules/postgres.bicep' = {
 
 var apiHostname = '${appName}-api-${environmentName}.azurewebsites.net'
 var apiUrl = 'https://${apiHostname}/api/v1'
-param webHostname string = '${appName}-web-${environmentName}.azurestaticapps.net'
+param webHostname string = 'noco3dworks.com'
 var webUrl = 'https://${webHostname}'
 
 module appService 'modules/appservice.bicep' = {
