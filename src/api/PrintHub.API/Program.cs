@@ -133,19 +133,19 @@ try
     {
         options.AddPolicy("AllowWebApp", policy =>
         {
-            var webAppUrl = builder.Configuration["WebAppUrl"] ?? "http://localhost:3000";
-            policy.SetIsOriginAllowed(origin =>
-                origin == "https://purple-mushroom-0cf080e0f6.azurestaticapps.net" ||
-                origin == webAppUrl ||
-                origin.StartsWith("http://localhost:") ||
-                origin.StartsWith("https://localhost:"))
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials();
-            // policy.SetIsOriginAllowed(_ => true)  // ← temporary diagnostic
-            // .AllowAnyMethod()
-            // .AllowAnyHeader()
-            // .AllowCredentials();
+            // var webAppUrl = builder.Configuration["WebAppUrl"] ?? "http://localhost:3000";
+            // policy.SetIsOriginAllowed(origin =>
+            //     origin == "https://purple-mushroom-0cf080e0f6.azurestaticapps.net" ||
+            //     origin == webAppUrl ||
+            //     origin.StartsWith("http://localhost:") ||
+            //     origin.StartsWith("https://localhost:"))
+            //     .AllowAnyMethod()
+            //     .AllowAnyHeader()
+            //     .AllowCredentials();
+            policy.SetIsOriginAllowed(_ => true)  // ← temporary diagnostic
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
         });
     });
 
