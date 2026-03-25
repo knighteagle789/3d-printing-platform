@@ -8,9 +8,11 @@ import { z } from 'zod';
 import { materialsApi } from '@/lib/api/materials';
 import { ordersApi } from '@/lib/api/orders';
 import { filesApi } from '@/lib/api/files';
+import { pricingApi } from '@/lib/api/pricing';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+import { PriceEstimatePanel } from '@/components/orders/PriceEstimatePanel';
 
 const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
 const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
@@ -31,9 +33,9 @@ const orderSchema = z.object({
 type OrderFormValues = z.infer<typeof orderSchema>;
 
 const QUALITY_OPTIONS = [
-  { value: 'Draft',    label: 'Draft (0.3 mm)',    sub: 'Fastest'        },
-  { value: 'Standard', label: 'Standard (0.2 mm)', sub: 'Recommended'    },
-  { value: 'High',     label: 'High (0.1 mm)',      sub: 'Best finish'    },
+  { value: 'Draft',    label: 'Draft (0.3 mm)',    sub: 'Fastest'     },
+  { value: 'Standard', label: 'Standard (0.2 mm)', sub: 'Recommended' },
+  { value: 'High',     label: 'High (0.1 mm)',      sub: 'Best finish' },
 ];
 
 // ── Shared field primitives ───────────────────────────────────────────────────
@@ -57,7 +59,7 @@ function FieldError({ msg }: { msg?: string }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border border-border bg-surface" >
+    <div className="border border-border bg-surface">
       <div className="px-4 py-2.5 border-b border-border">
         <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
           {title}
@@ -88,18 +90,27 @@ export default function NewOrderPage() {
     enabled:  isAuthenticated,
   });
 
+  const { data: pricingData } = useQuery({
+    queryKey: ['pricing-config'],
+    queryFn:  () => pricingApi.getConfig(),
+    staleTime: 5 * 60 * 1000, // cache for 5 minutes — changes rarely
+  });
+
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } =
     useForm<OrderFormValues>({
       resolver: zodResolver(orderSchema),
       defaultValues: {
-        quantity: 1,
-        quality: 'Standard',
-        infill: 20,
+        quantity:          1,
+        quality:           'Standard',
+        infill:            20,
         supportStructures: false,
       },
     });
 
+  // Watched values for live estimate
   const selectedMaterialId = watch('materialId');
+  const selectedQuality    = watch('quality');
+  const selectedQuantity   = watch('quantity');
   const selectedMaterial   = materialsData?.data.find(m => m.id === selectedMaterialId);
 
   const onSubmit = async (values: OrderFormValues) => {
@@ -214,7 +225,7 @@ export default function NewOrderPage() {
             <FieldLabel>Quality</FieldLabel>
             <div className="grid grid-cols-3 gap-2">
               {QUALITY_OPTIONS.map(q => {
-                const active = watch('quality') === q.value;
+                const active = selectedQuality === q.value;
                 return (
                   <button
                     key={q.value}
@@ -259,6 +270,15 @@ export default function NewOrderPage() {
             />
           </div>
         </Section>
+
+        {/* ── Live price estimate ─────────────────────────────────────────── */}
+        <PriceEstimatePanel
+          weightGrams={fileData?.data.analysis?.estimatedWeightGrams}
+          pricePerGram={selectedMaterial?.pricePerGram}
+          quality={selectedQuality}
+          quantity={selectedQuantity || 1}
+          pricingConfig={pricingData?.data}
+        />
 
         {/* Delivery */}
         <Section title="Delivery">
