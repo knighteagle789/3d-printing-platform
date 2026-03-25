@@ -82,4 +82,25 @@ public class MaterialRepository : Repository<Material>, IMaterialRepository
     {
         return await _context.PrintingTechnologies.FindAsync(id);
     }
+
+    public async Task<IReadOnlyList<Material>> FindDuplicatesAsync(MaterialType type, string color, string? brand)
+    {
+        var colorNorm = color.Trim().ToUpperInvariant();
+
+        var query = _dbSet
+            .Where(m => m.IsActive && m.Type == type &&
+                        m.Color.ToUpper().Trim() == colorNorm);
+
+        if (brand is not null)
+        {
+            var brandNorm = brand.Trim().ToUpperInvariant();
+            query = query.Where(m => m.Brand != null && m.Brand.ToUpper().Trim() == brandNorm);
+        }
+        else
+        {
+            query = query.Where(m => m.Brand == null);
+        }
+
+        return await query.OrderBy(m => m.CreatedAt).ToListAsync();
+    }
 }

@@ -143,4 +143,31 @@ public static class TestDataBuilder
             CreatedAt = DateTime.UtcNow
         };
     }
+
+    public static MaterialIntake CreateMaterialIntake(
+        Guid? id = null,
+        IntakeStatus status = IntakeStatus.NeedsReview,
+        Guid? uploadedByUserId = null,
+        string draftMaterialType = "PLA",
+        string draftColor = "Black",
+        string? draftBrand = null)
+    {
+        return new MaterialIntake
+        {
+            Id = id ?? Guid.NewGuid(),
+            Status = status,
+            PhotoBlobName = "material-intake/2026/03/test-photo.jpg",
+            PhotoUrl = "https://storage.example.com/material-intake/test-photo.jpg",
+            SourceType = IntakeSourceType.FileUpload,
+            DraftMaterialType = draftMaterialType,
+            DraftColor = draftColor,
+            DraftBrand = draftBrand,
+            DraftSpoolWeightGrams = 750m,
+            ExtractionAttemptCount = 1,
+            UploadedByUserId = uploadedByUserId ?? Guid.NewGuid(),
+            CreatedAtUtc = DateTime.UtcNow.AddMinutes(-10),
+            UpdatedAtUtc = DateTime.UtcNow.AddMinutes(-5),
+            Events = new List<IntakeEvent>(),
+        };
+    }
 }

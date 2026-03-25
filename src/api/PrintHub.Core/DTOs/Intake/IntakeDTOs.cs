@@ -22,7 +22,9 @@ namespace PrintHub.Core.DTOs.Intake
         string? CorrectedColor,
         decimal? CorrectedSpoolWeightGrams,
         string? CorrectedPrintSettingsHints,
-        string? CorrectedBatchOrLot
+        string? CorrectedBatchOrLot,
+        /// <summary>Price per gram for the approved material. Required when creating a new material record.</summary>
+        decimal PricePerGram = 0m
     );
 
     public record RejectIntakeRequest(

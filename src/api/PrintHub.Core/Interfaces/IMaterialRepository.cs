@@ -24,4 +24,10 @@ public interface IMaterialRepository : IRepository<Material>
     Task<IReadOnlyList<PrintingTechnology>> GetAllTechnologiesAsync();
 
     Task<PrintingTechnology?> GetTechnologyByIdAsync(Guid id);
+
+    /// <summary>
+    /// Returns active materials that match the given type, color (case-insensitive), and brand.
+    /// Used during intake approval to detect potential duplicates before creating a new material.
+    /// </summary>
+    Task<IReadOnlyList<Material>> FindDuplicatesAsync(MaterialType type, string color, string? brand);
 }

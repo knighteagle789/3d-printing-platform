@@ -200,6 +200,42 @@ public class MaterialIntakeController : ControllerBase
         await _materialIntakeService.TriggerExtractionAsync(intakeId, userId);
         return Accepted(new { intakeId, message = "Extraction queued." });
     }
+
+    /// <summary>
+    /// Approve a reviewed intake, creating or flagging a material record.
+    /// Intake must be in NeedsReview status. Reviewer corrections are optional
+    /// and override any extracted draft values. PricePerGram is required.
+    /// Returns the new/linked material ID and the approval outcome.
+    /// </summary>
+    [HttpPost("{intakeId:guid}/approve")]
+    public async Task<ActionResult<ApproveIntakeResponse>> ApproveIntake(
+        Guid intakeId,
+        [FromBody] ApproveIntakeRequest request)
+    {
+        var correlationId = HttpContext.TraceIdentifier;
+        Response.Headers.Append("X-Correlation-ID", correlationId);
+
+        var userId = User.GetUserId();
+        var response = await _materialIntakeService.ApproveIntakeAsync(intakeId, request, userId);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Reject a reviewed intake, recording a reason.
+    /// Intake must be in NeedsReview status.
+    /// </summary>
+    [HttpPost("{intakeId:guid}/reject")]
+    public async Task<IActionResult> RejectIntake(
+        Guid intakeId,
+        [FromBody] RejectIntakeRequest request)
+    {
+        var correlationId = HttpContext.TraceIdentifier;
+        Response.Headers.Append("X-Correlation-ID", correlationId);
+
+        var userId = User.GetUserId();
+        await _materialIntakeService.RejectIntakeAsync(intakeId, request, userId);
+        return NoContent();
+    }
     private async Task<MemoryStream> NormalizeToJpegAsync(IFormFile file, string correlationId)
     {
         var maxLongEdge = _configuration.GetValue<uint?>("Intake:ImageProcessing:MaxLongEdgePixels") ?? 2048;
