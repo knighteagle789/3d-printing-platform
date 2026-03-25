@@ -69,28 +69,25 @@ jobs:
           name: coverage-report
           path: src/api/**/TestResults/**/coverage.cobertura.xml
 
-  # ── Deploy ─────────────────────────────────────────────────────────────────
-  # Uncomment this job once Azure App Service is provisioned and the publish
-  # profile secret is added to the repo (Settings → Secrets → Actions):
-  #
-  #   Secret name: AZURE_API_PUBLISH_PROFILE
-  #   Value: contents of the .PublishSettings file downloaded from Azure Portal
-  
-  deploy:
-    name: Deploy to Azure App Service
+  # ── Deploy to Staging ───────────────────────────────────────────────────────
+  # Runs automatically on every merge to main.
+  # Targets the dev Azure App Service.
+  deploy-staging:
+    name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: build-and-test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  
+    environment: staging
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-  
+
       - name: Setup .NET ${{ env.DOTNET_VERSION }}
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-  
+
       - name: Publish
         run: >
           dotnet publish src/api/PrintHub.API/PrintHub.API.csproj
@@ -98,10 +95,44 @@ jobs:
           --runtime linux-x64
           --self-contained false
           --output ./publish
-  
-      - name: Deploy to Azure Web App
+
+      - name: Deploy to Azure Web App (Staging)
         uses: azure/webapps-deploy@v3
         with:
-          app-name: noco-make-lab-api-dev        # update to your Azure app name
+          app-name: noco-make-lab-api-dev
           publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+          package: ./publish
+
+  # ── Deploy to Production ────────────────────────────────────────────────────
+  # Requires manual approval in GitHub (Settings → Environments → production).
+  # Only runs after staging deploy succeeds.
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish
+        run: >
+          dotnet publish src/api/PrintHub.API/PrintHub.API.csproj
+          --configuration Release
+          --runtime linux-x64
+          --self-contained false
+          --output ./publish
+
+      - name: Deploy to Azure Web App (Production)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_API_APP_NAME_PROD }}
+          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE_PROD }}
           package: ./publish

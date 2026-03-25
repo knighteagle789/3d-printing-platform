@@ -1,0 +1,58 @@
+version: 2
+
+updates:
+
+  # ── npm (Next.js frontend) ──────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /src/web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/Denver
+    open-pull-requests-limit: 5
+    groups:
+      # Batch minor/patch updates into a single PR per week
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+      - frontend
+    commit-message:
+      prefix: chore
+
+  # ── NuGet (.NET API) ─────────────────────────────────────────────────────────
+  - package-ecosystem: nuget
+    directory: /src/api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/Denver
+    open-pull-requests-limit: 5
+    groups:
+      nuget-minor-patch:
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+      - backend
+    commit-message:
+      prefix: chore
+
+  # ── GitHub Actions ───────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      time: "08:00"
+      timezone: America/Denver
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: chore

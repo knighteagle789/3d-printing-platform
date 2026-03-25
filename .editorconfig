@@ -1,0 +1,34 @@
+# editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# follows Microsoft conventions (4-space indent)
+[*.cs]
+indent_size = 4
+
+# .NET project files
+[*.{csproj,props,targets,sln,slnx}]
+indent_size = 2
+
+# Bicep
+[*.bicep]
+indent_size = 2
+
+# Markdown — preserve trailing spaces (they're intentional line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# JSON / YAML
+[*.{json,yml,yaml}]
+indent_size = 2
+
+# Shell scripts
+[*.sh]
+end_of_line = lf

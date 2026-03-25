@@ -53,14 +53,15 @@ jobs:
               stripeSecretKey="${{ secrets.STRIPE_SECRET_KEY }}" \
               stripeWebhookSecret="${{ secrets.STRIPE_WEBHOOK_SECRET }}"
 
-  # ── Deploy (runs on push to main only) ─────────────────────────────────────
-  # Uses Deployment Stacks so removed resources are automatically cleaned up
-  # and denyDelete prevents accidental manual changes in the portal.
-  deploy:
-    name: Deploy Stack
+  # ── Deploy to Staging ───────────────────────────────────────────────────────
+  # Runs automatically on every merge to main.
+  # Uses Deployment Stacks so removed resources are automatically cleaned up.
+  deploy-staging:
+    name: Deploy Stack (Staging)
     runs-on: ubuntu-latest
     needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: staging
 
     steps:
       - name: Checkout
@@ -96,5 +97,52 @@ jobs:
           az stack group show \
             --name ${{ env.STACK_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "outputs" \
+            --output table
+
+  # ── Deploy to Production ────────────────────────────────────────────────────
+  # Requires manual approval in GitHub (Settings → Environments → production).
+  # Only runs after staging deploy succeeds.
+  deploy-production:
+    name: Deploy Stack (Production)
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Install Bicep
+        run: az bicep install
+
+      - name: Deploy Stack
+        run: |
+          az stack group create \
+            --name ${{ secrets.STACK_NAME_PROD }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP_PROD }} \
+            --template-file ${{ env.TEMPLATE }} \
+            --parameters ${{ env.PARAMS }} \
+            --parameters \
+              dbAdminPassword="${{ secrets.DB_ADMIN_PASSWORD_PROD }}" \
+              jwtKey="${{ secrets.JWT_KEY_PROD }}" \
+              resendApiKey="${{ secrets.RESEND_API_KEY_PROD }}" \
+              stripeSecretKey="${{ secrets.STRIPE_SECRET_KEY_PROD }}" \
+              stripeWebhookSecret="${{ secrets.STRIPE_WEBHOOK_SECRET_PROD }}" \
+            --deny-settings-mode denyDelete \
+            --action-on-unmanage deleteResources \
+            --yes
+
+      - name: Show Stack Outputs
+        run: |
+          az stack group show \
+            --name ${{ secrets.STACK_NAME_PROD }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP_PROD }} \
             --query "outputs" \
             --output table
