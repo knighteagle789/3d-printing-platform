@@ -8,9 +8,6 @@ on:
       - '.github/workflows/web.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'src/web/**'
-      - '.github/workflows/web.yml'
 
 env:
   NODE_VERSION: '22.x'
@@ -44,12 +41,10 @@ jobs:
         run: npm run build
         working-directory: ${{ env.WEB_PATH }}
         env:
-          # Build-time env vars — real values are set in Azure Static Web Apps config.
-          # Dummy values here prevent the build from failing on missing vars.
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://placeholder.example.com/api' }}
 
   # ── Deploy to Staging ───────────────────────────────────────────────────────
-  # Runs automatically on every merge to main.
+  # Runs automatically on every merge to main — only when web files changed.
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
@@ -75,7 +70,6 @@ jobs:
 
   # ── Deploy to Production ────────────────────────────────────────────────────
   # Requires manual approval in GitHub (Settings → Environments → production).
-  # Only runs after staging deploy succeeds.
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest

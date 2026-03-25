@@ -8,9 +8,6 @@ on:
       - '.github/workflows/infra.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'infrastructure/**'
-      - '.github/workflows/infra.yml'
 
 env:
   RESOURCE_GROUP: rg-noco-make-lab-dev
@@ -19,8 +16,7 @@ env:
   PARAMS: infrastructure/main.bicepparam
 
 jobs:
-  # ── Validate (runs on PRs) ──────────────────────────────────────────────────
-  # Shows exactly what will change before it changes — like terraform plan.
+  # ── Validate (runs on all PRs) ──────────────────────────────────────────────
   validate:
     name: Validate & What-If
     runs-on: ubuntu-latest
@@ -54,8 +50,6 @@ jobs:
               stripeWebhookSecret="${{ secrets.STRIPE_WEBHOOK_SECRET }}"
 
   # ── Deploy to Staging ───────────────────────────────────────────────────────
-  # Runs automatically on every merge to main.
-  # Uses Deployment Stacks so removed resources are automatically cleaned up.
   deploy-staging:
     name: Deploy Stack (Staging)
     runs-on: ubuntu-latest
@@ -101,8 +95,6 @@ jobs:
             --output table
 
   # ── Deploy to Production ────────────────────────────────────────────────────
-  # Requires manual approval in GitHub (Settings → Environments → production).
-  # Only runs after staging deploy succeeds.
   deploy-production:
     name: Deploy Stack (Production)
     runs-on: ubuntu-latest

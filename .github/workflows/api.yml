@@ -8,9 +8,6 @@ on:
       - '.github/workflows/api.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'src/api/**'
-      - '.github/workflows/api.yml'
 
 env:
   DOTNET_VERSION: '10.0.x'
@@ -70,8 +67,7 @@ jobs:
           path: src/api/**/TestResults/**/coverage.cobertura.xml
 
   # ── Deploy to Staging ───────────────────────────────────────────────────────
-  # Runs automatically on every merge to main.
-  # Targets the dev Azure App Service.
+  # Runs automatically on every merge to main — only when API files changed.
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
@@ -105,7 +101,6 @@ jobs:
 
   # ── Deploy to Production ────────────────────────────────────────────────────
   # Requires manual approval in GitHub (Settings → Environments → production).
-  # Only runs after staging deploy succeeds.
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest

@@ -110,4 +110,5 @@ publish/
 
 # Sensitive data
 appsettings.Production.json
+appsettings.Development.json
 secrets.json
