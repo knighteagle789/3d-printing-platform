@@ -12,6 +12,7 @@
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.1" />
     <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.25.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.11.0" />

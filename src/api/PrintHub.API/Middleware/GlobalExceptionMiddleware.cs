@@ -46,6 +46,7 @@ public class GlobalExceptionMiddleware
             BusinessRuleException ex => (StatusCodes.Status400BadRequest, ex.Message),
             ForbiddenException ex => (StatusCodes.Status403Forbidden, ex.Message),
             ConflictException ex => (StatusCodes.Status409Conflict, ex.Message),
+            InvalidIntakeTransitionException ex => (StatusCodes.Status409Conflict, ex.Message),
             InvalidOperationException ex => (StatusCodes.Status400BadRequest, ex.Message),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized."),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")

@@ -9,6 +9,7 @@ using Asp.Versioning.ApiExplorer;
 using PrintHub.Infrastructure.Data;
 using PrintHub.Infrastructure;
 using PrintHub.API;
+using PrintHub.API.Services.Intake;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using PrintHub.API.Middleware;
@@ -100,6 +101,8 @@ try
 
     builder.Services.AddInfrastructureServices(builder.Configuration); // Register infrastructure services (repositories, etc.)
     builder.Services.AddApplicationServices();      // Register application services (business logic)
+    builder.Services.Configure<MaterialIntakeQueueOptions>(builder.Configuration.GetSection("Intake:Queue"));
+    builder.Services.AddHostedService<MaterialIntakeExtractionWorker>();
 
     // ─── Authentication ───────────────────────────────────────────────────────
     // MY VERSION: JWT authentication (needed before you add protected endpoints)

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
@@ -50,9 +49,9 @@ public static class DependencyInjection
         var extractorProvider = configuration["Intake:Extractor:Provider"] ?? "Mock";
         if (extractorProvider.Equals("AzureVision", StringComparison.OrdinalIgnoreCase))
         {
-            // AzureVisionExtractionProvider registered in #15
-            // services.AddScoped<IExtractionProvider, AzureVisionExtractionProvider>();
-            services.AddScoped<IExtractionProvider, MockExtractionProvider>(); // temporary until #15
+            services.AddHttpClient<AzureVisionExtractionProvider>();
+            services.AddScoped<IExtractionProvider>(sp =>
+                sp.GetRequiredService<AzureVisionExtractionProvider>());
         }
         else
         {

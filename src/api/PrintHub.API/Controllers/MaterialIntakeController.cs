@@ -139,10 +139,15 @@ public class MaterialIntakeController : ControllerBase
                     UploadNotes: form.UploadNotes),
                 userId);
 
+            // Queue extraction immediately after upload.
+            await _materialIntakeService.TriggerExtractionAsync(response.Id, userId);
+
+            var latest = await _materialIntakeService.GetIntakeAsync(response.Id) ?? response;
+
             return CreatedAtAction(
                 nameof(GetIntake),
                 new { version = "1.0", intakeId = response.Id },
-                response);
+                latest);
         }
         catch (MagickMissingDelegateErrorException ex)
         {
@@ -184,6 +189,17 @@ public class MaterialIntakeController : ControllerBase
         return Ok(intake);
     }
 
+    /// <summary>
+    /// Manually trigger extraction for an intake.
+    /// Primary use case: retry an intake that is currently in Failed state.
+    /// </summary>
+    [HttpPost("{intakeId:guid}/extract")]
+    public async Task<IActionResult> TriggerExtraction(Guid intakeId)
+    {
+        var userId = User.GetUserId();
+        await _materialIntakeService.TriggerExtractionAsync(intakeId, userId);
+        return Accepted(new { intakeId, message = "Extraction queued." });
+    }
     private async Task<MemoryStream> NormalizeToJpegAsync(IFormFile file, string correlationId)
     {
         var maxLongEdge = _configuration.GetValue<uint?>("Intake:ImageProcessing:MaxLongEdgePixels") ?? 2048;

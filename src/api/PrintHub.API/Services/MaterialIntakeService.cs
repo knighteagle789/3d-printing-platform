@@ -1,6 +1,8 @@
 using System.Text.Json;
 using PrintHub.Core.DTOs.Intake;
 using PrintHub.Core.Entities;
+using PrintHub.Core.Common;
+using PrintHub.Core.Exceptions;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 
@@ -10,13 +12,16 @@ public class MaterialIntakeService : IMaterialIntakeService
 {
     private readonly IMaterialIntakeRepository _intakeRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IIntakeExtractionQueue _intakeExtractionQueue;
 
     public MaterialIntakeService(
         IMaterialIntakeRepository intakeRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IIntakeExtractionQueue intakeExtractionQueue)
     {
         _intakeRepository = intakeRepository;
         _unitOfWork = unitOfWork;
+        _intakeExtractionQueue = intakeExtractionQueue;
     }
 
     public async Task<MaterialIntakeResponse> CreateIntakeAsync(CreateIntakeRequest request, Guid uploadedByUserId)
@@ -89,9 +94,44 @@ public class MaterialIntakeService : IMaterialIntakeService
             .ToList();
     }
 
-    public Task TriggerExtractionAsync(Guid intakeId, Guid requestedByUserId)
+    public async Task TriggerExtractionAsync(Guid intakeId, Guid requestedByUserId)
     {
-        throw new NotImplementedException("Extraction queue trigger is implemented in issue #15.");
+        var intake = await _intakeRepository.GetByIdAsync(intakeId)
+            ?? throw new NotFoundException("Material intake", intakeId);
+
+        // Idempotent: if extraction is already in progress, don't re-enqueue.
+        if (intake.Status == IntakeStatus.Extracting)
+        {
+            return;
+        }
+
+        IntakeStateMachine.EnsureTransition(intake.Status, IntakeStatus.Extracting);
+
+        intake.Status = IntakeStatus.Extracting;
+        intake.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _intakeRepository.AddEventAsync(new IntakeEvent
+        {
+            Id = Guid.NewGuid(),
+            IntakeId = intake.Id,
+            EventType = "extraction.queued",
+            ToStatus = IntakeStatus.Extracting,
+            ActorUserId = requestedByUserId,
+            Details = JsonSerializer.Serialize(new
+            {
+                attempt = intake.ExtractionAttemptCount + 1,
+                queuedAtUtc = DateTime.UtcNow
+            }),
+            OccurredAtUtc = DateTime.UtcNow,
+        });
+
+        await _unitOfWork.SaveChangesAsync();
+
+        await _intakeExtractionQueue.EnqueueAsync(new IntakeExtractionQueueMessage(
+            intake.Id,
+            intake.PhotoBlobName,
+            intake.ExtractionAttemptCount + 1,
+            DateTime.UtcNow));
     }
 
     public Task<ApproveIntakeResponse> ApproveIntakeAsync(Guid intakeId, ApproveIntakeRequest request, Guid actionedByUserId)

@@ -1,4 +1,5 @@
 using PrintHub.API.Services;
+using PrintHub.API.Services.Intake;
 using PrintHub.Core.Interfaces.Services;
 using PrintHub.Core.Interfaces;
 namespace PrintHub.API;
@@ -16,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<IContentService, ContentService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IMaterialIntakeService, MaterialIntakeService>();
+        services.AddSingleton<IIntakeExtractionQueue, AzureMaterialIntakeQueue>();
 
         return services;
     }
