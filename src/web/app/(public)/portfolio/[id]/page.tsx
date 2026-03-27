@@ -1,5 +1,6 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { use, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -11,10 +12,7 @@ import { StlViewer } from '@/components/3d-viewer/StlViewer';
 import { ArrowLeft, ShoppingCart, FileText, Layers, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { toProxiedUrl } from '@/lib/utils';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 interface PortfolioMaterial {
   id:           string;

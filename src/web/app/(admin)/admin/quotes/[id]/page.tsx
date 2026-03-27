@@ -1,5 +1,6 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -8,14 +9,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { quotesApi } from '@/lib/api/quotes';
 import { materialsApi } from '@/lib/api/materials';
-import { JetBrains_Mono } from 'next/font/google';
 import { formatStatus } from '@/lib/utils';
 import {
   ArrowLeft, FileText, Calendar, DollarSign,
   CheckCircle2, AlertCircle, User, Mail, Download, Clock,
 } from 'lucide-react';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

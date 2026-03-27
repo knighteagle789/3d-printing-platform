@@ -1,10 +1,10 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,8 +22,6 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const NAV_LINKS = [
   { href: '/portfolio', label: 'Portfolio' },

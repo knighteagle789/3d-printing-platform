@@ -1,13 +1,12 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { usersApi } from '@/lib/api/users';
-import { JetBrains_Mono } from 'next/font/google';
 import { Users, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 type FilterType = 'all' | 'active' | 'inactive' | 'admin' | 'staff';
 

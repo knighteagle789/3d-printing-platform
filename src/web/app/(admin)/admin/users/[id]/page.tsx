@@ -1,19 +1,18 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { usersApi } from '@/lib/api/users';
 import { ordersApi } from '@/lib/api/orders';
 import { quotesApi } from '@/lib/api/quotes';
-import { JetBrains_Mono } from 'next/font/google';
 import {
   ArrowLeft,
   Calendar, ShoppingBag, MessageSquare, AlertTriangle,
   CheckCircle2, AlertCircle,
 } from 'lucide-react';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const ALL_ROLES = ['Customer', 'Staff', 'Admin'] as const;
 

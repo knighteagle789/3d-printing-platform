@@ -1,10 +1,9 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useCallback, useState } from 'react';
 import { Upload, File, X } from 'lucide-react';
-import { JetBrains_Mono } from 'next/font/google';
 
-const mono = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 const ALLOWED_EXTENSIONS = ['.stl', '.obj', '.3mf', '.step', '.iges', '.gcode'];
 const MAX_SIZE_MB = 250;

@@ -1,9 +1,7 @@
+import { display, mono } from '@/lib/fonts';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const VALUES = [
   {

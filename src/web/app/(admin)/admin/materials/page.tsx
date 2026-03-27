@@ -1,13 +1,12 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { materialsApi } from '@/lib/api/materials';
-import { JetBrains_Mono } from 'next/font/google';
 import { Plus, AlertTriangle, Package } from 'lucide-react';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const usd = new Intl.NumberFormat('en-US', {
   style: 'currency',

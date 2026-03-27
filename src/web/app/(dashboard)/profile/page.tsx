@@ -1,5 +1,6 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -9,11 +10,8 @@ import { authApi } from '@/lib/api/auth';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { User, Lock, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { PasswordInput } from '@/components/ui/password-input';
 
-const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -263,7 +261,7 @@ export default function ProfilePage() {
         <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-2`}>
           Account
         </p>
-        <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
+        <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
           Profile
         </h1>
         <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>

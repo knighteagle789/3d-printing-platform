@@ -1,14 +1,13 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { materialsApi, type MaterialFinish, type MaterialGrade } from '@/lib/api/materials';
 import { MaterialForm, type MaterialFormValues } from '../_components/material-form';
-import { JetBrains_Mono } from 'next/font/google';
 import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 export default function NewMaterialPage() {
   const router = useRouter();

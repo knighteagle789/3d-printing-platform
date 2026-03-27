@@ -1,8 +1,7 @@
+import { mono } from '@/lib/fonts';
 import { UploadedFile } from '@/lib/api/files';
 import { CheckCircle, AlertTriangle, Clock, Layers } from 'lucide-react';
-import { JetBrains_Mono } from 'next/font/google';
 
-const mono = JetBrains_Mono({ weight: ['400', '500', '600'], subsets: ['latin'] });
 
 interface FileAnalysisProps {
   file: UploadedFile;

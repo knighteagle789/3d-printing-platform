@@ -1,5 +1,6 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +10,6 @@ import {
   MATERIAL_TYPES, MATERIAL_FINISHES, MATERIAL_GRADES,
 } from '@/lib/api/materials';
 import { technologiesApi } from '@/lib/api/technologies';
-import { JetBrains_Mono } from 'next/font/google';
 import {
   PrintSettingsEditor,
   parsePrintSettings,
@@ -17,7 +17,6 @@ import {
   type PrintSettingPair,
 } from './PrintSettingsEditor';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 

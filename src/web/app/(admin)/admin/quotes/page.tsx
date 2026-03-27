@@ -1,14 +1,13 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { quotesApi, type QuoteRequest } from '@/lib/api/quotes';
-import { JetBrains_Mono } from 'next/font/google';
 import { ArrowRight, FileText, Search, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const STATUSES = [
   'All', 'Pending', 'InReview', 'QuoteProvided', 'Accepted', 'Declined', 'Expired', 'Cancelled',

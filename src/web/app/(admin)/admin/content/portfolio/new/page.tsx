@@ -1,5 +1,6 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -7,7 +8,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { contentApi, type CreatePortfolioItemRequest } from '@/lib/api/content';
-import { JetBrains_Mono } from 'next/font/google';
 import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import {
   ProjectDetailsEditor,
@@ -16,7 +16,6 @@ import {
 } from '@/components/admin/ProjectDetailsEditor';
 import { MediaUploadField } from '@/components/admin/MediaUploadField';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const PORTFOLIO_CATEGORIES = [
   'Prototyping', 'Automotive', 'Aerospace', 'Medical', 'Architecture',
