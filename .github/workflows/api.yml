@@ -99,35 +99,35 @@ jobs:
           publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
           package: ./publish
 
-  # ── Deploy to Production ────────────────────────────────────────────────────
-  # Requires manual approval in GitHub (Settings → Environments → production).
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: deploy-staging
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
+  # # ── Deploy to Production ────────────────────────────────────────────────────
+  # # Requires manual approval in GitHub (Settings → Environments → production).
+  # deploy-production:
+  #   name: Deploy to Production
+  #   runs-on: ubuntu-latest
+  #   needs: deploy-staging
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   environment: production
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
 
-      - name: Setup .NET ${{ env.DOTNET_VERSION }}
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+  #     - name: Setup .NET ${{ env.DOTNET_VERSION }}
+  #       uses: actions/setup-dotnet@v5
+  #       with:
+  #         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Publish
-        run: >
-          dotnet publish src/api/PrintHub.API/PrintHub.API.csproj
-          --configuration Release
-          --runtime linux-x64
-          --self-contained false
-          --output ./publish
+  #     - name: Publish
+  #       run: >
+  #         dotnet publish src/api/PrintHub.API/PrintHub.API.csproj
+  #         --configuration Release
+  #         --runtime linux-x64
+  #         --self-contained false
+  #         --output ./publish
 
-      - name: Deploy to Azure Web App (Production)
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ secrets.AZURE_API_APP_NAME_PROD }}
-          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE_PROD }}
-          package: ./publish
+  #     - name: Deploy to Azure Web App (Production)
+  #       uses: azure/webapps-deploy@v3
+  #       with:
+  #         app-name: ${{ secrets.AZURE_API_APP_NAME_PROD }}
+  #         publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE_PROD }}
+  #         package: ./publish
