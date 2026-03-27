@@ -41,6 +41,13 @@ export interface OrderStatusHistory {
   changedBy: { id: string; email: string; firstName: string; lastName: string } | null;
 }
 
+export interface QuoteSourceSummary {
+  id: string;
+  requestNumber: string;
+  status: string;
+  acceptedPrice: number;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -56,6 +63,7 @@ export interface Order {
   createdAt: string;
   items: OrderItem[];
   user: { id: string; email: string; firstName: string; lastName: string } | null;
+  sourceQuote: QuoteSourceSummary | null;
 }
 
 export interface PagedResponse<T> {

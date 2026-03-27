@@ -6,7 +6,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ordersApi } from '@/lib/api/orders';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2, Activity } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2, Activity, Receipt } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
 import { StatusTimeline } from '@/components/orders/StatusTimeline';
 
@@ -210,6 +210,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <Section icon={Activity} title="Order History">
           <StatusTimeline orderId={id} queryNamespace="customer" />
         </Section>
+
+        {/* Source Quote — only shown when this order came from a quote flow */}
+        {order.sourceQuote && (
+          <Section icon={Receipt} title="Created From Quote">
+            <div className="space-y-0">
+              <DataRow
+                label="Quote Number"
+                value={
+                  <button
+                    onClick={() => router.push(`/quotes/${order.sourceQuote!.id}`)}
+                    className={`${mono.className} text-[11px] text-amber-700 hover:text-amber-600 transition-colors underline underline-offset-2`}
+                  >
+                    {order.sourceQuote.requestNumber}
+                  </button>
+                }
+              />
+              <DataRow
+                label="Quote Status"
+                value={<StatusPill status={order.sourceQuote.status} />}
+              />
+              <DataRow
+                label="Accepted Price"
+                value={`$${order.sourceQuote.acceptedPrice.toFixed(2)}`}
+              />
+            </div>
+          </Section>
+        )}
 
         {/* Items */}
         <Section icon={Package} title={`Items (${order.items.length})`}>

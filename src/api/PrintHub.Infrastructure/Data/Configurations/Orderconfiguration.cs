@@ -54,6 +54,8 @@ namespace PrintHub.Infrastructure.Data.Configurations
 
             builder.HasIndex(o => o.CreatedAt);
 
+            builder.HasIndex(o => o.QuoteRequestId);
+
             // Navigation configurations
             builder.HasMany(o => o.Items)
                 .WithOne(i => i.Order)
@@ -64,6 +66,15 @@ namespace PrintHub.Infrastructure.Data.Configurations
                 .WithOne(h => h.Order)
                 .HasForeignKey(h => h.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Link back to the source quote request, if this order came from a quote flow.
+            // WithMany() because QuoteRequest already owns its own OrderId FK on the other side —
+            // these are two independent FK columns, not a HasOne/WithOne pair, which avoids
+            // EF shadow-property conflicts between the two configurations.
+            builder.HasOne(o => o.SourceQuote)
+                .WithMany()
+                .HasForeignKey(o => o.QuoteRequestId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 

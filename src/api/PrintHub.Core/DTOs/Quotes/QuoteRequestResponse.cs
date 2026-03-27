@@ -18,6 +18,7 @@ public record QuoteRequestResponse(
     string? Notes,
     string? BudgetDisplay,
     DateTime CreatedAt,
+    Guid? OrderId,
     FileSummaryResponse? File,
     MaterialSummaryResponse? PreferredMaterial,
     UserSummaryResponse? User,
@@ -34,6 +35,7 @@ public record QuoteRequestResponse(
         Notes: quote.Notes,
         BudgetDisplay: quote.GetBudgetDisplay(),
         CreatedAt: quote.CreatedAt,
+        OrderId: quote.OrderId,
         File: quote.File != null
             ? FileSummaryResponse.FromEntity(quote.File)
             : null,

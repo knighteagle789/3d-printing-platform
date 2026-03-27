@@ -61,6 +61,8 @@ public class OrderRepository : Repository<Order>, IOrderRepository
                 .ThenInclude(i => i.File)
             .Include(o => o.StatusHistory.OrderBy(sh => sh.ChangedAt))
                 .ThenInclude(sh => sh.ChangedBy)
+            .Include(o => o.SourceQuote)
+                .ThenInclude(q => q!.Responses)
             .AsSplitQuery()
             .FirstOrDefaultAsync(o => o.Id == orderId);
     }
