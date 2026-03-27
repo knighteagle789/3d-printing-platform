@@ -41,13 +41,15 @@ A full-stack web application for managing 3D printing services.
 9. Start dev server: `npm run dev`
 
 ## Project Structure
-3d-printing-platform/
-├── src/
-│   ├── api/              # .NET 10 API
-│   └── web/              # Next.js Frontend
-├── infrastructure/       # IaC (Bicep/Terraform)
-├── docs/                # Documentation
-└── .github/workflows/   # CI/CD
+```
+3d-printing-platform/ 
+├── src/ 
+│   ├── api/              # .NET 10 API 
+│   └── web/              # Next.js Frontend 
+├── infrastructure/       # IaC (Bicep/Terraform) 
+├── docs/                 # Documentation 
+└── .github/workflows/    # CI/CD
+```
 
 ## License
 
