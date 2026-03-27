@@ -6,27 +6,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { materialsApi, type Material } from '@/lib/api/materials';
+import { groupMaterials, type MaterialGroup } from '@/lib/utils';
 
-
-type MaterialGroup = {
-  type:     string;
-  variants: Material[];
-  minPrice: number;
-  maxPrice: number;
-};
-
-function groupMaterials(materials: Material[]): MaterialGroup[] {
-  const map = new Map<string, Material[]>();
-  for (const m of materials) {
-    map.set(m.type, [...(map.get(m.type) ?? []), m]);
-  }
-  return Array.from(map.entries()).map(([type, variants]) => ({
-    type,
-    variants,
-    minPrice: Math.min(...variants.map(v => v.pricePerGram)),
-    maxPrice: Math.max(...variants.map(v => v.pricePerGram)),
-  }));
-}
 
 const QUALITY_TIERS = [
   { name: 'Draft',      layer: '0.3mm',  multiplier: '×0.8', desc: 'Fast. Functional. Good for form-fit tests.',        highlight: false },

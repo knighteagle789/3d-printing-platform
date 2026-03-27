@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, X } from 'lucide-react';
 import { materialsApi, type Material } from '@/lib/api/materials';
 import { contentApi, type PortfolioItemResponse } from '@/lib/api/content';
+import { groupMaterials, type MaterialGroup } from '@/lib/utils';
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
 
@@ -69,28 +70,6 @@ const PROCESS_STEPS = [
     desc: 'Every print is inspected before it ships. We offer shipping across Northern Colorado and local pickup in Fort Collins.',
   },
 ];
-
-// ─── Material type grouping ───────────────────────────────────────────────────
-type MaterialGroup = {
-  type:     string;
-  variants: Material[];
-  minPrice: number;
-  maxPrice: number;
-};
-
-function groupMaterials(materials: Material[]): MaterialGroup[] {
-  const map = new Map<string, Material[]>();
-  for (const m of materials) {
-    const existing = map.get(m.type) ?? [];
-    map.set(m.type, [...existing, m]);
-  }
-  return Array.from(map.entries()).map(([type, variants]) => ({
-    type,
-    variants,
-    minPrice: Math.min(...variants.map(v => v.pricePerGram)),
-    maxPrice: Math.max(...variants.map(v => v.pricePerGram)),
-  }));
-}
 
 // ─── Material type tile ───────────────────────────────────────────────────────
 function MaterialTile({
