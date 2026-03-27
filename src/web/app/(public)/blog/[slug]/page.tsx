@@ -1,5 +1,6 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
@@ -7,10 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { contentApi } from '@/lib/api/content';
 import { ArrowLeft, ArrowRight, Calendar, User } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 interface BlogPost {
   id:               string;

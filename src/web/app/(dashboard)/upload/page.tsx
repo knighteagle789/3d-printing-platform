@@ -1,5 +1,6 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { filesApi, UploadedFile } from '@/lib/api/files';
@@ -9,10 +10,7 @@ import { FileAnalysisPanel } from './file-analysis';
 import { StlViewer } from '@/components/3d-viewer/StlViewer';
 import { toProxiedUrl } from '@/lib/utils';
 import { FileText, ShoppingCart } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 export default function UploadPage() {
   const router = useRouter();
@@ -62,7 +60,7 @@ export default function UploadPage() {
         <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-2`}>
           Upload
         </p>
-        <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
+        <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
           Upload 3D Model
         </h1>
         <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>

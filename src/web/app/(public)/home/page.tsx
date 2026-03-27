@@ -1,16 +1,14 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, X } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { materialsApi, type Material } from '@/lib/api/materials';
 import { contentApi, type PortfolioItemResponse } from '@/lib/api/content';
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const LAYER_COUNT = 72;

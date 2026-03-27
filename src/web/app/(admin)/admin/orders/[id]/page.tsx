@@ -1,17 +1,16 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { ordersApi, type OrderStatusHistory } from '@/lib/api/orders';
-import { JetBrains_Mono } from 'next/font/google';
 import { formatStatus } from '@/lib/utils';
 import {
   ArrowLeft, Package, Calendar, MapPin, Clock,
   CheckCircle2, AlertCircle, User, Download, Mail,
 } from 'lucide-react';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

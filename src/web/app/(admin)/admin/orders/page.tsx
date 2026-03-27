@@ -1,14 +1,13 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { ordersApi, type Order, type PagedResponse } from '@/lib/api/orders';
-import { JetBrains_Mono } from 'next/font/google';
 import { ArrowRight, Package, ChevronLeft, ChevronRight, Search, AlertTriangle } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const STATUSES = [
   'All',

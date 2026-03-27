@@ -1,5 +1,6 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,10 +12,8 @@ import {
   Package, FileText, Clock, AlertCircle, ArrowRight,
   Layers, RefreshCw, Plus, TrendingUp,
 } from 'lucide-react';
-import { JetBrains_Mono } from 'next/font/google';
 import { formatStatus } from '@/lib/utils';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 // ─── Status colours ────────────────────────────────────────────────────────────
 

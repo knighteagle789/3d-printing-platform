@@ -1,17 +1,16 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { materialsApi, type MaterialFinish, type MaterialGrade } from '@/lib/api/materials';
 import { MaterialForm, type MaterialFormValues } from '../_components/material-form';
-import { JetBrains_Mono } from 'next/font/google';
 import {
   ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle,
   Package, Clock,
 } from 'lucide-react';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 function gramsDisplay(value: number) {
   return value >= 1000

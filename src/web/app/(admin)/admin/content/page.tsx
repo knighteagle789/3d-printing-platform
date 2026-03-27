@@ -1,16 +1,15 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { contentApi } from '@/lib/api/content';
-import { JetBrains_Mono } from 'next/font/google';
 import {
   Plus, Trash2, Eye, EyeOff, Star,
   Image as ImageIcon, FileText, CheckCircle2, AlertCircle, AlertTriangle,
 } from 'lucide-react';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 type Tab = 'portfolio' | 'blog';
 

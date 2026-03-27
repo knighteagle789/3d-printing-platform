@@ -1,16 +1,14 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { quotesApi } from '@/lib/api/quotes';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { ArrowLeft, FileText, Calendar, MessageSquare, CheckCircle2, ArrowRight } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { formatStatus } from '@/lib/utils';
 
-const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
@@ -157,7 +155,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
             <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-1`}>
               Quote Request
             </p>
-            <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
+            <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
               {quote.requestNumber}
             </h1>
             <p className={`${mono.className} text-[10px] text-text-muted mt-1`}>
@@ -223,7 +221,7 @@ export default function QuoteDetailPage({ params }: { params: Promise<{ id: stri
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1.5">
                       <div className="flex items-baseline gap-3">
-                        <span className={`${bebas.className} text-2xl ${response.isAccepted ? 'text-emerald-400' : 'text-text-primary'}`}>
+                        <span className={`${display.className} text-2xl ${response.isAccepted ? 'text-emerald-400' : 'text-text-primary'}`}>
                           ${response.price.toFixed(2)}
                         </span>
                         {response.shippingCost != null && (

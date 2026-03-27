@@ -1,16 +1,14 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { use, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ordersApi } from '@/lib/api/orders';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2 } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { formatStatus } from '@/lib/utils';
 
-const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
@@ -147,7 +145,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-1`}>
               Order
             </p>
-            <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
+            <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
               {order.orderNumber}
             </h1>
             <p className={`${mono.className} text-[10px] text-text-muted mt-1`}>
@@ -183,7 +181,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <p className={`${mono.className} text-[10px] text-text-muted mb-2`}>
                 Complete payment to approve your order and begin production.
               </p>
-              <p className={`${bebas.className} text-2xl text-text-primary`}>
+              <p className={`${display.className} text-2xl text-text-primary`}>
                 ${order.totalPrice.toFixed(2)}
               </p>
             </div>
@@ -263,7 +261,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             )}
             <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-border">
               <span className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-text-secondary`}>Total</span>
-              <span className={`${bebas.className} text-xl text-text-primary`}>${order.totalPrice.toFixed(2)}</span>
+              <span className={`${display.className} text-xl text-text-primary`}>${order.totalPrice.toFixed(2)}</span>
             </div>
           </div>
         </Section>

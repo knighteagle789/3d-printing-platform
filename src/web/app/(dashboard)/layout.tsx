@@ -1,14 +1,12 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { Upload, Package, FileText, User, LogOut, ShieldCheck, ExternalLink } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 const navLinks = [
   { href: '/upload',  label: 'Upload',  icon: Upload   },
@@ -47,10 +45,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Wordmark */}
         <div className="h-14 flex items-center px-5 border-b border-border shrink-0">
           <Link href="/upload" className="flex items-baseline gap-1.5">
-            <span className={`${bebas.className} text-2xl text-text-primary tracking-wide leading-none`}>
+            <span className={`${display.className} text-2xl text-text-primary tracking-wide leading-none`}>
               NOCO
             </span>
-            <span className={`${bebas.className} text-2xl text-accent tracking-wide leading-none`}>
+            <span className={`${display.className} text-2xl text-accent tracking-wide leading-none`}>
               MAKE LAB
             </span>
           </Link>

@@ -1,5 +1,6 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,11 +8,8 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { authApi } from '@/lib/api/auth';
 
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),

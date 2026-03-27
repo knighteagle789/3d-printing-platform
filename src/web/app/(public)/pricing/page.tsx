@@ -1,14 +1,12 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { materialsApi, type Material } from '@/lib/api/materials';
 
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 type MaterialGroup = {
   type:     string;

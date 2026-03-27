@@ -1,5 +1,6 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -10,11 +11,8 @@ import { contactApi, ContactFormData } from '@/lib/api/contact';
 import { Label } from '@/components/ui/label';
 import { Mail, Clock, MapPin, ArrowRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import React from 'react';
 
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const schema = z.object({
   name:    z.string().min(2, 'Name is required'),

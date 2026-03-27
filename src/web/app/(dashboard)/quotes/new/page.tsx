@@ -1,5 +1,6 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -10,10 +11,7 @@ import { quotesApi } from '@/lib/api/quotes';
 import { filesApi } from '@/lib/api/files';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 
-const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -122,7 +120,7 @@ export default function NewQuotePage() {
         <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-700 mb-2`}>
           Quotes / New
         </p>
-        <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
+        <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
           Request a Quote
         </h1>
         <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>

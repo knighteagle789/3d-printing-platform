@@ -1,5 +1,6 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -7,11 +8,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { contentApi, type CreateBlogPostRequest } from '@/lib/api/content';
-import { JetBrains_Mono } from 'next/font/google';
 import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MediaUploadField } from '@/components/admin/MediaUploadField';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const BLOG_CATEGORIES = [
   'News', 'Tutorial', 'CaseStudy', 'Technology',

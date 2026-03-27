@@ -1,5 +1,6 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,11 +10,8 @@ import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { ArrowRight } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { PasswordInput } from '@/components/ui/password-input';
 
-const display = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono    = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 const registerSchema = z.object({
   firstName:       z.string().min(1, 'First name is required'),

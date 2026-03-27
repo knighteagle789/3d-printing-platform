@@ -1,16 +1,14 @@
 'use client';
 
+import { display, mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ordersApi } from '@/lib/api/orders';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { Package } from 'lucide-react';
-import { Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import { formatStatus } from '@/lib/utils';
 
-const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'] });
-const mono  = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
@@ -73,7 +71,7 @@ export default function OrdersPage() {
         <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
           Orders
         </p>
-        <h1 className={`${bebas.className} text-4xl text-text-primary tracking-wide`}>
+        <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
           My Orders
         </h1>
         <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>

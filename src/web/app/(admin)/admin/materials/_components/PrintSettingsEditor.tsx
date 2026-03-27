@@ -1,9 +1,8 @@
 'use client';
 
+import { mono } from '@/lib/fonts';
 import { Plus, X } from 'lucide-react';
-import { JetBrains_Mono } from 'next/font/google';
 
-const mono = JetBrains_Mono({ weight: ['400', '600'], subsets: ['latin'] });
 
 export type PrintSettingPair = { key: string; value: string };
 
