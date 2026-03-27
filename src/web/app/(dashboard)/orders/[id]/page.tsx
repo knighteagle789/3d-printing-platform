@@ -6,8 +6,9 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ordersApi } from '@/lib/api/orders';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2, Activity } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
+import { StatusTimeline } from '@/components/orders/StatusTimeline';
 
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -204,6 +205,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </p>
           </div>
         )}
+
+        {/* Status Timeline */}
+        <Section icon={Activity} title="Order History">
+          <StatusTimeline orderId={id} queryNamespace="customer" />
+        </Section>
 
         {/* Items */}
         <Section icon={Package} title={`Items (${order.items.length})`}>
