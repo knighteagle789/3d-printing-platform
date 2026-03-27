@@ -15,13 +15,15 @@ import { FileText, ShoppingCart } from 'lucide-react';
 export default function UploadPage() {
   const router = useRouter();
   const { isAuthenticated, isInitialized } = useRequireAuth();
-  const [isUploading,  setIsUploading]  = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
-  const [uploadError,  setUploadError]  = useState<string | null>(null);
-  const [previewUrl,   setPreviewUrl]   = useState<string | null>(null);
+  const [isUploading,      setIsUploading]      = useState(false);
+  const [uploadProgress,   setUploadProgress]   = useState(0);
+  const [uploadedFile,     setUploadedFile]     = useState<UploadedFile | null>(null);
+  const [uploadError,      setUploadError]      = useState<string | null>(null);
+  const [previewUrl,       setPreviewUrl]       = useState<string | null>(null);
 
   const handleFileSelect = async (file: File) => {
     setIsUploading(true);
+    setUploadProgress(0);
     setUploadError(null);
     setUploadedFile(null);
 
@@ -33,12 +35,13 @@ export default function UploadPage() {
     }
 
     try {
-      const response = await filesApi.upload(file);
-      setUploadedFile(response.data);
+      const uploadedFile = await filesApi.uploadChunked(file, setUploadProgress);
+      setUploadedFile(uploadedFile);
     } catch {
       setUploadError('Upload failed — please try again.');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -71,7 +74,7 @@ export default function UploadPage() {
       <div className="space-y-4">
 
         {/* ── Drop zone ── */}
-        <FileDropzone onFileSelect={handleFileSelect} isUploading={isUploading} />
+        <FileDropzone onFileSelect={handleFileSelect} isUploading={isUploading} uploadProgress={uploadProgress} />
 
         {uploadError && (
           <p className={`${mono.className} text-[10px] text-red-400`}>{uploadError}</p>

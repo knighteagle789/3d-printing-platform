@@ -11,9 +11,10 @@ const MAX_SIZE_MB = 250;
 interface FileDropzoneProps {
   onFileSelect: (file: File) => void;
   isUploading:  boolean;
+  uploadProgress?: number; // 0–100
 }
 
-export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
+export function FileDropzone({ onFileSelect, isUploading, uploadProgress = 0 }: FileDropzoneProps) {
   const [dragOver,     setDragOver]     = useState(false);
   const [error,        setError]        = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -79,12 +80,25 @@ export function FileDropzone({ onFileSelect, isUploading }: FileDropzoneProps) {
 
         {isUploading && (
           <div className="px-4 pb-3">
+            {/* Real progress bar */}
             <div className="h-[2px] w-full bg-border overflow-hidden">
-              <div className="h-full bg-accent/60 animate-pulse w-3/4 transition-all" />
+              <div
+                className="h-full bg-accent transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
             </div>
-            <p className={`${mono.className} text-[9px] text-accent/50 mt-1.5 animate-pulse`}>
-              Uploading...
-            </p>
+            <div className="flex items-center justify-between mt-1.5">
+              <p className={`${mono.className} text-[9px] text-accent/50`}>
+                {uploadProgress < 90
+                  ? `Uploading — ${uploadProgress}%`
+                  : uploadProgress < 100
+                  ? 'Committing...'
+                  : 'Analysing...'}
+              </p>
+              <p className={`${mono.className} text-[9px] text-text-muted`}>
+                {uploadProgress}%
+              </p>
+            </div>
           </div>
         )}
       </div>
