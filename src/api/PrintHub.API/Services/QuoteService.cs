@@ -202,6 +202,7 @@ public class QuoteService : IQuoteService
             RequiredByDate = quote.RequiredByDate,
             Notes = quote.SpecialRequirements ?? quote.Notes,
             CreatedAt = DateTime.UtcNow,
+            QuoteRequestId = quote.Id,
         };
 
         order.Items.Add(new OrderItem
@@ -311,17 +312,26 @@ public class QuoteService : IQuoteService
         await _quoteRepo.AddQuoteResponseAsync(response);
         await _unitOfWork.SaveChangesAsync();
 
+        // Capture email primitives now, before the fire-and-forget, so the lambda
+        // doesn't touch the DbContext after the main request has finished with it.
+        // GetByIdAsync above doesn't eager-load User, so we resolve it explicitly here.
+        var user = await _userRepo.GetByIdAsync(quote.UserId);
+        var toEmail = user?.Email;
+        var toFirstName = user?.FirstName;
+        var requestNumber = quote.RequestNumber;
+        var emailPrice = response.Price;
+        var emailEstimatedDays = response.EstimatedDays;
+
         _ = Task.Run(async () =>
         {
-            var fullQuote = await _quoteRepo.GetQuoteWithResponsesAsync(quoteRequestId);
-            if (fullQuote?.User != null)
+            if (toEmail != null)
             {
                 await _emailService.SendQuoteResponseProvidedAsync(
-                    fullQuote.User.Email,
-                    fullQuote.User.FirstName,
-                    fullQuote.RequestNumber,
-                    response.Price,
-                    response.EstimatedDays);
+                    toEmail,
+                    toFirstName ?? string.Empty,
+                    requestNumber,
+                    emailPrice,
+                    emailEstimatedDays);
             }
         });
 

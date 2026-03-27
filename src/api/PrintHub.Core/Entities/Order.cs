@@ -35,6 +35,12 @@ namespace PrintHub.Core.Entities
         public DateTime CreatedAt { get; set; }
         
         public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// The quote request this order was created from, if any.
+        /// Null for orders placed directly without a quote flow.
+        /// </summary>
+        public Guid? QuoteRequestId { get; set; }
         
         // Navigation properties
         public virtual User User { get; set; } = null!;
@@ -42,6 +48,11 @@ namespace PrintHub.Core.Entities
         public virtual ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
         
         public virtual ICollection<OrderStatusHistory> StatusHistory { get; set; } = new List<OrderStatusHistory>();
+
+        /// <summary>
+        /// The source quote request, populated when this order originated from a quote flow.
+        /// </summary>
+        public virtual QuoteRequest? SourceQuote { get; set; }
     }
     
     /// <summary>
