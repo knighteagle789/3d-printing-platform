@@ -111,6 +111,15 @@ public class OrderService : IOrderService
             order.OrderNumber, userId, totalPrice);
 
         var created = await _orderRepo.GetOrderWithDetailsAsync(order.Id);
+
+        // Notify admin of new order
+        if (created?.User != null)
+        {
+            var customerName = $"{created.User.FirstName} {created.User.LastName}";
+            await _emailService.SendNewOrderAdminAsync(
+                created.OrderNumber, customerName, totalPrice);
+        }
+
         return OrderResponse.FromEntity(created!);
     }
 
@@ -207,22 +216,27 @@ public class OrderService : IOrderService
 
         await _unitOfWork.SaveChangesAsync();
 
-        var milestones = new[] { "Printing", "Shipped", "Completed" };
-        if (milestones.Contains(status.ToString()))
+        // Send customer notification for customer-visible milestones.
+        // ResendEmailService swallows send failures internally so this is safe to await directly.
+        var notifyStatuses = new[]
         {
-            _ = Task.Run(async () =>
+            OrderStatus.Submitted, OrderStatus.Approved,
+            OrderStatus.Printing, OrderStatus.Shipped,
+            OrderStatus.Completed, OrderStatus.Cancelled,
+        };
+
+        if (notifyStatuses.Contains(status))
+        {
+            var updated = await _orderRepo.GetOrderWithDetailsAsync(orderId);
+            if (updated?.User != null)
             {
-                var updated = await _orderRepo.GetOrderWithDetailsAsync(orderId);
-                if (updated?.User != null)
-                {
-                    await _emailService.SendOrderStatusUpdateAsync(
-                        updated.User.Email,
-                        updated.User.FirstName,
-                        updated.OrderNumber,
-                        status.ToString(),
-                        notes);
-                }
-            });
+                await _emailService.SendOrderStatusUpdateAsync(
+                    updated.User.Email,
+                    updated.User.FirstName,
+                    updated.OrderNumber,
+                    status.ToString(),
+                    notes);
+            }
         }
 
         _logger.LogInformation(
@@ -314,9 +328,4 @@ public class OrderService : IOrderService
         return allowed.Contains(next);
     }
 
-    private async Task<User?> GetUserEmailInfoAsync(Guid userId)
-    {
-        try { return await _userRepo.GetByIdAsync(userId); }
-        catch { return null; }
-    }
 }
