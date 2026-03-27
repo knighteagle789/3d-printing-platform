@@ -171,6 +171,94 @@ public class FilesController : ControllerBase
         return Ok(new { url });
     }
 
+    // ─── Chunked upload ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Initiate a chunked upload session.
+    /// Returns a blobName to use for all subsequent block uploads.
+    /// </summary>
+    [HttpPost("upload/initiate")]
+    public ActionResult<InitiateUploadResponse> InitiateUpload([FromBody] InitiateUploadRequest request)
+    {
+        var allowedExtensions = new[] { ".stl", ".obj", ".3mf", ".step", ".iges", ".gcode", ".amf", ".ply" };
+        var ext = Path.GetExtension(request.FileName).ToLower();
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest(new { message = $"File type '{ext}' is not supported." });
+
+        var blobName = $"uploads/{Guid.NewGuid()}_{request.FileName}";
+        return Ok(new InitiateUploadResponse(blobName));
+    }
+
+    /// <summary>
+    /// Upload a single block as part of a chunked upload.
+    /// blockId must be a base64-encoded string of equal length across all blocks.
+    /// </summary>
+    [HttpPut("upload/block")]
+    [RequestSizeLimit(6_291_456)]                              // 6MB — slightly over 4MB chunk + headers
+    [RequestFormLimits(MultipartBodyLengthLimit = 6_291_456)]
+    public async Task<IActionResult> UploadBlock(
+        [FromQuery] string blobName,
+        [FromQuery] string blockId,
+        IFormFile block)
+    {
+        if (string.IsNullOrWhiteSpace(blobName) || string.IsNullOrWhiteSpace(blockId))
+            return BadRequest(new { message = "blobName and blockId are required." });
+
+        if (block == null || block.Length == 0)
+            return BadRequest(new { message = "No block data provided." });
+
+        await _storageService.StageBlockAsync(blobName, blockId, block.OpenReadStream());
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Commit all staged blocks, create the file record, and run analysis.
+    /// </summary>
+    [HttpPost("upload/complete")]
+    public async Task<ActionResult<FileResponse>> CompleteUpload(
+        [FromBody] CompleteUploadRequest request)
+    {
+        var userId = User.GetUserId();
+
+        var allowedExtensions = new[] { ".stl", ".obj", ".3mf", ".step", ".iges", ".gcode", ".amf", ".ply" };
+        var ext = Path.GetExtension(request.FileName).ToLower();
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest(new { message = $"File type '{ext}' is not supported." });
+
+        var fileType = ext.TrimStart('.').ToUpper();
+        if (fileType == "3MF") fileType = "ThreeMF";
+
+        try
+        {
+            var fileUploadRequest = new FileUploadRequest(
+                OriginalFileName: request.FileName,
+                ContentType:      request.ContentType,
+                FileSizeBytes:    request.FileSizeBytes,
+                FileType:         fileType,
+                FileStream:       Stream.Null, // not used for chunked path
+                BlobName:         request.BlobName,
+                BlockIds:         request.BlockIds);
+
+            var response = await _fileService.CompleteChunkedUploadAsync(userId, fileUploadRequest);
+            return CreatedAtAction(nameof(GetFile), new { id = response.Id }, response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     // ─── Private helpers ──────────────────────────────────────────────────
 
 }
+
+// ─── Request / response records ───────────────────────────────────────────────
+
+public record InitiateUploadRequest(string FileName);
+public record InitiateUploadResponse(string BlobName);
+public record CompleteUploadRequest(
+    string BlobName,
+    string FileName,
+    string ContentType,
+    long   FileSizeBytes,
+    IReadOnlyList<string> BlockIds);

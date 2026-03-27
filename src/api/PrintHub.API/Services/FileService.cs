@@ -109,6 +109,88 @@ public class FileService : IFileService
         return FileResponse.FromEntity(file);
     }
 
+    public async Task<FileResponse> CompleteChunkedUploadAsync(Guid userId, FileUploadRequest request)
+    {
+        if (string.IsNullOrEmpty(request.BlobName) || request.BlockIds == null || request.BlockIds.Count == 0)
+            throw new InvalidOperationException("BlobName and BlockIds are required for chunked uploads.");
+
+        if (!Enum.TryParse<FileType>(request.FileType, ignoreCase: true, out var fileType))
+            throw new BusinessRuleException($"Unsupported file type: {request.FileType}");
+
+        // Commit all staged blocks into the final blob
+        var storageUrl = await _storageService.CommitBlocksAsync(
+            request.BlobName, request.BlockIds, request.ContentType);
+
+        var file = new UploadedFile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            OriginalFileName = request.OriginalFileName,
+            StorageUrl = storageUrl,
+            BlobName = request.BlobName,
+            FileType = fileType,
+            FileSizeBytes = request.FileSizeBytes,
+            ContentType = request.ContentType,
+            IsAnalyzed = false,
+            UploadedAt = DateTime.UtcNow
+        };
+
+        await _fileRepo.AddAsync(file);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Chunked upload committed: {FileName} ({FileSize} bytes, {BlockCount} blocks) by user {UserId}",
+            request.OriginalFileName, request.FileSizeBytes, request.BlockIds.Count, userId);
+
+        // Run analysis if STL
+        if (fileType == FileType.STL)
+        {
+            try
+            {
+                using var stream = await _storageService.DownloadFileAsync(request.BlobName);
+                var analysis = await _analyzerService.AnalyzeAsync(stream, request.OriginalFileName);
+
+                if (analysis != null)
+                {
+                    var fileAnalysis = new FileAnalysis
+                    {
+                        Id = Guid.NewGuid(),
+                        FileId = file.Id,
+                        VolumeInCubicMm = analysis.VolumeInCubicMm,
+                        SurfaceArea = analysis.SurfaceArea,
+                        DimensionX = analysis.DimensionX,
+                        DimensionY = analysis.DimensionY,
+                        DimensionZ = analysis.DimensionZ,
+                        TriangleCount = analysis.TriangleCount,
+                        VertexCount = analysis.VertexCount,
+                        IsManifold = analysis.IsManifold,
+                        RequiresSupport = analysis.RequiresSupport,
+                        EstimatedWeightGrams = analysis.EstimatedWeightGrams,
+                        EstimatedPrintTimeHours = analysis.EstimatedPrintTimeHours,
+                        ComplexityScore = analysis.ComplexityScore,
+                        Warnings = System.Text.Json.JsonSerializer.Serialize(analysis.Warnings),
+                        AnalyzedAt = DateTime.UtcNow
+                    };
+
+                    await _analysisRepo.AddAsync(fileAnalysis);
+
+                    file.IsAnalyzed = true;
+                    _fileRepo.Update(file);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Analysis failure should not fail the upload
+                _logger.LogWarning(ex,
+                    "STL analysis failed for chunked upload {FileName} — file was saved successfully",
+                    request.OriginalFileName);
+            }
+        }
+
+        return FileResponse.FromEntity(file);
+    }
+
     public async Task<FileResponse?> GetFileByIdAsync(Guid fileId)
     {
         var file = await _fileRepo.GetFileWithAnalysisAsync(fileId);

@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PrintHub.Core.Interfaces.Services;
@@ -72,5 +73,27 @@ public class BlobStorageService : IFileStorageService
         var blobClient = _containerClient.GetBlobClient(blobName);
         var response = await blobClient.ExistsAsync();
         return response.Value;
+    }
+
+    public async Task StageBlockAsync(string blobName, string blockId, Stream blockData)
+    {
+        var blobClient = _containerClient.GetBlockBlobClient(blobName);
+        await blobClient.StageBlockAsync(blockId, blockData);
+        _logger.LogDebug("Staged block {BlockId} for blob {BlobName}", blockId, blobName);
+    }
+
+    public async Task<string> CommitBlocksAsync(
+        string blobName, IReadOnlyList<string> blockIds, string contentType)
+    {
+        var blobClient = _containerClient.GetBlockBlobClient(blobName);
+        await blobClient.CommitBlockListAsync(blockIds, new BlobHttpHeaders
+        {
+            ContentType = contentType,
+        });
+
+        _logger.LogInformation(
+            "Committed {BlockCount} blocks for blob {BlobName}", blockIds.Count, blobName);
+
+        return blobClient.Uri.ToString();
     }
 }
