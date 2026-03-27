@@ -212,17 +212,14 @@ public class StripePaymentService : IPaymentService
             "Payment succeeded for order {OrderNumber}, moved to Approved",
             order.OrderNumber);
 
-        // Send confirmation email
+        // Send confirmation email — ResendEmailService swallows send failures internally
         if (order.User != null)
         {
-            _ = Task.Run(async () =>
-            {
-                await _emailService.SendOrderStatusUpdateAsync(
-                    order.User.Email,
-                    order.User.FirstName,
-                    order.OrderNumber,
-                    "Approved");
-            });
+            await _emailService.SendOrderStatusUpdateAsync(
+                order.User.Email,
+                order.User.FirstName,
+                order.OrderNumber,
+                "Approved");
         }
     }
 }
