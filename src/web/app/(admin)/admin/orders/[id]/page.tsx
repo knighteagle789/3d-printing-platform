@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { ordersApi, type OrderStatusHistory } from '@/lib/api/orders';
 import { formatStatus } from '@/lib/utils';
+import { StatusTimeline } from '@/components/orders/StatusTimeline';
 import {
   ArrowLeft, Package, Calendar, MapPin, Clock,
   CheckCircle2, AlertCircle, User, Download, Mail,
@@ -55,14 +56,6 @@ function formatDate(d: string | null) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
-  });
-}
-
-function formatDateTime(d: string | null) {
-  if (!d) return '—';
-  return new Date(d).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
   });
 }
 
@@ -431,89 +424,10 @@ export default function AdminOrderDetailPage({
           </span>
         </div>
         <div className="p-6">
-          <StatusHistory orderId={id} monoClass={mono.className} />
+          <StatusTimeline orderId={id} queryNamespace="admin" />
         </div>
       </div>
 
-    </div>
-  );
-}
-
-// ─── Status History ───────────────────────────────────────────────────────────
-
-function StatusHistory({ orderId, monoClass }: { orderId: string; monoClass: string }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'order', orderId, 'history'],
-    queryFn:  () => ordersApi.getHistory(orderId),
-  });
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex gap-4">
-            <div className="w-2 h-2 bg-surface-alt animate-pulse mt-1 shrink-0" />
-            <div className="space-y-1.5 flex-1">
-              <div className="h-3 bg-surface-alt animate-pulse w-24" />
-              <div className="h-2 bg-surface-alt animate-pulse w-40" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  const history: OrderStatusHistory[] = data?.data ?? [];
-
-  if (history.length === 0) {
-    return (
-      <p className={`${monoClass} text-[9px] uppercase tracking-[0.2em] text-text-muted`}>
-        No history yet
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-0">
-      {history.map((entry, i) => (
-        <div key={entry.id} className="flex gap-5">
-          {/* Timeline spine */}
-          <div className="flex flex-col items-center">
-            <div className={`w-1.5 h-1.5 border mt-1 shrink-0 ${
-              i === 0 ? 'bg-accent border-accent' : 'bg-gray-300 border-border'
-            }`} />
-            {i < history.length - 1 && (
-              <div className="w-px flex-1 bg-border mt-1" />
-            )}
-          </div>
-
-          {/* Content */}
-          <div className={`pb-5 ${i === history.length - 1 ? 'pb-0' : ''}`}>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span
-                className="text-text-primary font-medium text-sm"
-                style={{ fontFamily: 'var(--font-epilogue)' }}
-              >
-                {formatStatus(entry.status)}
-              </span>
-              {i === 0 && (
-                <span className={`${monoClass} text-[8px] uppercase tracking-[0.15em] text-accent`}>
-                  Current
-                </span>
-              )}
-            </div>
-            {entry.notes && (
-              <p className={`${monoClass} text-[10px] text-text-muted mb-1`}>
-                {entry.notes}
-              </p>
-            )}
-            <p className={`${monoClass} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
-              {formatDateTime(entry.changedAt)}
-              {entry.changedBy && ` · ${entry.changedBy.firstName} ${entry.changedBy.lastName}`}
-            </p>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
