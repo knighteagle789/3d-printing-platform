@@ -29,8 +29,6 @@ type QuoteFormValues = z.infer<typeof quoteSchema>;
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
-const inputCls = `w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
-const textareaCls = `w-full bg-surface-alt border border-border px-3 py-2.5 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-none`;
 
 function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
   return (
@@ -147,7 +145,7 @@ export default function NewQuotePage() {
             <input
               type="number"
               min={1}
-              className={`${inputCls} ${mono.className}`}
+              className={`field-input-alt ${mono.className}`}
               {...register('quantity', { valueAsNumber: true })}
             />
             <FieldError msg={errors.quantity?.message} />
@@ -158,7 +156,7 @@ export default function NewQuotePage() {
             <div className="relative">
               <select
                 {...register('preferredMaterialId')}
-                className={`${inputCls} ${mono.className} appearance-none pr-8`}
+                className={`field-input-alt ${mono.className} appearance-none pr-8`}
               >
                 <option value="">No preference</option>
                 {materialsData?.data.map(m => (
@@ -175,7 +173,7 @@ export default function NewQuotePage() {
             <FieldLabel optional>Required By</FieldLabel>
             <input
               type="date"
-              className={`${inputCls} ${mono.className}`}
+              className={`field-input-alt ${mono.className}`}
               {...register('requiredByDate')}
             />
           </div>
@@ -190,7 +188,7 @@ export default function NewQuotePage() {
                 type="number"
                 min={0}
                 placeholder="0.00"
-                className={`${inputCls} ${mono.className}`}
+                className={`field-input-alt ${mono.className}`}
                 {...register('budgetMin', { valueAsNumber: true })}
               />
             </div>
@@ -200,7 +198,7 @@ export default function NewQuotePage() {
                 type="number"
                 min={0}
                 placeholder="0.00"
-                className={`${inputCls} ${mono.className}`}
+                className={`field-input-alt ${mono.className}`}
                 {...register('budgetMax', { valueAsNumber: true })}
               />
             </div>
@@ -214,7 +212,7 @@ export default function NewQuotePage() {
             <textarea
               rows={3}
               placeholder="Any specific technical requirements..."
-              className={`${textareaCls} ${mono.className}`}
+              className={`field-textarea-alt ${mono.className}`}
               {...register('specialRequirements')}
             />
           </div>
@@ -223,7 +221,7 @@ export default function NewQuotePage() {
             <textarea
               rows={2}
               placeholder="Anything else you'd like us to know..."
-              className={`${textareaCls} ${mono.className}`}
+              className={`field-textarea-alt ${mono.className}`}
               {...register('notes')}
             />
           </div>

@@ -134,6 +134,20 @@
            placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-y;
   }
 
+  /* Field label — mono uppercase label above any form field */
+  .field-label {
+    @apply block text-[9px] uppercase tracking-[0.15em] text-text-muted mb-1.5;
+  }
+  /* surface-alt variants — used in dashboard forms (bg is slightly off-white) */
+  .field-input-alt {
+    @apply w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary
+           placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors;
+  }
+  .field-textarea-alt {
+    @apply w-full bg-surface-alt border border-border px-3 py-2.5 text-[11px] text-text-primary
+           placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-none;
+  }
+
   /* Primary action button */
   .btn-primary {
     @apply bg-accent text-white text-[10px] uppercase tracking-[0.15em] font-medium

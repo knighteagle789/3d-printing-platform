@@ -42,7 +42,6 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
-const inputCls = `w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -130,12 +129,12 @@ function ProfileForm({ user }: {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <FieldLabel>First Name</FieldLabel>
-            <input className={`${inputCls} ${mono.className}`} {...register('firstName')} />
+            <input className={`field-input-alt ${mono.className}`} {...register('firstName')} />
             <FieldError msg={errors.firstName?.message} />
           </div>
           <div>
             <FieldLabel>Last Name</FieldLabel>
-            <input className={`${inputCls} ${mono.className}`} {...register('lastName')} />
+            <input className={`field-input-alt ${mono.className}`} {...register('lastName')} />
             <FieldError msg={errors.lastName?.message} />
           </div>
         </div>
@@ -143,7 +142,7 @@ function ProfileForm({ user }: {
         <div>
           <FieldLabel>Phone Number</FieldLabel>
           <input
-            className={`${inputCls} ${mono.className}`}
+            className={`field-input-alt ${mono.className}`}
             placeholder="+1 (555) 000-0000"
             {...register('phoneNumber')}
           />
@@ -152,7 +151,7 @@ function ProfileForm({ user }: {
         <div>
           <FieldLabel>Company Name</FieldLabel>
           <input
-            className={`${inputCls} ${mono.className}`}
+            className={`field-input-alt ${mono.className}`}
             placeholder="Your company (optional)"
             {...register('companyName')}
           />
@@ -207,19 +206,19 @@ function PasswordForm() {
       <form onSubmit={handleSubmit(v => mutation.mutate(v))} className="space-y-4">
         <div>
           <FieldLabel>Current Password</FieldLabel>
-          <PasswordInput className={`${inputCls} ${mono.className}`} {...register('currentPassword')} />
+          <PasswordInput className={`field-input-alt ${mono.className}`} {...register('currentPassword')} />
           <FieldError msg={errors.currentPassword?.message} />
         </div>
 
         <div>
           <FieldLabel>New Password</FieldLabel>
-          <PasswordInput className={`${inputCls} ${mono.className}`} {...register('newPassword')} />
+          <PasswordInput className={`field-input-alt ${mono.className}`} {...register('newPassword')} />
           <FieldError msg={errors.newPassword?.message} />
         </div>
 
         <div>
           <FieldLabel>Confirm New Password</FieldLabel>
-          <PasswordInput className={`${inputCls} ${mono.className}`} {...register('confirmPassword')} />
+          <PasswordInput className={`field-input-alt ${mono.className}`} {...register('confirmPassword')} />
           <FieldError msg={errors.confirmPassword?.message} />
         </div>
 

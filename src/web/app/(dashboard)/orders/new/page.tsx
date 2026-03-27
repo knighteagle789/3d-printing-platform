@@ -38,8 +38,6 @@ const QUALITY_OPTIONS = [
 
 // ── Shared field primitives ───────────────────────────────────────────────────
 
-const inputCls = `w-full h-9 bg-surface-alt border border-border px-3 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
-const textareaCls = `w-full bg-surface-alt border border-border px-3 py-2.5 text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-none`;
 
 function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
   return (
@@ -178,7 +176,7 @@ export default function NewOrderPage() {
             <div className="relative">
               <select
                 {...register('materialId')}
-                className={`${inputCls} ${mono.className} appearance-none pr-8`}
+                className={`field-input-alt ${mono.className} appearance-none pr-8`}
               >
                 <option value="">Select a material</option>
                 {materialsData?.data.map(m => (
@@ -201,7 +199,7 @@ export default function NewOrderPage() {
               <input
                 type="number"
                 min={1}
-                className={`${inputCls} ${mono.className}`}
+                className={`field-input-alt ${mono.className}`}
                 {...register('quantity', { valueAsNumber: true })}
               />
               <FieldError msg={errors.quantity?.message} />
@@ -212,7 +210,7 @@ export default function NewOrderPage() {
                 type="number"
                 min={5}
                 max={100}
-                className={`${inputCls} ${mono.className}`}
+                className={`field-input-alt ${mono.className}`}
                 {...register('infill', { valueAsNumber: true })}
               />
               <FieldError msg={errors.infill?.message} />
@@ -263,7 +261,7 @@ export default function NewOrderPage() {
             <textarea
               rows={3}
               placeholder="Any specific requirements for this print..."
-              className={`${textareaCls} ${mono.className}`}
+              className={`field-textarea-alt ${mono.className}`}
               {...register('specialInstructions')}
             />
           </div>
@@ -285,7 +283,7 @@ export default function NewOrderPage() {
             <textarea
               rows={3}
               placeholder="Enter your full shipping address..."
-              className={`${textareaCls} ${mono.className}`}
+              className={`field-textarea-alt ${mono.className}`}
               {...register('shippingAddress')}
             />
             <FieldError msg={errors.shippingAddress?.message} />
@@ -296,7 +294,7 @@ export default function NewOrderPage() {
             <textarea
               rows={2}
               placeholder="Anything else we should know..."
-              className={`${textareaCls} ${mono.className}`}
+              className={`field-textarea-alt ${mono.className}`}
               {...register('notes')}
             />
           </div>
