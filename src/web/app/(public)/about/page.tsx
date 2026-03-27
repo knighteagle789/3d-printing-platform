@@ -1,7 +1,21 @@
 import { display, mono } from '@/lib/fonts';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import type { Material } from '@/lib/api/materials';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5267/api/v1';
+
+async function fetchMaterials(): Promise<Material[]> {
+  try {
+    const res = await fetch(`${API_BASE}/Materials`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
 
 const VALUES = [
   {
@@ -16,30 +30,63 @@ const VALUES = [
   },
   {
     n:     '03',
-    title: 'Your success is ours',
+    title: "Your success is ours",
     desc:  "We're not just a print shop. When your prototype succeeds or your project comes to life, we take pride in that too.",
   },
 ];
 
-const CAPABILITIES = [
-  { label: 'Build volume',    value: 'Up to 300 × 300 × 400 mm'         },
-  { label: 'Layer height',    value: '0.1 mm – 0.3 mm'                  },
-  { label: 'Materials',       value: 'PLA, PETG, ABS, ASA, TPU, Nylon' },
-  { label: 'Technologies',    value: 'FDM · SLA (coming soon)'          },
+// Static rows that have no live API equivalent
+const STATIC_CAPABILITIES = [
   { label: 'Post-processing', value: 'Sanding, priming, painting'       },
   { label: 'Rush turnaround', value: '24-hour orders available'         },
   { label: 'Production runs', value: 'Small batch manufacturing'        },
   { label: 'File services',   value: 'Repair, optimisation, conversion' },
 ];
 
-const STATS = [
-  { value: '0.1mm', label: 'Min layer height' },
-  { value: '2024',  label: 'Est.'             },
-  { value: '8+',    label: 'Materials'        },
-  { value: 'NoCo',  label: 'Loveland, CO'     },
-];
+export default async function AboutPage() {
+  const materials = await fetchMaterials();
 
-export default function AboutPage() {
+  // Derive live capability values from materials
+  const uniqueTypes = [...new Set(materials.map(m => m.type))].sort();
+  const materialsValue = uniqueTypes.length > 0
+    ? uniqueTypes.join(', ')
+    : 'PLA, PETG, ABS, ASA, TPU, Nylon';
+
+  const uniqueTechnologies = [...new Set(
+    materials
+      .filter(m => m.technology?.name)
+      .map(m => m.technology!.name)
+  )];
+  const technologiesValue = uniqueTechnologies.length > 0
+    ? uniqueTechnologies.join(' · ')
+    : 'FDM · SLA (coming soon)';
+
+  // Build volume + layer height from first technology found on any material
+  const firstTech = materials.find(m => m.technology)?.technology;
+  const buildVolume   = firstTech?.maxDimensions
+    ? `Up to ${firstTech.maxDimensions} mm`
+    : 'Up to 300 × 300 × 400 mm';
+  const layerHeight   = firstTech?.layerHeightRange ?? '0.1 mm – 0.3 mm';
+
+  const CAPABILITIES = [
+    { label: 'Build volume',    value: buildVolume        },
+    { label: 'Layer height',    value: layerHeight        },
+    { label: 'Materials',       value: materialsValue     },
+    { label: 'Technologies',    value: technologiesValue  },
+    ...STATIC_CAPABILITIES,
+  ];
+
+  const materialCount = uniqueTypes.length > 0
+    ? `${uniqueTypes.length}+`
+    : '8+';
+
+  const STATS = [
+    { value: firstTech?.layerHeightRange?.split('–')[0]?.trim() ?? '0.1mm', label: 'Min layer height' },
+    { value: '2024',          label: 'Est.'         },
+    { value: materialCount,   label: 'Materials'    },
+    { value: 'NoCo',          label: 'Loveland, CO' },
+  ];
+
   return (
     <div className="pt-16 bg-page">
 
