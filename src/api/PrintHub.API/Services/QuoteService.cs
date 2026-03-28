@@ -312,9 +312,8 @@ public class QuoteService : IQuoteService
         await _quoteRepo.AddQuoteResponseAsync(response);
         await _unitOfWork.SaveChangesAsync();
 
-        // Capture email primitives now, before the fire-and-forget, so the lambda
+        // Capture email primitives before the fire-and-forget so the lambda
         // doesn't touch the DbContext after the main request has finished with it.
-        // GetByIdAsync above doesn't eager-load User, so we resolve it explicitly here.
         var user = await _userRepo.GetByIdAsync(quote.UserId);
         var toEmail = user?.Email;
         var toFirstName = user?.FirstName;
@@ -348,6 +347,73 @@ public class QuoteService : IQuoteService
     {
         var quotes = await _quoteRepo.GetExpiringQuotesAsync(withinDays);
         return quotes.Select(QuoteRequestResponse.FromEntity).ToList();
+    }
+
+    public async Task<QuoteConversionAnalyticsResponse> GetConversionAnalyticsAsync(int days)
+    {
+        // Run both repo queries concurrently — they touch different tables.
+        var rows     = await _quoteRepo.GetConversionAnalyticsDataAsync(days);
+        var revenue  = await _orderRepo.GetRevenueBySourceAsync(days);
+
+        // ── Volume counts ─────────────────────────────────────────────────────
+        var total     = rows.Count;
+        var accepted  = rows.Count(r => r.Status == QuoteStatus.Accepted);
+        var declined  = rows.Count(r => r.Status == QuoteStatus.Declined);
+        var expired   = rows.Count(r => r.Status == QuoteStatus.Expired);
+        var converted = rows.Count(r => r.HasOrder);
+
+        // ── Rates ─────────────────────────────────────────────────────────────
+        var conversionRate = total > 0
+            ? Math.Round((decimal)converted / total * 100, 1)
+            : (decimal?)null;
+
+        var terminalCount = accepted + declined + expired;
+        var acceptanceRate = terminalCount > 0
+            ? Math.Round((decimal)accepted / terminalCount * 100, 1)
+            : (decimal?)null;
+
+        // ── Time-to-conversion ────────────────────────────────────────────────
+        // Duration from quote accepted → order created, in fractional days.
+        var conversionDurations = rows
+            .Where(r => r.HasOrder && r.AcceptedAt.HasValue && r.OrderCreatedAt.HasValue)
+            .Select(r => (decimal)(r.OrderCreatedAt!.Value - r.AcceptedAt!.Value).TotalDays)
+            .ToList();
+
+        decimal? avgDays = conversionDurations.Count > 0
+            ? Math.Round(conversionDurations.Average(), 1)
+            : null;
+
+        decimal? minDays = conversionDurations.Count > 0
+            ? Math.Round(conversionDurations.Min(), 1)
+            : null;
+
+        decimal? maxDays = conversionDurations.Count > 0
+            ? Math.Round(conversionDurations.Max(), 1)
+            : null;
+
+        // ── Revenue ───────────────────────────────────────────────────────────
+        var totalRevenue = revenue.QuoteOriginated + revenue.Direct;
+        var revenueShare = totalRevenue > 0
+            ? Math.Round(revenue.QuoteOriginated / totalRevenue * 100, 1)
+            : (decimal?)null;
+
+        return new QuoteConversionAnalyticsResponse(
+            WindowDays: days,
+            TotalQuotes: total,
+            AcceptedQuotes: accepted,
+            DeclinedQuotes: declined,
+            ExpiredQuotes: expired,
+            ConvertedQuotes: converted,
+            ConversionRate: conversionRate,
+            AcceptanceRate: acceptanceRate,
+            AvgDaysToConversion: avgDays,
+            MinDaysToConversion: minDays,
+            MaxDaysToConversion: maxDays,
+            QuoteOriginatedRevenue: revenue.QuoteOriginated,
+            DirectRevenue: revenue.Direct,
+            TotalRevenue: totalRevenue,
+            QuoteOriginatedRevenueShare: revenueShare
+        );
     }
 
     // --- Private helpers ---

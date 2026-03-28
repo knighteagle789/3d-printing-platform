@@ -35,6 +35,28 @@ export interface QuoteRequest {
   orderId: string | null;
 }
 
+export interface QuoteAnalytics {
+  windowDays: number;
+  // Volume
+  totalQuotes: number;
+  acceptedQuotes: number;
+  declinedQuotes: number;
+  expiredQuotes: number;
+  convertedQuotes: number;
+  // Rates (null when no data in window)
+  conversionRate: number | null;
+  acceptanceRate: number | null;
+  // Time-to-conversion (null when no conversions in window)
+  avgDaysToConversion: number | null;
+  minDaysToConversion: number | null;
+  maxDaysToConversion: number | null;
+  // Revenue split
+  quoteOriginatedRevenue: number;
+  directRevenue: number;
+  totalRevenue: number;
+  quoteOriginatedRevenueShare: number | null;
+}
+
 export interface CreateQuoteRequest {
   fileId?: string;
   quantity: number;
@@ -97,4 +119,7 @@ export const quotesApi = {
 
   convertToOrder: (quoteId: string) =>
     apiClient.post<Order>(`/Quotes/${quoteId}/convert-to-order`),
+
+  getAnalytics: (days: 30 | 90 | 365 = 30) =>
+    apiClient.get<QuoteAnalytics>('/Quotes/analytics', { params: { days } }),
 };

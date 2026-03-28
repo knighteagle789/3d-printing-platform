@@ -159,4 +159,22 @@ public class QuotesController : ControllerBase
         var quotes = await _quoteService.GetExpiringQuotesAsync(withinDays);
         return Ok(quotes);
     }
+
+    /// <summary>
+    /// Quote-to-order conversion funnel analytics.
+    /// Returns conversion rate, acceptance rate, time-to-conversion, and revenue split
+    /// for the requested time window. Requires Staff or Admin role.
+    /// GH #55 Phase 2: GET /Quotes/analytics?days=30
+    /// </summary>
+    [HttpGet("analytics")]
+    [Authorize(Policy = "StaffOrAdmin")]
+    public async Task<ActionResult<QuoteConversionAnalyticsResponse>> GetConversionAnalytics(
+        [FromQuery] int days = 30)
+    {
+        if (days is not (30 or 90 or 365))
+            return BadRequest("days must be 30, 90, or 365.");
+
+        var analytics = await _quoteService.GetConversionAnalyticsAsync(days);
+        return Ok(analytics);
+    }
 }

@@ -28,4 +28,22 @@ public interface IQuoteRepository : IRepository<QuoteRequest>
     Task<Dictionary<string, int>> GetStatusCountsAsync();
 
     Task AddQuoteResponseAsync(QuoteResponse response);
+
+    /// <summary>
+    /// Returns lightweight projections of all quotes created within <paramref name="days"/> days,
+    /// including their accepted response timestamps for time-to-conversion calculation.
+    /// Used exclusively by the analytics service — no navigation properties loaded.
+    /// </summary>
+    Task<IReadOnlyList<QuoteAnalyticsRow>> GetConversionAnalyticsDataAsync(int days);
 }
+
+/// <summary>
+/// Lightweight projection used only for analytics aggregation.
+/// Avoids loading full entity graphs for what is purely a counting/timing query.
+/// </summary>
+public record QuoteAnalyticsRow(
+    QuoteStatus Status,
+    bool HasOrder,
+    DateTime CreatedAt,
+    DateTime? AcceptedAt,
+    DateTime? OrderCreatedAt);

@@ -27,4 +27,18 @@ public interface IOrderRepository : IRepository<Order>
     Task AddStatusHistoryAsync(OrderStatusHistory statusHistory);
 
     Task<IReadOnlyList<OrderStatusHistory>> GetStatusHistoryAsync(Guid orderId);
+
+    /// <summary>
+    /// Returns total revenue split by order origin (quote-originated vs direct)
+    /// for orders created within <paramref name="days"/> days.
+    /// Excludes cancelled orders from revenue totals.
+    /// </summary>
+    Task<OrderRevenueBySource> GetRevenueBySourceAsync(int days);
 }
+
+/// <summary>
+/// Revenue totals split by whether the order came from a quote flow or was placed directly.
+/// </summary>
+public record OrderRevenueBySource(
+    decimal QuoteOriginated,
+    decimal Direct);

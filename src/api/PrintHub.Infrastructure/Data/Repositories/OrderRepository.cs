@@ -118,4 +118,26 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .OrderBy(sh => sh.ChangedAt)
             .ToListAsync();
     }
+
+    public async Task<OrderRevenueBySource> GetRevenueBySourceAsync(int days)
+    {
+        var since = DateTime.UtcNow.AddDays(-days);
+
+        // Single query — project to anonymous type, sum client-side.
+        // Cancelled orders are excluded; they represent no real revenue.
+        var rows = await _dbSet
+            .Where(o => o.CreatedAt >= since && o.Status != OrderStatus.Cancelled)
+            .Select(o => new { o.TotalPrice, IsQuoteOriginated = o.QuoteRequestId != null })
+            .ToListAsync();
+
+        var quoteOriginated = rows
+            .Where(r => r.IsQuoteOriginated)
+            .Sum(r => r.TotalPrice);
+
+        var direct = rows
+            .Where(r => !r.IsQuoteOriginated)
+            .Sum(r => r.TotalPrice);
+
+        return new OrderRevenueBySource(quoteOriginated, direct);
+    }
 }

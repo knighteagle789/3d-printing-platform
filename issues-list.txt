@@ -1,0 +1,32 @@
+50	OPEN	Add machine/hourly rate to price estimate using print time from slicer	enhancement, backend, frontend	2026-03-25T23:15:56Z
+35	OPEN	Add custom 404 page matching design system	enhancement, frontend, ux	2026-03-25T16:16:50Z
+34	OPEN	Sync About page capabilities table with live data	enhancement, frontend	2026-03-25T16:16:48Z
+33	OPEN	Add SEO metadata to blog post pages and wire up content	enhancement, frontend, seo	2026-03-25T16:16:46Z
+32	OPEN	Add ErrorBoundary to STL viewer	bug, frontend, ux	2026-03-25T16:16:44Z
+31	OPEN	Add unit tests for MaterialService	enhancement, backend, testing	2026-03-25T16:16:42Z
+30	OPEN	Extract shared form primitives and groupMaterials utility	enhancement, frontend, dx	2026-03-25T16:16:40Z
+29	OPEN	Consolidate font imports into root layout (Next.js font optimisation)	enhancement, frontend, dx	2026-03-25T16:16:38Z
+28	OPEN	Send email notifications on order status transitions	enhancement, backend	2026-03-25T16:16:36Z
+27	OPEN	Order detail page: add status timeline	enhancement, frontend, ux	2026-03-25T16:16:34Z
+26	CLOSED	Live price estimate on new order form	enhancement, frontend, ux	2026-03-25T23:36:34Z
+22	CLOSED	infra: Add GitHub Actions pipeline for Bicep deployment using Deployment Stacks		2026-03-19T16:10:09Z
+20	OPEN	Platform: Add contract tests, metrics, and feature-flagged rollout for intake v1	AI, Materials, Intake	2026-03-13T20:09:44Z
+19	OPEN	Web: Add draft review form with confidence indicators and correction flow	AI, Materials, Intake	2026-03-13T20:09:42Z
+18	OPEN	Web: Build admin material intake queue page	AI, Materials, Intake	2026-03-13T20:09:40Z
+17	CLOSED	API: Implement approve/reject actions and material write-through mapping	AI, Materials, Intake	2026-03-25T16:04:15Z
+16	OPEN	API: Add intake draft retrieval and queue listing endpoints	AI, Materials, Intake	2026-03-13T22:06:51Z
+15	CLOSED	API: Add async extraction worker and queue message contract	AI, Materials, Intake	2026-03-25T14:38:33Z
+14	CLOSED	API: Implement material photo upload endpoint with validation	AI, Materials, Intake	2026-03-20T21:38:20Z
+13	CLOSED	API: Add material intake domain model and lifecycle states	AI, Materials, Intake	2026-03-13T22:28:48Z
+12	OPEN	Epic: Material Photo Intake v1 (Upload -> Extract -> Review -> Approve)	AI, Materials, Intake	2026-03-13T20:09:46Z
+11	CLOSED	feat: GET /Quotes/all endpoint with status filtering	enhancement, backend	2026-03-16T17:18:58Z
+10	CLOSED	feat: GET /Orders/status-counts endpoint	enhancement, backend	2026-03-16T17:18:52Z
+9	CLOSED	Implement forgot password functionality		2026-03-16T17:47:57Z
+8	CLOSED	refactor: Redesign Material entity to represent specific Type+Color+Grade stock items	enhancement	2026-03-16T15:56:24Z
+7	OPEN	feat: Chunked file uploads for large 3D model files		2026-03-06T20:55:29Z
+6	CLOSED	Create a relationship between Material and Printing Technology	enhancement	2026-03-06T22:28:09Z
+5	CLOSED	Make MaterialAvailableColors an array or other option	enhancement	2026-03-06T21:22:39Z
+4	CLOSED	BlogPost.Slug Autogeneration Helper Class	enhancement	2026-03-06T21:22:09Z
+3	CLOSED	OrderNumber Generation	enhancement	2026-03-06T21:21:29Z
+2	CLOSED	Consider Fullname computed property	enhancement	2026-03-06T21:32:27Z
+1	OPEN	Feature: Quote-to-Order Conversion Tracking	enhancement	2026-03-06T21:24:00Z
