@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { quotesApi, type QuoteRequest } from '@/lib/api/quotes';
-import { ArrowRight, FileText, Search, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, FileText, Search, AlertTriangle, ChevronLeft, ChevronRight, BarChart2 } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
 
 
@@ -105,14 +105,27 @@ export default function AdminQuotesPage() {
                 : `${totalCount} quote${totalCount !== 1 ? 's' : ''}${status !== 'All' ? ` · ${formatStatus(status)}` : ''}`
             }
           </p>
+          
         </div>
-        <div className="relative shrink-0 w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-text-muted pointer-events-none" />
-          <input
-            type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Request #, customer, or file..."
-            className={`${mono.className} w-full h-8 bg-surface-alt border border-border pl-8 pr-3 text-[10px] uppercase tracking-[0.1em] text-text-secondary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`}
-          />
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => router.push('/admin/quotes/analytics')}
+            className={`${mono.className} inline-flex items-center gap-2 border border-border 
+                      text-text-secondary hover:text-text-primary hover:border-border-strong 
+                      text-[9px] uppercase tracking-[0.18em] px-4 h-8 transition-colors`}
+          >
+            <BarChart2 className="h-3.5 w-3.5" /> Conversion Analytics
+          </button>
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-text-muted pointer-events-none" />
+            <input
+              type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Request #, customer, or file..."
+              className={`${mono.className} w-full h-8 bg-surface-alt border 
+                        border-border pl-8 pr-3 text-[10px] uppercase tracking-[0.1em]
+                        text-text-secondary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`}
+            />
+          </div>
         </div>
       </div>
 

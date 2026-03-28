@@ -115,4 +115,24 @@ public class QuoteRepository : Repository<QuoteRequest>, IQuoteRepository
     {
         await _context.QuoteResponses.AddAsync(response);
     }
+
+    public async Task<IReadOnlyList<QuoteAnalyticsRow>> GetConversionAnalyticsDataAsync(int days)
+    {
+        var since = DateTime.UtcNow.AddDays(-days);
+
+        // Project only the scalar fields needed for aggregation — no nav property loading.
+        // AcceptedAt comes from the accepted QuoteResponse, OrderCreatedAt from the linked Order.
+        return await _dbSet
+            .Where(q => q.CreatedAt >= since)
+            .Select(q => new QuoteAnalyticsRow(
+                q.Status,
+                q.OrderId != null,
+                q.CreatedAt,
+                q.Responses
+                    .Where(r => r.IsAccepted)
+                    .Select(r => (DateTime?)r.AcceptedAt)
+                    .FirstOrDefault(),
+                q.Order != null ? (DateTime?)q.Order.CreatedAt : null))
+            .ToListAsync();
+    }
 }

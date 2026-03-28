@@ -1,0 +1,733 @@
+[
+    {
+        "body": "## Problem\nThe current price estimate uses material cost + handling fee. This doesn't account for machine time, which is a real cost for long prints — a 20-hour print ties up the CR-10 regardless of how much filament it uses.\n\n## Proposed solution\nAdd a configurable machine rate ($/hr) to the pricing config and include it in the estimate once print time estimation is available server-side.\n\n**Formula:**\n```\nmaterial cost  = weight (g) × price/g × quality multiplier × quantity\nhandling fee   = flat fee per unique model (already implemented)\nmachine cost   = estimated print time (hrs) × machine rate ($/hr) × quantity\n─────────────────────────────────────────────────────────────────────\ntotal estimate = material cost + handling fee + machine cost\n```\n\n## What's needed first\nPrint time estimation requires a slicer or slicer-equivalent running server-side. Options to evaluate:\n- **CuraEngine** (headless) — industry standard, can be invoked via CLI\n- **PrusaSlicer** (headless CLI) — `prusa-slicer --info` outputs time estimate\n- **Bambu/OrcaSlicer** — similar CLI support\n- **Custom estimation** — rough formula based on volume, layer height, and print speed from material `PrintSettings` JSONB\n\nThe `FileAnalysis` entity already has `EstimatedPrintTimeHours` column — it just isn't populated yet. The `StlAnalyzerService` is where this would be calculated.\n\n## Implementation notes\n- Add `MachineRatePerHour` to `Pricing` config section in `appsettings.json`\n- Populate `EstimatedPrintTimeHours` in `StlAnalyzerService` using chosen approach\n- Extend `GET /Pricing/config` response to include `machineRatePerHour`\n- Update price estimate panel on order form to show machine cost line item\n- Add machine cost line to quote display as well\n\n## Acceptance criteria\n- [ ] `EstimatedPrintTimeHours` is populated on file analysis\n- [ ] `MachineRatePerHour` is configurable in `appsettings.json` / Azure config\n- [ ] Price estimate panel shows machine cost as a separate line item\n- [ ] Machine cost = `estimatedPrintTimeHours × machineRatePerHour × quantity`\n- [ ] Falls back gracefully if print time is not available (omits line, shows note)\n\n## Related\n- Builds on the handling fee + live estimate work (implements alongside `GET /Pricing/config`)\n- `FileAnalysis.EstimatedPrintTimeHours` already exists in DB schema",
+        "closedAt": null,
+        "createdAt": "2026-03-25T23:15:56Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbD2JYg",
+                "name": "backend",
+                "description": "",
+                "color": "e4e669"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            }
+        ],
+        "number": 50,
+        "state": "OPEN",
+        "title": "Add machine/hourly rate to price estimate using print time from slicer"
+    },
+    {
+        "body": "## Problem\nThere is no `app/not-found.tsx` file. Next.js falls back to its generic built-in 404 page which uses completely different styling and breaks the brand experience for any invalid URL.\n\n## Desired behaviour\nA custom 404 page that matches the NoCo Make Lab design system — same fonts, colours, and layout language as the rest of the site.\n\n## Implementation notes\nCreate `app/not-found.tsx`:\n- Use `Bebas_Neue` display font for a large \"404\" or \"NOT FOUND\" heading (via CSS variable once issue #X font consolidation is done)\n- Include a brief message and links back to home and portfolio\n- Reuse the teal accent and grid/border aesthetic\n- Keep it simple — this page should load fast and get people back on track\n\nExample structure:\n```tsx\nexport default function NotFound() {\n  return (\n    <div className=\"pt-16 min-h-screen bg-page flex items-center\">\n      {/* Large 404 display, short message, two CTAs */}\n    </div>\n  )\n}\n```\n\n## Acceptance criteria\n- [ ] `app/not-found.tsx` exists and is exported correctly\n- [ ] Page visually matches the NoCo Make Lab design system\n- [ ] Links back to home and at least one other useful destination\n- [ ] Works for both authenticated and unauthenticated users",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:50Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgZDw",
+                "name": "ux",
+                "description": "",
+                "color": "bfd4f2"
+            }
+        ],
+        "number": 35,
+        "state": "OPEN",
+        "title": "Add custom 404 page matching design system"
+    },
+    {
+        "body": "## Problem\nThe capabilities table in `about/page.tsx` contains a hardcoded `CAPABILITIES` array including the materials list (`PLA, PETG, ABS, ASA, TPU, Nylon`). As materials are added or changed via the admin panel, this table will silently drift out of sync.\n\n## Desired behaviour\nThe materials row pulls from the same materials API that the home and pricing pages use. Other rows (build volume, layer height) can remain static but should be flagged clearly as manually maintained.\n\n## Implementation notes\n- Convert `about/page.tsx` to a client component (or use a server component with `fetch`)\n- Query `materialsApi.getAll()` and derive the materials list dynamically: `[...new Set(materials.map(m => m.type))].join(', ')`\n- Add a comment above the static rows: `// NOTE: update manually when printer specs change`\n\n## Acceptance criteria\n- [ ] Materials capability row reflects the live materials catalogue\n- [ ] Static rows are clearly commented as manually maintained\n- [ ] Page still renders correctly if the API is unavailable (fallback to a safe default)",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:48Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            }
+        ],
+        "number": 34,
+        "state": "OPEN",
+        "title": "Sync About page capabilities table with live data"
+    },
+    {
+        "body": "## Problem\nThe blog post page at `/blog/[slug]` has no `<title>` or `<meta description>` set via Next.js metadata. For a local service business, blog content is a primary organic discovery channel — this is leaving SEO value on the table.\n\n## Desired behaviour\n1. Each blog post page exports a `generateMetadata` function that sets title and description from the post content\n2. The blog list page gets a static metadata block\n3. At least a placeholder post or two to confirm the full rendering pipeline works end-to-end\n\n## Implementation notes\n```ts\n// app/(public)/blog/[slug]/page.tsx\nexport async function generateMetadata({ params }): Promise<Metadata> {\n  const post = await contentApi.getBlogPostBySlug(params.slug)\n  return {\n    title: `${post.title} | NoCo Make Lab`,\n    description: post.excerpt ?? post.content.slice(0, 160),\n  }\n}\n```\n\nAlso add Open Graph tags (`og:title`, `og:description`, `og:image`) for social sharing.\n\n## Acceptance criteria\n- [ ] Blog post pages have unique `<title>` tags\n- [ ] Blog post pages have `<meta name=\"description\">` populated from post content\n- [ ] Blog list page has static metadata\n- [ ] Open Graph tags present on post pages",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:46Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgZSw",
+                "name": "seo",
+                "description": "",
+                "color": "f9d0c4"
+            }
+        ],
+        "number": 33,
+        "state": "OPEN",
+        "title": "Add SEO metadata to blog post pages and wire up content"
+    },
+    {
+        "body": "## Problem\n`StlViewer` uses `useLoader(STLLoader, url)` which throws synchronously if the file is malformed, the blob URL is unavailable, or Three.js geometry parsing fails. This crash propagates to the entire page, breaking the order/quote flow for the customer.\n\n## Desired behaviour\nA graceful degraded state — the rest of the page remains functional and the viewer shows an explanatory message with a retry option.\n\n## Implementation notes\nCreate a React `ErrorBoundary` wrapper component at `components/3d-viewer/ViewerErrorBoundary.tsx`:\n\n```tsx\n<ViewerErrorBoundary fallback={<ViewerErrorState />}>\n  <Canvas>\n    <StlModel url={modelUrl} />\n  </Canvas>\n</ViewerErrorBoundary>\n```\n\nThe fallback (`ViewerErrorState`) should:\n- Match the site's design system (border, mono font, teal accent)\n- Show a message like \"Unable to preview this file\"\n- Offer a \"Retry\" button that resets the boundary via `key` prop\n\nAlso consider wrapping the `useLoader` call in a `<Suspense>` boundary for the loading state.\n\n## Acceptance criteria\n- [ ] A malformed STL file shows the error fallback instead of crashing the page\n- [ ] The error state is visually consistent with the design system\n- [ ] A retry mechanism is available\n- [ ] Loading state is handled gracefully",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:44Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWipo-A",
+                "name": "bug",
+                "description": "Something isn't working",
+                "color": "d73a4a"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgZDw",
+                "name": "ux",
+                "description": "",
+                "color": "bfd4f2"
+            }
+        ],
+        "number": 32,
+        "state": "OPEN",
+        "title": "Add ErrorBoundary to STL viewer"
+    },
+    {
+        "body": "## Problem\n`MaterialService` handles the pricing and availability logic that drives every customer-facing quote and order. It currently has no test coverage, making it the highest-risk untested service in the codebase.\n\n## Desired behaviour\nA comprehensive unit test suite for `MaterialService` in `PrintHub.Tests`.\n\n## Cases to cover\n- `GetAllAsync` returns only active materials when `activeOnly: true`\n- `GetByIdAsync` returns `null` for unknown IDs\n- `CreateAsync` persists a new material correctly\n- `UpdateAsync` updates only the changed fields\n- `DeleteAsync` (or deactivation) sets `IsActive = false` rather than hard-deleting\n- Price-per-gram cannot be zero or negative (validation)\n- Duplicate type+color combination is rejected\n\n## Implementation notes\n- Follow the existing mock-based pattern in `PrintHub.Tests`\n- Use `Moq` for `IMaterialRepository` and `IUnitOfWork`\n- No real database required — pure unit tests\n\n## Acceptance criteria\n- [ ] All cases above have at least one test\n- [ ] Tests run green in CI (`api.yml` workflow)\n- [ ] Coverage for `MaterialService` is ≥ 80%",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:42Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbD2JYg",
+                "name": "backend",
+                "description": "",
+                "color": "e4e669"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgZfA",
+                "name": "testing",
+                "description": "",
+                "color": "0e8a16"
+            }
+        ],
+        "number": 31,
+        "state": "OPEN",
+        "title": "Add unit tests for MaterialService"
+    },
+    {
+        "body": "## Problem\nSeveral utilities are copy-pasted across pages in violation of DRY:\n\n1. `groupMaterials()` — identical in `home/page.tsx` and `pricing/page.tsx`\n2. `inputCls`, `textareaCls` — duplicated between `orders/new` and `quotes/new`\n3. `FieldLabel`, `FieldError`, `Section` components — also duplicated between those two pages\n\n## Desired behaviour\nSingle source of truth for each of these.\n\n## Implementation notes\n- `groupMaterials` → move to `lib/utils.ts` (alongside the existing `formatStatus`)\n- Form class strings (`inputCls`, `textareaCls`) → either `lib/utils.ts` constants or Tailwind component classes in `globals.css`\n- `FieldLabel`, `FieldError`, `Section` → new file `components/forms/field-primitives.tsx`\n\n## Acceptance criteria\n- [ ] `groupMaterials` lives in `lib/utils.ts` and is imported by both pages\n- [ ] `FieldLabel`, `FieldError`, `Section` live in a shared component file\n- [ ] No duplicate implementations remain\n- [ ] All pages that previously defined these locally now import from the shared location",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:40Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgY2Q",
+                "name": "dx",
+                "description": "",
+                "color": "cfd3d7"
+            }
+        ],
+        "number": 30,
+        "state": "OPEN",
+        "title": "Extract shared form primitives and groupMaterials utility"
+    },
+    {
+        "body": "## Problem\n`Bebas_Neue` and `JetBrains_Mono` are instantiated via `next/font/google` independently inside almost every page file. This defeats Next.js's font subsetting optimisation and adds overhead per route.\n\n## Desired behaviour\nFonts loaded once in `app/layout.tsx`, exposed as CSS variables, consumed everywhere via those variables.\n\n## Implementation notes\nFollow the pattern already established by `--font-epilogue` in the codebase:\n\n```ts\n// app/layout.tsx\nconst bebasNeue = Bebas_Neue({ weight: '400', subsets: ['latin'], variable: '--font-bebas' })\nconst jetbrainsMono = JetBrains_Mono({ weight: ['400','600'], subsets: ['latin'], variable: '--font-mono' })\n```\n\nApply both variables to the root `<html>` element, then replace every `bebas.className` / `mono.className` reference across pages with `font-[family-name:var(--font-bebas)]` / `font-[family-name:var(--font-mono)]` or matching Tailwind config entries.\n\n## Files to update\n- `app/layout.tsx` — add font declarations\n- `app/(public)/home/page.tsx`\n- `app/(public)/pricing/page.tsx`\n- `app/(public)/about/page.tsx`\n- `app/(dashboard)/orders/page.tsx`\n- `app/(dashboard)/orders/new/page.tsx`\n- `app/(dashboard)/quotes/new/page.tsx`\n- Any other pages importing fonts directly\n\n## Acceptance criteria\n- [ ] Fonts declared only in `layout.tsx`\n- [ ] No per-page `next/font` imports remain\n- [ ] Visual output is identical",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:38Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgY2Q",
+                "name": "dx",
+                "description": "",
+                "color": "cfd3d7"
+            }
+        ],
+        "number": 29,
+        "state": "OPEN",
+        "title": "Consolidate font imports into root layout (Next.js font optimisation)"
+    },
+    {
+        "body": "## Problem\n`IEmailService` is wired up with Resend, and the forgot-password flow already uses it — but `OrderService` never sends any emails. Customers get no automated updates when their order progresses.\n\n## Desired behaviour\nTransactional emails triggered at key order status transitions.\n\n## Transitions to notify on\n| Transition | Email |\n|---|---|\n| → `Submitted` | Order confirmation with summary |\n| → `Printing` | \"Your print has started\" |\n| → `Shipped` | Shipping notification (include any tracking info from notes) |\n| → `Completed` | Completion + request for feedback |\n| → `Cancelled` | Cancellation notice with reason |\n\n## Implementation notes\n- Inject `IEmailService` into `OrderService`\n- Send emails inside `UpdateOrderStatusAsync` after the status write succeeds\n- Add email templates to `ResendEmailService` — keep them consistent with the existing brand (mono font, teal accent, NoCo Make Lab header)\n- Fire-and-forget pattern acceptable (log failures, don't throw)\n\n## Acceptance criteria\n- [ ] Confirmation email sent when order reaches `Submitted`\n- [ ] Shipping notification sent when order reaches `Shipped`\n- [ ] Email failures are logged but do not fail the status update\n- [ ] No emails sent for `Draft` status (user hasn't committed yet)",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:36Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbD2JYg",
+                "name": "backend",
+                "description": "",
+                "color": "e4e669"
+            }
+        ],
+        "number": 28,
+        "state": "OPEN",
+        "title": "Send email notifications on order status transitions"
+    },
+    {
+        "body": "## Problem\nThe order detail page at `/orders/[id]` shows static fields but gives no sense of progress through the print lifecycle. Customers have no visibility into where their job is without contacting you directly.\n\n## Desired behaviour\nA visual step-by-step timeline showing all statuses the order has passed through, with timestamps pulled from `OrderStatusHistory`.\n\n## Statuses to represent\n`Draft → Submitted → In Review → Approved → Printing → Quality Check → Shipped → Completed`\n\n## Implementation notes\n- The `OrderStatusHistory` entity is fully modelled in the API and already included in `OrderResponse`\n- Build a `<OrderTimeline>` component in `components/orders/`\n- Completed steps: solid accent colour + checkmark\n- Current step: pulsing dot (reuse the dot-pulse animation from the home page hero)\n- Future steps: muted/dimmed\n\n## Acceptance criteria\n- [ ] Timeline renders all historical status transitions with timestamps\n- [ ] Current status is visually distinct from completed and pending steps\n- [ ] Cancelled orders show a terminal cancelled state\n- [ ] Component is reusable (admin order detail can use it too)",
+        "closedAt": null,
+        "createdAt": "2026-03-25T16:16:34Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgZDw",
+                "name": "ux",
+                "description": "",
+                "color": "bfd4f2"
+            }
+        ],
+        "number": 27,
+        "state": "OPEN",
+        "title": "Order detail page: add status timeline"
+    },
+    {
+        "body": "## Problem\nThe home page copy promises *\"A live price estimate updates as you go\"* but the current `orders/new/page.tsx` does not calculate a live total. Price is only visible after submission, which creates doubt at the most critical moment in the customer journey.\n\n## Desired behaviour\nAs the customer selects material, quality tier, and quantity, a price estimate updates in real time in a sticky summary panel before the submit button.\n\n## Implementation notes\nAll the data needed is already available client-side:\n- `fileData.weightGrams` from the STL analysis (passed in via `?fileId=` param)\n- `selectedMaterial.pricePerGram` from the materials query\n- Quality multiplier from `QUALITY_OPTIONS` (already defined in the page)\n\nFormula: `weightGrams × pricePerGram × qualityMultiplier × quantity`\n\nShow the estimated total in a summary card that updates on every form change (`watch()` from react-hook-form). Include a disclaimer that final price is confirmed at review.\n\n## Acceptance criteria\n- [ ] Price recalculates on material change, quality change, and quantity change\n- [ ] Zero-state handled (file has no weight analysis yet)\n- [ ] Consistent with the formula displayed on the pricing page",
+        "closedAt": "2026-03-25T23:36:34Z",
+        "createdAt": "2026-03-25T16:16:33Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgYLw",
+                "name": "frontend",
+                "description": "",
+                "color": "7057ff"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACcwgZDw",
+                "name": "ux",
+                "description": "",
+                "color": "bfd4f2"
+            }
+        ],
+        "number": 26,
+        "state": "CLOSED",
+        "title": "Live price estimate on new order form"
+    },
+    {
+        "body": "## Summary\nReplace the manual `deploy.sh` script with a GitHub Actions pipeline that\ndeploys Azure infrastructure via Bicep using Azure Deployment Stacks.\n\n## Motivation\n- Infra changes become auditable alongside app changes in git history\n- Bicep `what-if` on PRs shows exactly what will change before it does\n- Deployment Stacks provide automatic cleanup of removed resources and\n  drift protection via deny assignments — preventing orphaned resources\n  and enforcing Bicep as the single source of truth\n\n## Acceptance Criteria\n- [ ] Azure Service Principal created with Contributor role scoped to the\n      resource group, stored as `AZURE_CREDENTIALS` GitHub secret\n- [ ] `.github/workflows/infra.yml` pipeline created with two jobs:\n  - `validate` — runs on PRs: `az deployment group what-if` to preview changes\n  - `deploy` — runs on push to main: `az stack group create` with\n    `--deny-settings-mode denyDelete`\n- [ ] Pipeline triggered on changes to `infrastructure/**`\n- [ ] `deploy.sh` retained for bootstrapping / disaster recovery scenarios\n- [ ] `main.bicepparam` updated for prod environment parameters\n\n## Notes\n- Service Principal setup: `az ad sp create-for-rbac --role Contributor\n  --scopes /subscriptions/<id>/resourceGroups/<rg> --sdk-auth`\n- Deployment Stacks replace `az deployment group create` —\n  `az stack group create` is the equivalent command\n- Consider `denyDelete` for dev, `denyWriteAndDelete` for prod\n- Deployment Stacks require az CLI 2.47.0+ and the stack to be created\n  in the same scope as the resources (resource group scope here)",
+        "closedAt": "2026-03-19T16:09:38Z",
+        "createdAt": "2026-03-16T20:18:21Z",
+        "labels": [],
+        "number": 22,
+        "state": "CLOSED",
+        "title": "infra: Add GitHub Actions pipeline for Bicep deployment using Deployment Stacks"
+    },
+    {
+        "body": "Scope:\r\n- Add API integration tests for upload/extraction/approve/reject/auth failures.\r\n- Add worker tests for retry/dead-letter behavior.\r\n- Emit events and metrics for throughput/failures.\r\n- Roll out behind admin/staff feature flag with rollback notes.\r\n\r\nAcceptance:\r\n- CI includes contract and worker tests\r\n- Dashboard/log queries exist for core metrics\r\n- Feature can be disabled without affecting existing material CRUD\r\nEstimate: M",
+        "closedAt": null,
+        "createdAt": "2026-03-13T20:09:44Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 20,
+        "state": "OPEN",
+        "title": "Platform: Add contract tests, metrics, and feature-flagged rollout for intake v1"
+    },
+    {
+        "body": "Scope:\r\n- Reuse material form sections for extracted draft review.\r\n- Show per-field confidence badges and provenance.\r\n- Require correction/confirmation for low-confidence required fields.\r\n- Wire approve/reject actions with clear feedback.\r\n\r\nAcceptance:\r\n- Users can correct and submit draft reliably\r\n- Confidence-gate messaging is explicit\r\nEstimate: M",
+        "closedAt": null,
+        "createdAt": "2026-03-13T20:09:42Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 19,
+        "state": "OPEN",
+        "title": "Web: Add draft review form with confidence indicators and correction flow"
+    },
+    {
+        "body": "Scope:\r\n- Add admin page for intake items and statuses.\r\n- Add filters (pending/failed/approved today) and search.\r\n- Add actions to open review and retrigger extraction where allowed.\r\n\r\nAcceptance:\r\n- Queue updates after mutations via query invalidation\r\n- Errors and empty states handled clearly\r\nEstimate: M",
+        "closedAt": null,
+        "createdAt": "2026-03-13T20:09:40Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 18,
+        "state": "OPEN",
+        "title": "Web: Build admin material intake queue page"
+    },
+    {
+        "body": "Scope:\r\n- Add POST /{id}/approve and POST /{id}/reject.\r\n- On approve, map corrected draft into existing material create/update flow.\r\n- Enforce confidence gates for required fields.\r\n- Record audit event and deterministic outcome.\r\n\r\nAcceptance:\r\n- Approval writes valid material record and linkage metadata\r\n- Rejection persists reason and reviewer\r\n- Idempotency behavior documented and tested\r\nEstimate: L",
+        "closedAt": "2026-03-25T16:04:15Z",
+        "createdAt": "2026-03-13T20:09:38Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 17,
+        "state": "CLOSED",
+        "title": "API: Implement approve/reject actions and material write-through mapping"
+    },
+    {
+        "body": "Scope:\r\n- Add GET /api/v1.0/material-intake/{id} and GET /api/v1.0/material-intake.\r\n- Return extracted fields, confidence object, provenance, and status.\r\n- Support filters: status, createdBy, date range, search.\r\n\r\nAcceptance:\r\n- Payload contract matches frontend review requirements\r\n- Paging/filtering stable and documented\r\nEstimate: M",
+        "closedAt": null,
+        "createdAt": "2026-03-13T20:09:36Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 16,
+        "state": "OPEN",
+        "title": "API: Add intake draft retrieval and queue listing endpoints"
+    },
+    {
+        "body": "Scope:\n- Define queue message schema: intakeId, blobRef, attempt, requestedAtUtc.\n- Implement worker for OCR/vision extraction into structured draft fields.\n- Add retry policy and dead-letter/final Failed behavior.\n\nEstimate: L\nEpic: #12\n\n## Acceptance Criteria\n\n### Extractor abstraction (the \"translator contract\")\n- [ ] Define IExtractionProvider interface with single method:\n  - Input: intakeId, normalizedImageUrl\n  - Output: brand, materialType, color, spoolWeightGrams, printSettingsHints (bedTemp/nozzleTemp/speed), batchOrLot, plus a confidence score and source text snippet per field, plus overall status (success/failed) and error message\n- [ ] Active provider is selected at startup via Intake:Extractor:Provider config value\n- [ ] Two providers are implemented:\n  - AzureVisionProvider: calls Azure AI Vision OCR\n  - MockProvider: returns deterministic sample values for local dev and unit tests\n\n### Local development\n- [ ] MockProvider is the default when Intake:Extractor:Provider = \"Mock\"\n- [ ] MockProvider returns realistic sample data with controllable confidence scores\n- [ ] Unit tests use MockProvider exclusively — no Azure dependency required to run tests\n\n### Azure AI Vision integration\n- [ ] AzureVisionProvider calls Azure AI Vision OCR Read API\n- [ ] Extracted text is parsed into structured fields using configurable regex/pattern rules\n- [ ] Unrecognized or empty fields produce confidence of 0.0 (not null)\n- [ ] Azure endpoint and key configured via Intake:Extractor:AzureVision:Endpoint and Key\n\n### Queue and worker\n- [ ] Queue technology: Azure Storage Queue (local dev via Azurite)\n- [ ] Queue message schema includes: intakeId, blobRef, attempt, requestedAtUtc\n- [ ] Worker picks up message, calls active provider, updates intake record with draft + confidence map\n- [ ] Worker sets status to Extracting on pickup, NeedsReview on success, Failed on terminal error\n\n### Retry and failure\n- [ ] Worker retries up to 3 times (configurable) before setting status to Failed\n- [ ] Failed records persist lastError and attempt count for admin visibility\n- [ ] Re-extract available via POST /material-intake/{id}/extract when in Failed state\n\n### Confidence thresholds (config-driven)\n- [ ] Intake:Confidence:HighThreshold defaults to 0.85 (auto-accepted, green)\n- [ ] Intake:Confidence:LowThreshold defaults to 0.55 (below this, required fields must be corrected before approve)\n- [ ] Between thresholds shows yellow warning but does not block approval",
+        "closedAt": "2026-03-25T14:38:33Z",
+        "createdAt": "2026-03-13T20:09:34Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 15,
+        "state": "CLOSED",
+        "title": "API: Add async extraction worker and queue message contract"
+    },
+    {
+        "body": "Scope:\n- Add POST /api/v1.0/material-intake for multipart image upload.\n- Enforce StaffOrAdmin and file validation (type/extension/size).\n- Persist intake record and photo reference, return 201 payload.\n\nEstimate: M\nEpic: #12\n\n## Acceptance Criteria\n\n### File validation\n- [ ] Accept jpg, jpeg, png, webp, heic, heif\n- [ ] Reject any other extension with 400 and clear error message\n- [ ] Reject files exceeding configured max size with 400 and clear error message\n- [ ] Reject if content-type does not match extension\n\n### HEIC/HEIF conversion\n- [ ] heic and heif files are automatically converted to JPEG on the server before storage\n- [ ] Conversion happens before blob upload (original heic is not stored by default)\n- [ ] If conversion fails, upload returns 422 with descriptive reason\n\n### Image normalization\n- [ ] All accepted images are normalized before extraction:\n  - JPEG quality: 85\n  - Maximum long edge: 2048px (aspect ratio preserved)\n  - EXIF auto-rotation applied\n  - Metadata stripped except orientation used during processing\n- [ ] Normalization is configurable via Intake:ImageProcessing settings\n\n### Upload response\n- [ ] Returns 201 with intakeId, status (Uploaded), createdAtUtc, createdBy, photoUrl\n- [ ] Correlation id is propagated in response headers\n\n### Security\n- [ ] Endpoint requires StaffOrAdmin role; unauthorized callers receive 401/403\n- [ ] Blob stored in private container; no public URL exposed directly",
+        "closedAt": "2026-03-20T21:38:20Z",
+        "createdAt": "2026-03-13T20:09:32Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 14,
+        "state": "CLOSED",
+        "title": "API: Implement material photo upload endpoint with validation"
+    },
+    {
+        "body": "Scope:\r\n- Add intake entities and persistence model for photo intake lifecycle.\r\n- Implement statuses: Uploaded, Extracting, NeedsReview, Approved, Rejected, Failed.\r\n- Define allowed transitions and terminal state rules.\r\n\r\nAcceptance:\r\n- State transitions validated server-side\r\n- Invalid transitions return standardized error\r\n- UTC timestamps and actor metadata persisted\r\nEstimate: M",
+        "closedAt": "2026-03-13T22:28:48Z",
+        "createdAt": "2026-03-13T20:09:30Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 13,
+        "state": "CLOSED",
+        "title": "API: Add material intake domain model and lifecycle states"
+    },
+    {
+        "body": "Objective:\r\nEnable staff to capture/upload material photos, auto-extract key fields, review low-confidence fields, and approve into Materials.\r\n\r\nSuccess Criteria:\r\n- Staff can upload from mobile/webcam\r\n- Draft generated with confidence per field\r\n- Approval writes through existing material service\r\n- Audit trail and contract tests in CI\r\n\r\nChild work will be linked in a follow-up comment.\r\nEstimate: L",
+        "closedAt": null,
+        "createdAt": "2026-03-13T20:09:28Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjdw",
+                "name": "AI",
+                "description": "AI-related work",
+                "color": "5319E7"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKjlA",
+                "name": "Materials",
+                "description": "Materials domain",
+                "color": "0E8A16"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbTKj5w",
+                "name": "Intake",
+                "description": "Material intake pipeline",
+                "color": "1D76DB"
+            }
+        ],
+        "number": 12,
+        "state": "OPEN",
+        "title": "Epic: Material Photo Intake v1 (Upload -> Extract -> Review -> Approve)"
+    },
+    {
+        "body": "## Summary\nAdd a GET /api/v1/Quotes/all endpoint that returns all quote requests with optional status filtering and pagination.\n\n## Motivation\nThe admin quotes list currently uses GET /Quotes/pending which only returns active quotes (Pending, UnderReview, QuoteProvided). The Accepted, Expired, and Cancelled tabs on the admin quotes page always show zero because terminal-status quotes are excluded from the pending endpoint.\n\n## Proposed Endpoint\nGET /api/v1/Quotes/all?status={status}&page={page}&pageSize={pageSize}\n\n- status is optional — omit to return all statuses\n- Standard PagedResponse<QuoteRequestResponse> shape matching existing endpoints\n- Admin/Staff only — [Authorize(Roles = \"Admin,Staff\")]\n\n## Implementation Notes\n- Add GetAllQuotesAsync(string? status, int page, int pageSize) to IQuoteService + QuoteService\n- Single query with optional .Where(q => q.Status == status) filter\n- Mirror the GetOrdersByStatus pattern from OrderService\n\n## Frontend Work (deferred)\nOnce live, update /admin/quotes/page.tsx to:\n- Replace the getPending(1, 200) call with getAll(status, page, pageSize)\n- Add proper pagination (currently client-side only)\n- Remove the comment noting terminal statuses are unavailable",
+        "closedAt": "2026-03-16T17:18:58Z",
+        "createdAt": "2026-03-12T02:24:07Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbD2JYg",
+                "name": "backend",
+                "description": "",
+                "color": "e4e669"
+            }
+        ],
+        "number": 11,
+        "state": "CLOSED",
+        "title": "feat: GET /Quotes/all endpoint with status filtering"
+    },
+    {
+        "body": "Add a GET /api/v1/Orders/status-counts endpoint returning order counts grouped by status.\n\nMotivation: the admin orders filter tabs need live counts per status without fetching all orders client-side.\n\nResponse shape: { \"Submitted\": 3, \"Printing\": 1, ... } for all statuses.\n\nImplementation:\n- Admin/Staff only — [Authorize(Roles = \"Admin,Staff\")]\n- Single GROUP BY query via EF Core, no N+1\n- Add GetStatusCountsAsync() to IOrderService + OrderService\n\nFrontend work (deferred): once live, update /admin/orders/page.tsx to display count badges on tabs between Submitted and Completed.",
+        "closedAt": "2026-03-16T17:18:52Z",
+        "createdAt": "2026-03-12T02:02:20Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            },
+            {
+                "id": "LA_kwDORFN0y88AAAACbD2JYg",
+                "name": "backend",
+                "description": "",
+                "color": "e4e669"
+            }
+        ],
+        "number": 10,
+        "state": "CLOSED",
+        "title": "feat: GET /Orders/status-counts endpoint"
+    },
+    {
+        "body": "## Overview\nUsers currently have no way to recover their account if they forget their password. The profile page allows changing a password but requires knowing the current one.\n\n## Required Work\n\n### Backend\n- `POST /api/Auth/forgot-password` — accepts `{ email }`, looks up user, generates a secure reset token with ~1 hour expiry, sends reset email\n- `POST /api/Auth/reset-password` — accepts `{ token, newPassword }`, validates token existence and expiry, updates password hash, invalidates token\n- Storage: either a `PasswordResetTokens` table or a `ResetToken` + `ResetTokenExpiry` column on `Users`\n- Email delivery via SendGrid (or whichever email service is integrated)\n- Reset link format: `https://nocomakelab.com/reset-password?token=xxx`\n\n### Frontend\n- `/forgot-password` — email input form; on success shows \"check your inbox\" confirmation state (stub page already exists at this route)\n- `/reset-password?token=xxx` — new password + confirm password form; validates token via API on load; on success redirects to `/login`\n\n## Notes\n- Stub page at `/forgot-password` is already in place with a \"coming soon\" message and contact email fallback\n- The login page already has a \"Forgot password?\" link pointing to this route\n- Profile page password change (requires current password) is a separate flow and is not a replacement for this\n\n## Acceptance Criteria\n- [ ] User receives reset email within ~1 minute of submitting their address\n- [ ] Reset link expires after 1 hour\n- [ ] Token is single-use — invalidated after successful reset\n- [ ] Invalid or expired token shows a clear error on the reset page\n- [ ] Successful reset redirects to login with a success toast",
+        "closedAt": "2026-03-16T17:47:57Z",
+        "createdAt": "2026-03-12T01:24:37Z",
+        "labels": [],
+        "number": 9,
+        "state": "CLOSED",
+        "title": "Implement forgot password functionality"
+    },
+    {
+        "body": "<html>\n<body>\n<!--StartFragment--><h2 class=\"text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold\">Overview</h2>\n<p class=\"font-claude-response-body break-words whitespace-normal leading-[1.7]\">The current <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Material</code> entity models abstract material types with an array of available colors. This doesn't reflect how the business actually operates — each purchasable filament/resin is a distinct product with its own color, price, and stock level. This refactor redesigns the entity to represent specific, orderable stock items.</p>\n<h2 class=\"text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold\">Motivation</h2>\n<ul class=\"[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3\">\n<li class=\"whitespace-normal break-words pl-2\">A customer choosing \"PLA - Black\" at $0.10/g and \"PLA - Rainbow\" at $0.15/g are selecting different products, not different options on the same product</li>\n<li class=\"whitespace-normal break-words pl-2\">Stock tracking is impossible at the current level of abstraction — you can't track how many grams of black PLA vs rainbow PLA remain on separate rolls</li>\n<li class=\"whitespace-normal break-words pl-2\">Manufacturer/brand matters internally (for knowing which roll to grab, and for cost tracking) but should never be exposed to customers</li>\n<li class=\"whitespace-normal break-words pl-2\">FDM and SLA resins have entirely different slicer settings — a flexible JSONB field handles this better than rigid nullable columns</li>\n</ul>\n<h2 class=\"text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold\">Proposed Changes</h2>\n<h3 class=\"text-text-100 mt-2 -mb-1 text-base font-bold\">Entity Changes</h3>\n<p class=\"font-claude-response-body break-words whitespace-normal leading-[1.7]\"><strong>Remove:</strong></p>\n<ul class=\"[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3\">\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">AvailableColors</code> (text[] array) → replaced by single <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Color</code> column</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Properties</code> (JSONB) → replaced by more explicit fields below</li>\n</ul>\n<p class=\"font-claude-response-body break-words whitespace-normal leading-[1.7]\"><strong>Add:</strong></p>\n<ul class=\"[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3\">\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Color</code> (string, required) — e.g. \"Black\", \"Galaxy Black\", \"Rainbow\"</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Finish</code> (enum, nullable) — Standard, Matte, Silk, Glossy</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Grade</code> (enum, nullable) — Standard, Premium, Economy</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">StockGrams</code> (decimal, required) — current stock level</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">LowStockThresholdGrams</code> (decimal, nullable) — triggers low stock warning</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Notes</code> (string, nullable) — internal notes about the batch/roll</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">PrintSettings</code> (JSONB, nullable) — printer/slicer settings, schema varies by technology</li>\n</ul>\n<p class=\"font-claude-response-body break-words whitespace-normal leading-[1.7]\"><strong>Keep:</strong></p>\n<ul class=\"[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3\">\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Type</code>, <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Brand</code>, <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">PricePerGram</code>, <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">IsActive</code>, <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">PrintingTechnologyId</code>, <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">CreatedAt</code>, <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">UpdatedAt</code></li>\n</ul>\n<p class=\"font-claude-response-body break-words whitespace-normal leading-[1.7]\"><strong>Rename:</strong></p>\n<ul class=\"[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3\">\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Brand</code> stays but is explicitly marked internal-only — never returned in customer-facing DTOs</li>\n</ul>\n<h3 class=\"text-text-100 mt-2 -mb-1 text-base font-bold\">Example Records After Migration</h3>\n<div class=\"overflow-x-auto w-full px-2 mb-6\">\nType | Color | Finish | Grade | Price/g | Brand (internal)\n-- | -- | -- | -- | -- | --\nPLA | Black | Standard | Standard | $0.10 | Hatchbox\nPLA | Black | Standard | Premium | $0.20 | Prusament\nPLA | Rainbow | Silk | Standard | $0.15 | Polymaker\nPETG | White | Standard | Standard | $0.12 | Polymaker\nResin | White | Glossy | Standard | $0.40 | Elegoo\n\n</div>\n<h3 class=\"text-text-100 mt-2 -mb-1 text-base font-bold\">PrintSettings JSONB Examples</h3>\n<p class=\"font-claude-response-body break-words whitespace-normal leading-[1.7]\">FDM:</p>\n<div class=\"relative group/copy bg-bg-000/50 border-0.5 border-border-400 rounded-lg\"><div class=\"sticky opacity-0 group-hover/copy:opacity-100 top-2 py-2 h-12 w-0 float-right\"><div class=\"absolute right-0 h-8 px-2 items-center inline-flex z-10\"><button class=\"inline-flex\n  items-center\n  justify-center\n  relative\n  shrink-0\n  can-focus\n  select-none\n  disabled:pointer-events-none\n  disabled:opacity-50\n  disabled:shadow-none\n  disabled:drop-shadow-none border-transparent\n          transition\n          font-base\n          duration-300\n          ease-[cubic-bezier(0.165,0.85,0.45,1)] h-8 w-8 rounded-md active:scale-95 backdrop-blur-md Button_ghost__BUAoh\" type=\"button\" aria-label=\"Copy to clipboard\" data-state=\"closed\"><div class=\"relative\"><div class=\"transition-all opacity-100 scale-100\" style=\"width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" class=\"transition-all opacity-100 scale-100\" aria-hidden=\"true\" style=\"flex-shrink: 0;\"><path d=\"M12.5 3C13.3284 3 14 3.67157 14 4.5V6H15.5C16.3284 6 17 6.67157 17 7.5V15.5C17 16.3284 16.3284 17 15.5 17H7.5C6.67157 17 6 16.3284 6 15.5V14H4.5C3.67157 14 3 13.3284 3 12.5V4.5C3 3.67157 3.67157 3 4.5 3H12.5ZM14 12.5C14 13.3284 13.3284 14 12.5 14H7V15.5C7 15.7761 7.22386 16 7.5 16H15.5C15.7761 16 16 15.7761 16 15.5V7.5C16 7.22386 15.7761 7 15.5 7H14V12.5ZM4.5 4C4.22386 4 4 4.22386 4 4.5V12.5C4 12.7761 4.22386 13 4.5 13H12.5C12.7761 13 13 12.7761 13 12.5V4.5C13 4.22386 12.7761 4 12.5 4H4.5Z\"></path></svg></div><div class=\"absolute inset-0 flex items-center justify-center\"><div class=\"transition-all opacity-0 scale-50\" style=\"width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" class=\"transition-all opacity-0 scale-50\" aria-hidden=\"true\" style=\"flex-shrink: 0;\"><path d=\"M15.1883 5.10908C15.3699 4.96398 15.6346 4.96153 15.8202 5.11592C16.0056 5.27067 16.0504 5.53125 15.9403 5.73605L15.8836 5.82003L8.38354 14.8202C8.29361 14.9279 8.16242 14.9925 8.02221 14.9989C7.88203 15.0051 7.74545 14.9526 7.64622 14.8534L4.14617 11.3533L4.08172 11.2752C3.95384 11.0811 3.97542 10.817 4.14617 10.6463C4.31693 10.4755 4.58105 10.4539 4.77509 10.5818L4.85321 10.6463L7.96556 13.7586L15.1161 5.1794L15.1883 5.10908Z\"></path></svg></div></div></div></button></div></div><div class=\"text-text-500 font-small p-3.5 pb-0\">json</div><div class=\"overflow-x-auto\"><pre class=\"code-block__code !my-0 !rounded-lg !text-sm !leading-relaxed p-3.5\" style=\"color: rgb(234, 236, 240); background: transparent; font-family: var(--font-mono);\"><code class=\"language-json\" style=\"color: rgb(234, 236, 240); background: transparent; font-family: var(--font-mono); white-space: pre;\"><span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">{</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"bedTemp\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">60</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"hotendTemp\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">215</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"printSpeed\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">50</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"coolingFan\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">true</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"enclosureRequired\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">false</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"dryingRequired\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">false</span><span> </span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">}</span></span></code></pre></div></div>\n<p class=\"font-claude-response-body break-words whitespace-normal leading-[1.7]\">SLA (future):</p>\n<div class=\"relative group/copy bg-bg-000/50 border-0.5 border-border-400 rounded-lg\"><div class=\"sticky opacity-0 group-hover/copy:opacity-100 top-2 py-2 h-12 w-0 float-right\"><div class=\"absolute right-0 h-8 px-2 items-center inline-flex z-10\"><button class=\"inline-flex\n  items-center\n  justify-center\n  relative\n  shrink-0\n  can-focus\n  select-none\n  disabled:pointer-events-none\n  disabled:opacity-50\n  disabled:shadow-none\n  disabled:drop-shadow-none border-transparent\n          transition\n          font-base\n          duration-300\n          ease-[cubic-bezier(0.165,0.85,0.45,1)] h-8 w-8 rounded-md active:scale-95 backdrop-blur-md Button_ghost__BUAoh\" type=\"button\" aria-label=\"Copy to clipboard\" data-state=\"closed\"><div class=\"relative\"><div class=\"transition-all opacity-100 scale-100\" style=\"width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" class=\"transition-all opacity-100 scale-100\" aria-hidden=\"true\" style=\"flex-shrink: 0;\"><path d=\"M12.5 3C13.3284 3 14 3.67157 14 4.5V6H15.5C16.3284 6 17 6.67157 17 7.5V15.5C17 16.3284 16.3284 17 15.5 17H7.5C6.67157 17 6 16.3284 6 15.5V14H4.5C3.67157 14 3 13.3284 3 12.5V4.5C3 3.67157 3.67157 3 4.5 3H12.5ZM14 12.5C14 13.3284 13.3284 14 12.5 14H7V15.5C7 15.7761 7.22386 16 7.5 16H15.5C15.7761 16 16 15.7761 16 15.5V7.5C16 7.22386 15.7761 7 15.5 7H14V12.5ZM4.5 4C4.22386 4 4 4.22386 4 4.5V12.5C4 12.7761 4.22386 13 4.5 13H12.5C12.7761 13 13 12.7761 13 12.5V4.5C13 4.22386 12.7761 4 12.5 4H4.5Z\"></path></svg></div><div class=\"absolute inset-0 flex items-center justify-center\"><div class=\"transition-all opacity-0 scale-50\" style=\"width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" class=\"transition-all opacity-0 scale-50\" aria-hidden=\"true\" style=\"flex-shrink: 0;\"><path d=\"M15.1883 5.10908C15.3699 4.96398 15.6346 4.96153 15.8202 5.11592C16.0056 5.27067 16.0504 5.53125 15.9403 5.73605L15.8836 5.82003L8.38354 14.8202C8.29361 14.9279 8.16242 14.9925 8.02221 14.9989C7.88203 15.0051 7.74545 14.9526 7.64622 14.8534L4.14617 11.3533L4.08172 11.2752C3.95384 11.0811 3.97542 10.817 4.14617 10.6463C4.31693 10.4755 4.58105 10.4539 4.77509 10.5818L4.85321 10.6463L7.96556 13.7586L15.1161 5.1794L15.1883 5.10908Z\"></path></svg></div></div></div></button></div></div><div class=\"text-text-500 font-small p-3.5 pb-0\">json</div><div class=\"overflow-x-auto\"><pre class=\"code-block__code !my-0 !rounded-lg !text-sm !leading-relaxed p-3.5\" style=\"color: rgb(234, 236, 240); background: transparent; font-family: var(--font-mono);\"><code class=\"language-json\" style=\"color: rgb(234, 236, 240); background: transparent; font-family: var(--font-mono); white-space: pre;\"><span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">{</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"layerExposureTime\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">2.5</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"bottomExposureTime\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">35</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"liftSpeed\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">65</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"uvWavelength\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">405</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"washTime\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">120</span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">,</span><span> </span><span class=\"token token\" style=\"color: rgb(244, 123, 133);\">\"cureTime\"</span><span class=\"token token\" style=\"color: rgb(234, 236, 240);\">:</span><span> </span><span class=\"token token\" style=\"color: rgb(94, 237, 237);\">300</span><span> </span><span class=\"token token\" style=\"color: rgb(211, 215, 222);\">}</span></span></code></pre></div></div>\n<h3 class=\"text-text-100 mt-2 -mb-1 text-base font-bold\">DTO Changes</h3>\n<ul class=\"[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3\">\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">MaterialResponse</code> — expose Type, Color, Finish, Grade, PricePerGram, IsActive. <strong>Do not expose</strong> Brand, StockGrams, Notes, PrintSettings</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">AdminMaterialResponse</code> — full fields including all internal ones</li>\n<li class=\"whitespace-normal break-words pl-2\"><code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">CreateMaterialRequest</code> / <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">UpdateMaterialRequest</code> — include all fields</li>\n<li class=\"whitespace-normal break-words pl-2\">Add <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">StockGrams</code> to admin material list view so low-stock items are visible at a glance</li>\n</ul>\n<h3 class=\"text-text-100 mt-2 -mb-1 text-base font-bold\">Migration Notes</h3>\n<ul class=\"[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3\">\n<li class=\"whitespace-normal break-words pl-2\">Drop <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">AvailableColors</code> column</li>\n<li class=\"whitespace-normal break-words pl-2\">Drop <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Properties</code> column</li>\n<li class=\"whitespace-normal break-words pl-2\">Add new columns listed above</li>\n<li class=\"whitespace-normal break-words pl-2\">Reseed <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">Materials</code> table with ~15-20 specific Type+Color records replacing the current 7 abstract ones</li>\n<li class=\"whitespace-normal break-words pl-2\">No order history impact — <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">OrderItem</code> references <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">MaterialId</code> which remains stable</li>\n</ul>\n<h3 class=\"text-text-100 mt-2 -mb-1 text-base font-bold\">Closes / Supersedes</h3>\n<ul class=\"[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3\">\n<li class=\"whitespace-normal break-words pl-2\">Closes #6 (Material ↔ PrintingTechnology many-to-many) — a simple <code class=\"bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]\">PrintingTechnologyId</code> FK is sufficient since each stock item belongs to exactly one technology by nature</li></ul><!--EndFragment-->\n</body>\n</html>",
+        "closedAt": "2026-03-16T15:56:24Z",
+        "createdAt": "2026-03-06T22:26:12Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            }
+        ],
+        "number": 8,
+        "state": "CLOSED",
+        "title": "refactor: Redesign Material entity to represent specific Type+Color+Grade stock items"
+    },
+    {
+        "body": "## feat: Chunked file uploads for large 3D model files\n\n### Background\nCurrently, file uploads use a single multipart POST with `[RequestSizeLimit]` and `[RequestFormLimits]` set to 200MB. This works for most files but has limitations for very large models and unreliable connections.\n\n### Problem\n- Single-request uploads fail silently if the connection drops mid-upload — the user must restart from scratch\n- 200MB limit may still be insufficient for high-resolution STL files (complex architectural models, detailed character meshes, etc.)\n- No upload progress feedback is possible with the current approach\n- Large uploads put memory pressure on the API server (entire stream held in memory)\n\n### Proposed Solution\nImplement chunked/resumable uploads using a two-phase approach:\n\n**Phase 1 — Initiate upload**\n`POST /Files/upload/initiate` → returns an `uploadSessionId`\n\n**Phase 2 — Upload chunks**\n`POST /Files/upload/chunk/{sessionId}` with `chunkIndex`, `totalChunks`, and the chunk bytes\n\n**Phase 3 — Finalise**\n`POST /Files/upload/complete/{sessionId}` → reassembles chunks, runs analysis, returns `FileResponse`\n\n### Implementation Notes\n- Chunk size: ~5MB per chunk (configurable)\n- Temporary chunk storage: local disk or Azure Blob (with a TTL cleanup job for abandoned sessions)\n- Frontend: update `MediaUploadField` and the main file upload flow to slice `File` using `file.slice(start, end)` and track progress per chunk\n- Consider using Azure Blob's native [block blob uncommitted blocks](https://learn.microsoft.com/en-us/rest/api/storageservices/put-block) API which handles reassembly natively — avoids storing chunks ourselves\n- Add an `UploadSession` entity or use a Redis/memory cache for session state\n\n### Acceptance Criteria\n- [ ] Upload can be resumed if connection drops\n- [ ] Progress bar shown on frontend during upload\n- [ ] No practical file size ceiling (beyond storage costs)\n- [ ] Abandoned sessions cleaned up automatically after 24h\n- [ ] Existing single-file upload endpoint continues to work for small files (<200MB)\n\n### Labels\n`enhancement` `backend` `frontend` `file-upload`\n\n### Priority\nLow — current 200MB limit is sufficient for most use cases. Revisit when large file complaints arise or before production launch.",
+        "closedAt": null,
+        "createdAt": "2026-03-06T20:55:29Z",
+        "labels": [],
+        "number": 7,
+        "state": "OPEN",
+        "title": "feat: Chunked file uploads for large 3D model files"
+    },
+    {
+        "body": "No relationship between Material and PrintingTechnology. In reality, not all materials work with all technologies (you can't FDM with resin, can't SLA with PLA filament). A many-to-many junction table (MaterialTechnologyCompatibility) would enforce valid combinations and power the frontend's material/technology selection dropdowns.",
+        "closedAt": "2026-03-06T22:27:14Z",
+        "createdAt": "2026-02-13T16:04:59Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            }
+        ],
+        "number": 6,
+        "state": "CLOSED",
+        "title": "Create a relationship between Material and Printing Technology"
+    },
+    {
+        "body": "Material.AvailableColors is still a comma-separated string. You converted Tags to arrays — AvailableColors would benefit from the same treatment. Right now querying \"all materials available in Blue\" requires string matching.",
+        "closedAt": "2026-03-06T21:22:39Z",
+        "createdAt": "2026-02-12T21:53:12Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            }
+        ],
+        "number": 5,
+        "state": "CLOSED",
+        "title": "Make MaterialAvailableColors an array or other option"
+    },
+    {
+        "body": "BlogPost.Slug has no auto-generation. You'll want a utility to generate slugs from titles (lowercased, hyphenated, special chars removed). Consider adding this as a method on the entity or a helper class.",
+        "closedAt": "2026-03-06T21:22:09Z",
+        "createdAt": "2026-02-12T21:51:50Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            }
+        ],
+        "number": 4,
+        "state": "CLOSED",
+        "title": "BlogPost.Slug Autogeneration Helper Class"
+    },
+    {
+        "body": "OrderNumber generation isn't defined anywhere. You have OrderNumber as a required string with a unique index (good), but there's no service or logic to auto-generate these. When you build the order service, you'll want a pattern like ORD-{date}-{sequence} with proper concurrency handling.",
+        "closedAt": "2026-03-06T21:21:29Z",
+        "createdAt": "2026-02-12T21:46:04Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            }
+        ],
+        "number": 3,
+        "state": "CLOSED",
+        "title": "OrderNumber Generation"
+    },
+    {
+        "body": "In User.cs\n\nConsider a FullName computed property. You'll end up writing $\"{user.FirstName} {user.LastName}\" in many places. A simple computed property keeps it DRY:\n```\npublic string FullName => $\"{FirstName} {LastName}\";\n```",
+        "closedAt": "2026-03-06T21:32:27Z",
+        "createdAt": "2026-02-12T21:43:24Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            }
+        ],
+        "number": 2,
+        "state": "CLOSED",
+        "title": "Consider Fullname computed property"
+    },
+    {
+        "body": "Phase 1 (Simple):\n- Add QuoteRequestId (nullable) to Orders table\n- Link orders to their source quotes\n- Show quote history on order detail page\n\nPhase 2 (Analytics):\n- Track conversion rates\n- Compare quoted vs actual prices\n- Time-to-conversion metrics\n- Customer quote acceptance patterns\n\nBusiness Value:\n- \"Are our quotes competitive?\" \n- \"How long does it take customers to decide?\"\n- \"Are we quoting accurately?\"",
+        "closedAt": null,
+        "createdAt": "2026-02-11T23:39:35Z",
+        "labels": [
+            {
+                "id": "LA_kwDORFN0y88AAAACWippBA",
+                "name": "enhancement",
+                "description": "New feature or request",
+                "color": "a2eeef"
+            }
+        ],
+        "number": 1,
+        "state": "OPEN",
+        "title": "Feature: Quote-to-Order Conversion Tracking"
+    }
+]

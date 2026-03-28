@@ -38,4 +38,10 @@ public interface IQuoteService
     Task<Dictionary<string, int>> GetStatusCountsAsync();
 
     Task<OrderResponse> ConvertToOrderAsync(Guid quoteRequestId, Guid userId);
+
+    /// <summary>
+    /// Aggregated conversion funnel analytics for the admin analytics page.
+    /// Backs GET /Quotes/analytics?days=N (StaffOrAdmin only).
+    /// </summary>
+    Task<QuoteConversionAnalyticsResponse> GetConversionAnalyticsAsync(int days);
 }
