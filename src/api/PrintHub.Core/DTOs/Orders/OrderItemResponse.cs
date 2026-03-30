@@ -16,6 +16,7 @@ public record OrderItemResponse(
     string? SpecialInstructions,
     decimal? EstimatedWeight,
     decimal? EstimatedPrintTime,
+    decimal? MachineCost,
     string Quality,
     decimal? Infill,
     bool SupportStructures,
@@ -31,6 +32,7 @@ public record OrderItemResponse(
         SpecialInstructions: item.SpecialInstructions,
         EstimatedWeight: item.EstimatedWeight,
         EstimatedPrintTime: item.EstimatedPrintTime,
+        MachineCost: item.MachineCost,
         Quality: item.Quality.ToString(),
         Infill: item.Infill,
         SupportStructures: item.SupportStructures,
@@ -40,6 +42,7 @@ public record OrderItemResponse(
         File: item.File != null
             ? FileSummaryResponse.FromEntity(item.File)
             : null
+        
     );
 }
 

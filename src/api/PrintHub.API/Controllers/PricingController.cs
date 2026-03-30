@@ -25,6 +25,7 @@ public class PricingController : ControllerBase
     public ActionResult<PricingConfigResponse> GetConfig()
     {
         var handlingFee = _configuration.GetValue<decimal>("Pricing:HandlingFeePerModel", 4.00m);
+        var machineRatePerHour = _configuration.GetValue<decimal>("Pricing:MachineRatePerHour", 3.50m);
 
         var multipliers = new Dictionary<string, decimal>
         {
@@ -35,6 +36,7 @@ public class PricingController : ControllerBase
 
         return Ok(new PricingConfigResponse(
             HandlingFeePerModel: handlingFee,
+            MachineRatePerHour:  machineRatePerHour,
             QualityMultipliers:  multipliers
         ));
     }

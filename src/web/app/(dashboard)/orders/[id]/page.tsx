@@ -5,6 +5,7 @@ import { use, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ordersApi } from '@/lib/api/orders';
+import { pricingApi } from '@/lib/api/pricing';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2, Activity, Receipt } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
@@ -92,6 +93,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     queryKey: ['order', id],
     queryFn:  () => ordersApi.getById(id),
     enabled:  isAuthenticated,
+  });
+
+  const { data: pricingData } = useQuery({
+    queryKey: ['pricing-config'],
+    queryFn:  () => pricingApi.getConfig(),
+    staleTime: 5 * 60 * 1000, 
   });
 
   const payMutation = useMutation({
@@ -257,9 +264,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     {item.supportStructures && (
                       <p className={`${mono.className} text-[9px] text-text-muted`}>Support structures included</p>
                     )}
-                    {item.estimatedWeight && (
+                    {item.estimatedWeight != null && (
                       <p className={`${mono.className} text-[9px] text-text-muted`}>
                         Est. weight: {item.estimatedWeight.toFixed(1)} g
+                      </p>
+                    )}
+                    {item.machineCost != null ? (
+                      <p className={`${mono.className} text-[9px] text-text-muted`}>
+                        Machine time: ${item.machineCost.toFixed(2)}
+                      </p>
+                    ) : item.estimatedPrintTime != null && (
+                      <p className={`${mono.className} text-[9px] text-text-muted`}>
+                        Est. print time: {item.estimatedPrintTime.toFixed(1)} h
                       </p>
                     )}
                     {item.specialInstructions && (

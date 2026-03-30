@@ -5,6 +5,7 @@ using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
 using PrintHub.Core.Common;
 using PrintHub.Core.Exceptions;
+using System.Configuration;
 
 namespace PrintHub.API.Services;
 
@@ -17,6 +18,7 @@ public class OrderService : IOrderService
     private readonly IUserRepository _userRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<OrderService> _logger;
+    private readonly decimal _machineRatePerHour;
 
     public OrderService(
         IOrderRepository orderRepo,
@@ -25,6 +27,7 @@ public class OrderService : IOrderService
         IEmailService emailService,
         IUserRepository userRepo,
         IUnitOfWork unitOfWork,
+        IConfiguration configuration,
         ILogger<OrderService> logger)
     {
         _orderRepo = orderRepo;
@@ -34,6 +37,7 @@ public class OrderService : IOrderService
         _userRepo = userRepo;
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _machineRatePerHour = configuration.GetValue<decimal>("Pricing:MachineRatePerHour", 3.50m);
     }
 
     // --- Customer operations ---
@@ -70,6 +74,7 @@ public class OrderService : IOrderService
                 throw new NotFoundException("File", itemRequest.FileId);
 
             var unitPrice = CalculateUnitPrice(material, file, itemRequest);
+            var machineCost = CalculateMachineCost(file, itemRequest.Quantity);
 
             var orderItem = new OrderItem
             {
@@ -78,7 +83,8 @@ public class OrderService : IOrderService
                 FileId = itemRequest.FileId,
                 Quantity = itemRequest.Quantity,
                 UnitPrice = unitPrice,
-                TotalPrice = unitPrice * itemRequest.Quantity,
+                TotalPrice = unitPrice * itemRequest.Quantity + machineCost,
+                MachineCost = machineCost > 0 ? machineCost : null,
                 Color = itemRequest.Color,
                 SpecialInstructions = itemRequest.SpecialInstructions,
                 Quality = Enum.Parse<PrintQuality>(itemRequest.Quality, ignoreCase: true),
@@ -296,6 +302,21 @@ public class OrderService : IOrderService
         var calculatedPrice = baseCost * qualityMultiplier * infillAdjustment * supportMultiplier;
 
         return Math.Max(calculatedPrice, 5.00m);
+    }
+
+    /// <summary>
+    /// Calculates the total machine cost for an order item, snapshotted at order creation.
+    /// Returns 0 if print time is unavailable so callers can treat null and 0 uniformly..
+    /// </summary>
+    private decimal CalculateMachineCost(UploadedFile file, int quantity)
+    {
+        if (file.Analysis?.EstimatedPrintTimeHours == null)
+        {
+            return 0m;
+        }
+        return Math.Round(
+            file.Analysis.EstimatedPrintTimeHours.Value * _machineRatePerHour * quantity, 
+            2);
     }
 
     private bool IsValidStatusTransition(OrderStatus current, OrderStatus next)

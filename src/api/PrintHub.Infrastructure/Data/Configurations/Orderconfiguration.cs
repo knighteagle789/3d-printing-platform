@@ -112,6 +112,9 @@ namespace PrintHub.Infrastructure.Data.Configurations
             builder.Property(i => i.EstimatedPrintTime)
                 .HasPrecision(18, 2);
 
+            builder.Property(i => i.MachineCost)
+                .HasPrecision(18, 2);
+
             builder.Property(i => i.Quality)
                 .IsRequired()
                 .HasConversion<string>()

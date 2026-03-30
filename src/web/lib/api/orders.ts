@@ -26,6 +26,7 @@ export interface OrderItem {
   specialInstructions: string | null;
   estimatedWeight: number | null;
   estimatedPrintTime: number | null;
+  machineCost: number | null;
   quality: string;
   infill: number | null;
   supportStructures: boolean;
