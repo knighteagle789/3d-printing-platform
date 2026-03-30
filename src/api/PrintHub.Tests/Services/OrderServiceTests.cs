@@ -1,4 +1,6 @@
+using Castle.Core.Configuration;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using PrintHub.API.Services;
@@ -22,6 +24,13 @@ public class OrderServiceTests
     private readonly Mock<ILogger<OrderService>> _loggerMock = new();
     private readonly OrderService _sut;
 
+    private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration = new ConfigurationBuilder()
+        .AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Pricing:MachineRatePerHour"] = "3.50"
+        })
+        .Build();
+
     public OrderServiceTests()
     {
         _sut = new OrderService(
@@ -31,6 +40,7 @@ public class OrderServiceTests
             _emailServiceMock.Object,
             _userRepoMock.Object,
             _unitOfWorkMock.Object,
+            _configuration,
             _loggerMock.Object);
     }
 
