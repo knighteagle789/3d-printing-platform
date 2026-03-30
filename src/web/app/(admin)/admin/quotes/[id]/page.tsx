@@ -8,6 +8,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { quotesApi } from '@/lib/api/quotes';
+import { pricingApi } from '@/lib/api/pricing';
+import { filesApi } from '@/lib/api/files';
 import { materialsApi } from '@/lib/api/materials';
 import { formatStatus } from '@/lib/utils';
 import {
@@ -161,6 +163,19 @@ export default function AdminQuoteDetailPage({
   const { data: materialsData } = useQuery({
     queryKey: ['materials'],
     queryFn:  () => materialsApi.getAll(),
+  });
+
+  const { data: pricingData } = useQuery({
+    queryKey: ['pricing-config'],
+    queryFn:  () => pricingApi.getConfig(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const fileId = data?.data.file?.id;
+  const { data: fileData } = useQuery({
+    queryKey: ['file', fileId],
+    queryFn:  () => filesApi.getById(fileId!),
+    enabled:  !!fileId,
   });
 
   const {
@@ -349,6 +364,78 @@ export default function AdminQuoteDetailPage({
               }
             />
           </div>
+
+          {/* -- Estimated cost breakdown -- */}
+          {fileData?.data.analysis && pricingData?.data && (() => {
+              const a       = fileData.data.analysis!;
+              const cfg     = pricingData.data;
+              const qty     = quote.quantity;
+              // Use preferredMaterial if available, else omit material line
+              const pricePerG   = quote.preferredMaterial?.pricePerGram ?? null;
+            const weightG     = a.estimatedWeightGrams;
+            const printHrs    = a.estimatedPrintTimeHours;
+            const matCost     = pricePerG != null && weightG != null
+              ? weightG * pricePerG * qty : null;
+            const machineCost = printHrs != null
+              ? printHrs * cfg.machineRatePerHour * qty : null;
+            const total       = matCost != null
+              ? matCost + cfg.handlingFeePerModel + (machineCost ?? 0) : null;
+
+            return (
+              <div className="mt-5 pt-5 border-t border-border">
+                <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted mb-3`}>
+                  Estimated Cost Breakdown
+                </p>
+                <div className="space-y-1.5">
+                  {matCost != null && (
+                    <div className="flex justify-between">
+                      <span className={`${mono.className} text-[9px] text-text-muted`}>
+                        Material ({weightG!.toFixed(1)}g × ${pricePerG!.toFixed(3)}/g × {qty})
+                      </span>
+                      <span className={`${mono.className} text-[9px] text-text-secondary tabular-nums`}>
+                        ${matCost.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className={`${mono.className} text-[9px] text-text-muted`}>
+                      Handling (setup & QC)
+                    </span>
+                    <span className={`${mono.className} text-[9px] text-text-secondary tabular-nums`}>
+                      ${cfg.handlingFeePerModel.toFixed(2)}
+                    </span>
+                  </div>
+                  {machineCost != null ? (
+                    <div className="flex justify-between">
+                      <span className={`${mono.className} text-[9px] text-text-muted`}>
+                        Machine ({printHrs!.toFixed(1)}h × ${cfg.machineRatePerHour.toFixed(2)}/hr × {qty})
+                      </span>
+                      <span className={`${mono.className} text-[9px] text-text-secondary tabular-nums`}>
+                        ${machineCost.toFixed(2)}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className={`${mono.className} text-[8px] text-text-muted/60`}>
+                      Machine cost unavailable — no print time estimate
+                    </p>
+                  )}
+                  {total != null && (
+                    <div className="flex justify-between pt-1.5 border-t border-border mt-1.5">
+                      <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
+                        Est. total
+                      </span>
+                      <span className={`${mono.className} text-[10px] font-medium text-accent tabular-nums`}>
+                        ${total.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <p className={`${mono.className} text-[8px] text-text-muted/60 mt-2`}>
+                  For reference only — use your judgment to set the quote price.
+                </p>
+              </div>
+            );
+          })()}
 
           {(quote.specialRequirements || quote.notes) && (
             <div className="mt-5 pt-5 border-t border-border space-y-4">

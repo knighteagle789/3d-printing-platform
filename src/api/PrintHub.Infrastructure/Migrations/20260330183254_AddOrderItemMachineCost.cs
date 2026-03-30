@@ -1,0 +1,30 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace PrintHub.Infrastructure.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddOrderItemMachineCost : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<decimal>(
+                name: "MachineCost",
+                table: "OrderItems",
+                type: "numeric(18,2)",
+                precision: 18,
+                scale: 2,
+                nullable: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "MachineCost",
+                table: "OrderItems");
+        }
+    }
+}

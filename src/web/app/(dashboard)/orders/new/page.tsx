@@ -271,6 +271,7 @@ export default function NewOrderPage() {
         <PriceEstimatePanel
           weightGrams={fileData?.data.analysis?.estimatedWeightGrams}
           pricePerGram={selectedMaterial?.pricePerGram}
+          estimatedPrintTimeHours={fileData?.data.analysis?.estimatedPrintTimeHours}
           quality={selectedQuality}
           quantity={selectedQuantity || 1}
           pricingConfig={pricingData?.data}

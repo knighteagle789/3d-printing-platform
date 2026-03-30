@@ -6,34 +6,41 @@ import type { PricingConfig } from '@/lib/api/pricing';
 const mono = JetBrains_Mono({ weight: ['400', '500'], subsets: ['latin'] });
 
 interface PriceEstimatePanelProps {
-  weightGrams:    number | null | undefined;
-  pricePerGram:   number | null | undefined;
-  quality:        string;
-  quantity:       number;
-  pricingConfig:  PricingConfig | null | undefined;
+  weightGrams:            number | null | undefined;
+  pricePerGram:           number | null | undefined;
+  estimatedPrintTimeHours: number | null | undefined;
+  quality:                string;
+  quantity:               number;
+  pricingConfig:          PricingConfig | null | undefined;
 }
 
 export function PriceEstimatePanel({
   weightGrams,
   pricePerGram,
+  estimatedPrintTimeHours,
   quality,
   quantity,
   pricingConfig,
 }: PriceEstimatePanelProps) {
-  const hasWeight   = weightGrams != null && weightGrams > 0;
-  const hasMaterial = pricePerGram != null && pricePerGram > 0;
-  const hasConfig   = pricingConfig != null;
+  const hasWeight    = weightGrams != null && weightGrams > 0;
+  const hasMaterial  = pricePerGram != null && pricePerGram > 0;
+  const hasConfig    = pricingConfig != null;
+  const hasPrintTime = estimatedPrintTimeHours != null && estimatedPrintTimeHours > 0;
 
-  // Resolved values
-  const multiplier  = pricingConfig?.qualityMultipliers[quality] ?? 1.0;
-  const handlingFee = pricingConfig?.handlingFeePerModel ?? 0;
+  const multiplier      = pricingConfig?.qualityMultipliers[quality] ?? 1.0;
+  const handlingFee     = pricingConfig?.handlingFeePerModel ?? 0;
+  const machineRate     = pricingConfig?.machineRatePerHour ?? 0;
 
   const materialCost = hasWeight && hasMaterial
     ? weightGrams! * pricePerGram! * multiplier * quantity
     : null;
 
+  const machineCost = hasPrintTime && hasConfig
+    ? estimatedPrintTimeHours! * machineRate * quantity
+    : null;
+
   const totalEstimate = materialCost != null
-    ? materialCost + handlingFee
+    ? materialCost + handlingFee + (machineCost ?? 0)
     : null;
 
   return (
@@ -69,7 +76,6 @@ export function PriceEstimatePanel({
         {/* Full estimate */}
         {hasWeight && hasMaterial && (
           <>
-            {/* Line items */}
             <div className="space-y-1.5">
 
               {/* Material cost */}
@@ -102,9 +108,30 @@ export function PriceEstimatePanel({
                 </span>
               </div>
 
+              {/* Machine cost */}
+              {machineCost != null ? (
+                <div className="flex items-baseline justify-between gap-4">
+                  <div>
+                    <span className={`${mono.className} text-[10px] text-text-secondary`}>
+                      Machine
+                    </span>
+                    <span className={`${mono.className} text-[8.5px] text-text-muted ml-2`}>
+                      {estimatedPrintTimeHours!.toFixed(1)}h × ${machineRate.toFixed(2)}/hr × {quantity}
+                    </span>
+                  </div>
+                  <span className={`${mono.className} text-[11px] text-text-primary tabular-nums shrink-0`}>
+                    ${machineCost.toFixed(2)}
+                  </span>
+                </div>
+              ) : (
+                <p className={`${mono.className} text-[8.5px] text-text-muted/70`}>
+                  Machine cost unavailable — no print time estimate
+                </p>
+              )}
+
             </div>
 
-            {/* Divider */}
+            {/* Divider + total */}
             <div className="border-t border-border pt-2 flex items-baseline justify-between">
               <span className={`${mono.className} text-[9px] uppercase tracking-[0.15em] text-text-muted`}>
                 Estimated total
@@ -116,7 +143,7 @@ export function PriceEstimatePanel({
 
             {/* Disclaimer */}
             <p className={`${mono.className} text-[8px] text-text-muted/60 pt-0.5`}>
-              Final price confirmed at order review. Weight is estimated from geometry.
+              Final price confirmed at order review. Weight and print time are estimated from geometry.
             </p>
           </>
         )}

@@ -87,6 +87,13 @@ namespace PrintHub.Core.Entities
         /// Estimated print time in hours
         /// </summary>
         public decimal? EstimatedPrintTime { get; set; }
+
+        /// <summary>
+        /// Machine cost snapshot for this item (print time × machine rate × quantity).
+        /// Captured at order creation so the breakdown never drifts if the rate changes.
+        /// Null if print time was unavailable at the time of order.
+        /// </summary>
+        public decimal? MachineCost { get; set; }
         
         public PrintQuality Quality { get; set; } = PrintQuality.Standard;
         

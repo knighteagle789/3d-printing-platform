@@ -13,6 +13,12 @@ public record PricingConfigResponse(
     decimal HandlingFeePerModel,
 
     /// <summary>
+    /// Hourly rate charged for machine time ($/hr).
+    /// Applied as: estimatedPrintTimeHours × machineRatePerHour × quantity.
+    /// </summary>
+    decimal MachineRatePerHour,
+
+    /// <summary>
     /// Quality tier multipliers applied to the base material cost.
     /// Key = quality tier name (e.g. "Draft", "Standard", "High").
     /// </summary>
