@@ -25,12 +25,12 @@ public class BlobStorageService : IFileStorageService
 
         var serviceClient = new BlobServiceClient(connectionString);
         _containerClient = serviceClient.GetBlobContainerClient(containerName);
-        _containerClient.CreateIfNotExists(PublicAccessType.Blob);
+        _containerClient.CreateIfNotExists(PublicAccessType.None);
 
         if (_isDevelopment)
         {
             _logger.LogInformation("Blob storage initialized in development mode. Container: {ContainerName}", containerName);
-            _containerClient.SetAccessPolicy(PublicAccessType.Blob);
+            // _containerClient.SetAccessPolicy(PublicAccessType.Blob);
         }
     }
 
@@ -39,7 +39,7 @@ public class BlobStorageService : IFileStorageService
         if (_isDevelopment)
         {
             _logger.LogInformation("Uploading blob (development mode): {BlobName}", blobName);
-            _containerClient.SetAccessPolicy(PublicAccessType.Blob);
+            // _containerClient.SetAccessPolicy(PublicAccessType.Blob);
         }
         
         var blobClient = _containerClient.GetBlobClient(blobName);
