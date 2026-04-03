@@ -83,6 +83,7 @@ jobs:
               stripeSecretKey="${{ secrets.STRIPE_SECRET_KEY }}" \
               stripeWebhookSecret="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
             --deny-settings-mode denyDelete \
+            --deny-settings-excluded-principals b8b4030e-0ae4-4e0a-b1af-91efb208c684 \
             --action-on-unmanage deleteResources \
             --yes
 

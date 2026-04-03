@@ -11,7 +11,12 @@ param appName string
 //
 // Azure AI Vision 4.0 Image Analysis (api-version=2024-02-01) uses the
 // standard ComputerVision Cognitive Services endpoint:
-//   https://<name>.cognitiveservices.azure.com/
+//   https://<subdomain>.cognitiveservices.azure.com/
+//
+// customSubDomainName is REQUIRED to get that format. Without it, Azure returns
+// the old regional endpoint (https://<region>.api.cognitive.microsoft.com/)
+// which does NOT work with Image Analysis 4.0.
+// Must be globally unique, lowercase, max 24 chars, letters/numbers/hyphens only.
 //
 // Supported regions for Image Analysis 4.0: eastus, westus, westeurope,
 // westus2, eastasia, southeastasia, and others — confirm at:
@@ -22,6 +27,7 @@ param appName string
 //   S1 — Pay-per-use: $1.00/1,000 transactions (use for prod if volume warrants it)
 //
 var visionResourceName = '${appName}-vision-${environmentName}'
+var visionSubdomainName = toLower(take(replace(visionResourceName, '-', ''), 24))
 
 resource computerVision 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: visionResourceName
@@ -32,6 +38,7 @@ resource computerVision 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   }
   properties: {
     publicNetworkAccess: 'Enabled'
+    customSubDomainName: visionSubdomainName
     // Disabling local (key) auth would require managed identity wiring; keep enabled
     // for the simple key-based flow the AzureVisionExtractionProvider uses.
     disableLocalAuth: false
