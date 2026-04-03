@@ -51,6 +51,22 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
+// ── Azure AI Computer Vision ───────────────────────────────────────────────────
+//
+// Provides the Image Analysis 4.0 endpoint and key consumed by
+// AzureVisionExtractionProvider in the material photo intake pipeline.
+// The storage queue used by AzureMaterialIntakeQueue is auto-created at
+// startup via CreateIfNotExists() — no separate queue resource needed here.
+
+module aiVision 'modules/ai-vision.bicep' = {
+  name: 'aiVision'
+  params: {
+    location: location
+    environmentName: environmentName
+    appName: appName
+  }
+}
+
 // ── PostgreSQL ────────────────────────────────────────────────────────────────
 
 module postgres 'modules/postgres.bicep' = {
@@ -88,6 +104,8 @@ module appService 'modules/appservice.bicep' = {
     stripeSecretKey: stripeSecretKey
     stripeWebhookSecret: stripeWebhookSecret
     webAppUrl: webUrl
+    aiVisionEndpoint: aiVision.outputs.endpoint
+    aiVisionKey: aiVision.outputs.key
   }
 }
 
