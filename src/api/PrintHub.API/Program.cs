@@ -38,7 +38,14 @@ try
     builder.Host.UseSerilog();
 
     // ─── Controllers + Swagger ────────────────────────────────────────────────
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            // Serialize all enums as strings (e.g. "NeedsReview" not 2) for
+            // readable API responses and correct frontend deserialization.
+            options.JsonSerializerOptions.Converters.Add(
+                new System.Text.Json.Serialization.JsonStringEnumConverter());
+        });
     builder.Services.AddFluentValidationAutoValidation();
     builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // Auto-register all validators in this assembly
     builder.Services.AddEndpointsApiExplorer();
