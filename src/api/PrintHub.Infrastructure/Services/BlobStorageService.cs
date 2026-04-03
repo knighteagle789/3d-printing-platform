@@ -25,12 +25,21 @@ public class BlobStorageService : IFileStorageService
 
         var serviceClient = new BlobServiceClient(connectionString);
         _containerClient = serviceClient.GetBlobContainerClient(containerName);
-        _containerClient.CreateIfNotExists(PublicAccessType.Blob);
+
+        // Azure storage account has allowBlobPublicAccess: false — always create with None.
+        // In development, we attempt to grant public access on the local Azurite container
+        // so the Next.js dev blob proxy can serve images directly. Wrapped in try/catch
+        // because Azurite versions vary in their support for SetAccessPolicy.
+        _containerClient.CreateIfNotExists(PublicAccessType.None);
 
         if (_isDevelopment)
         {
             _logger.LogInformation("Blob storage initialized in development mode. Container: {ContainerName}", containerName);
-            _containerClient.SetAccessPolicy(PublicAccessType.Blob);
+            try { _containerClient.SetAccessPolicy(PublicAccessType.Blob); }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not set public access policy on dev container — blob proxy may not serve images.");
+            }
         }
     }
 
@@ -39,9 +48,8 @@ public class BlobStorageService : IFileStorageService
         if (_isDevelopment)
         {
             _logger.LogInformation("Uploading blob (development mode): {BlobName}", blobName);
-            _containerClient.SetAccessPolicy(PublicAccessType.Blob);
         }
-        
+
         var blobClient = _containerClient.GetBlobClient(blobName);
 
         await blobClient.UploadAsync(fileStream, new BlobHttpHeaders
