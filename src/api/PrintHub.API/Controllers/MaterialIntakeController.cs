@@ -43,6 +43,25 @@ public class MaterialIntakeController : ControllerBase
         _logger = logger;
     }
 
+    // ── Feature Flag ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a 503 result when the intake feature is disabled via
+    /// <c>Intake:FeatureEnabled = false</c> in configuration.
+    /// Returns null when the feature is enabled (proceed normally).
+    /// </summary>
+    private ObjectResult? IntakeDisabled()
+    {
+        var enabled = _configuration.GetValue<bool?>("Intake:FeatureEnabled") ?? _configuration.GetValue<bool?>("Intake:Enabled") ?? true;
+        if (!enabled)
+        {
+            _logger.LogWarning("Material intake feature is disabled. Request rejected.");
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { code = "intake_disabled", message = "The material intake feature is currently disabled." });
+        }
+        return null;
+    }
+
     /// <summary>
     /// Upload a material photo and create a new intake record.
     /// Supports JPEG/PNG/WebP and HEIC/HEIF (converted server-side to normalized JPEG).
@@ -53,6 +72,7 @@ public class MaterialIntakeController : ControllerBase
     public async Task<ActionResult<MaterialIntakeResponse>> CreateIntake([FromForm] MaterialIntakeUploadForm form)
     {
         var correlationId = HttpContext.TraceIdentifier;
+        if (IntakeDisabled() is { } disabled) return disabled;
         Response.Headers.Append("X-Correlation-ID", correlationId);
 
         if (form.File is null || form.File.Length == 0)
@@ -145,6 +165,10 @@ public class MaterialIntakeController : ControllerBase
 
             var latest = await _materialIntakeService.GetIntakeAsync(response.Id) ?? response;
 
+            _logger.LogInformation(
+                "intake.created IntakeId={IntakeId} SourceType={SourceType} ActorId={ActorId}",
+                response.Id, sourceType, userId);
+
             return CreatedAtAction(
                 nameof(GetIntake),
                 new { version = "1.0", intakeId = response.Id },
@@ -209,6 +233,7 @@ public class MaterialIntakeController : ControllerBase
     [HttpPost("{intakeId:guid}/extract")]
     public async Task<IActionResult> TriggerExtraction(Guid intakeId)
     {
+        if (IntakeDisabled() is { } disabled) return disabled;
         var userId = User.GetUserId();
         await _materialIntakeService.TriggerExtractionAsync(intakeId, userId);
         return Accepted(new { intakeId, message = "Extraction queued." });
@@ -225,11 +250,17 @@ public class MaterialIntakeController : ControllerBase
         Guid intakeId,
         [FromBody] ApproveIntakeRequest request)
     {
+        if (IntakeDisabled() is { } disabled) return disabled;
         var correlationId = HttpContext.TraceIdentifier;
         Response.Headers.Append("X-Correlation-ID", correlationId);
 
         var userId = User.GetUserId();
         var response = await _materialIntakeService.ApproveIntakeAsync(intakeId, request, userId);
+
+        _logger.LogInformation(
+            "intake.approved IntakeId={IntakeId} Outcome={Outcome} MaterialId={MaterialId} ActorId={ActorId}",
+            intakeId, response.Outcome, response.MaterialId, userId);
+
         return Ok(response);
     }
 
@@ -242,11 +273,17 @@ public class MaterialIntakeController : ControllerBase
         Guid intakeId,
         [FromBody] RejectIntakeRequest request)
     {
+        if (IntakeDisabled() is { } disabled) return disabled;
         var correlationId = HttpContext.TraceIdentifier;
         Response.Headers.Append("X-Correlation-ID", correlationId);
 
         var userId = User.GetUserId();
         await _materialIntakeService.RejectIntakeAsync(intakeId, request, userId);
+
+        _logger.LogInformation(
+            "intake.rejected IntakeId={IntakeId} Reason={Reason} ActorId={ActorId}",
+            intakeId, request.Reason, userId);
+
         return NoContent();
     }
     private async Task<MemoryStream> NormalizeToJpegAsync(IFormFile file, string correlationId)
