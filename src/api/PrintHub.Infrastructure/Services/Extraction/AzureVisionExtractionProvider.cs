@@ -14,14 +14,16 @@ namespace PrintHub.Infrastructure.Services.Extraction;
 /// Uses a single synchronous POST to:
 ///   /computervision/imageanalysis:analyze?api-version=2024-02-01&amp;features=read,tags
 ///
-/// - 'read':    OCR text  → brand, material type, weight, batch/lot, label-printed color name
+/// - 'read':    OCR text  → brand, material type, weight, batch/lot, label-printed color name,
+///                          print settings (nozzle temp, bed temp, speed, fan — config-driven)
 /// - 'tags':    visual AI → physical filament color from the image itself (the key gap in v3.2)
-/// - 'caption': natural-language description → supplementary context
 ///
-/// Requires a Computer Vision resource in a region that supports Image Analysis 4.0
-/// (eastus, westus, westeurope, etc.) and the same Ocp-Apim-Subscription-Key auth header.
+/// Print settings patterns are read from Intake:Extractor:PrintSettings:Patterns at startup.
+/// New patterns can be added via Azure App Settings without redeployment using array notation:
+///   Intake__Extractor__PrintSettings__Patterns__4__Label = Drying
+///   Intake__Extractor__PrintSettings__Patterns__4__Pattern = (?:dry|drying)[:\s]+(\d+°C[^,\n]*)
 ///
-/// Config keys (unchanged): Intake:Extractor:AzureVision:Endpoint  /  :Key
+/// Config keys: Intake:Extractor:AzureVision:Endpoint  /  :Key
 /// </summary>
 public class AzureVisionExtractionProvider : IExtractionProvider
 {
@@ -121,11 +123,24 @@ public class AzureVisionExtractionProvider : IExtractionProvider
         "Grey", "Gray",
     ];
 
+    /// <summary>
+    /// Fallback print settings patterns used when none are configured.
+    /// Covers the most common label formats across popular filament brands.
+    /// </summary>
+    private static readonly IReadOnlyList<PrintSettingsPatternEntry> DefaultPrintSettingsPatterns =
+    [
+        new("Nozzle", @"(?:printing\s+temp(?:erature)?|nozzle|hotend)[:\s]+(\d+(?:\s*[–\-]\s*\d+)?\s*°C)"),
+        new("Bed",    @"(?:bed\s+temp(?:erature)?|build\s+plate)[:\s]+(\d+(?:\s*[–\-]\s*\d+)?\s*°C)"),
+        new("Speed",  @"(?:printing\s+speed|print\s+speed)[:\s]+(\d+(?:\s*[–\-]\s*\d+)?\s*mm/s)"),
+        new("Fan",    @"(?:fan|cooling)[:\s]+(\w+)"),
+    ];
+
     // ── Instance ──────────────────────────────────────────────────────────────
 
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AzureVisionExtractionProvider> _logger;
+    private readonly IReadOnlyList<PrintSettingsPatternEntry> _printSettingsPatterns;
 
     public AzureVisionExtractionProvider(
         HttpClient httpClient,
@@ -135,6 +150,22 @@ public class AzureVisionExtractionProvider : IExtractionProvider
         _httpClient    = httpClient;
         _configuration = configuration;
         _logger        = logger;
+
+        // Load print settings patterns from config, falling back to built-in defaults.
+        // Patterns can be extended in Azure App Settings without redeployment using
+        // array notation: Intake__Extractor__PrintSettings__Patterns__N__Label / __Pattern
+        var configured = _configuration
+            .GetSection("Intake:Extractor:PrintSettings:Patterns")
+            .Get<List<PrintSettingsPatternEntry>>();
+
+        _printSettingsPatterns = configured is { Count: > 0 }
+            ? configured
+            : DefaultPrintSettingsPatterns;
+
+        _logger.LogInformation(
+            "Print settings extraction loaded {Count} pattern(s): {Labels}",
+            _printSettingsPatterns.Count,
+            string.Join(", ", _printSettingsPatterns.Select(p => p.Label)));
     }
 
     // ── Main extraction ───────────────────────────────────────────────────────
@@ -224,9 +255,10 @@ public class AzureVisionExtractionProvider : IExtractionProvider
             var batchMatch = BatchRegex.Match(ocrText);
             var batchOrLot = batchMatch.Success ? batchMatch.Groups[1].Value : null;
 
+            // ── Print settings (config-driven patterns) ───────────────────────
+            var printSettings = ExtractPrintSettings(ocrText);
+
             // ── Color: label text wins over visual tag ─────────────────────────
-            // Many labels print the color name explicitly ("Galaxy Black", "Traffic Red").
-            // Fall back to Azure's visual tagging when no printed name is found.
             var colorFromLabel = ExtractColorFromOcrText(ocrText);
             var (colorFromTag, tagConf) = ExtractColorFromTags(root);
 
@@ -255,25 +287,25 @@ public class AzureVisionExtractionProvider : IExtractionProvider
 
             _logger.LogInformation(
                 "Azure AI Vision 4.0 extraction completed for intake {IntakeId} — " +
-                "Brand={Brand} Type={Type} Color={Color} Weight={Weight}",
-                request.IntakeId, brand, materialType, color, spoolWeight);
+                "Brand={Brand} Type={Type} Color={Color} Weight={Weight} PrintSettings={PrintSettings}",
+                request.IntakeId, brand, materialType, color, spoolWeight, printSettings);
 
             return new ExtractionResult(
-                Success:           true,
-                ErrorMessage:      null,
-                Brand:             brand,
-                MaterialType:      materialType,
-                Color:             color,
-                SpoolWeightGrams:  spoolWeight,
-                PrintSettingsHints: null,
-                BatchOrLot:        batchOrLot,
+                Success:            true,
+                ErrorMessage:       null,
+                Brand:              brand,
+                MaterialType:       materialType,
+                Color:              color,
+                SpoolWeightGrams:   spoolWeight,
+                PrintSettingsHints: printSettings,
+                BatchOrLot:         batchOrLot,
                 Confidence: new ExtractionConfidence(
                     Brand:              new FieldConfidence(brand        is not null ? 0.75 : 0.0, brand),
                     MaterialType:       new FieldConfidence(materialType is not null ? 0.80 : 0.0, materialType),
                     Color:              new FieldConfidence(colorConf,   colorSource),
                     SpoolWeightGrams:   new FieldConfidence(spoolWeight.HasValue ? 0.78 : 0.0, weightSource),
-                    PrintSettingsHints: new FieldConfidence(0.0, null),
-                    BatchOrLot:         new FieldConfidence(batchOrLot  is not null ? 0.65 : 0.0, batchOrLot)
+                    PrintSettingsHints: new FieldConfidence(printSettings is not null ? 0.75 : 0.0, printSettings),
+                    BatchOrLot:         new FieldConfidence(batchOrLot   is not null ? 0.65 : 0.0, batchOrLot)
                 )
             );
         }
@@ -286,11 +318,41 @@ public class AzureVisionExtractionProvider : IExtractionProvider
         }
     }
 
+    // ── Print settings extraction ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Applies each configured pattern against the OCR text and collects all matches
+    /// into a structured hints string e.g. "Nozzle: 230-240°C, Bed: 70-80°C, Fan: OFF".
+    /// All patterns are evaluated independently — the first match per pattern is used.
+    /// Invalid regex patterns from config are skipped with a warning rather than throwing.
+    /// </summary>
+    private string? ExtractPrintSettings(string ocrText)
+    {
+        var hints = new List<string>();
+
+        foreach (var entry in _printSettingsPatterns)
+        {
+            try
+            {
+                var match = Regex.Match(ocrText, entry.Pattern, RegexOptions.IgnoreCase);
+                if (match.Success && match.Groups.Count > 1)
+                    hints.Add($"{entry.Label}: {match.Groups[1].Value.Trim()}");
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex,
+                    "Invalid print settings regex pattern for label '{Label}' — skipping.",
+                    entry.Label);
+            }
+        }
+
+        return hints.Count > 0 ? string.Join(", ", hints) : null;
+    }
+
     // ── OCR helpers ───────────────────────────────────────────────────────────
 
     /// <summary>
     /// Pulls all text lines from the v4.0 'readResult.blocks[].lines[].text' structure.
-    /// (v3.2 used analyzeResult.readResults; v4.0 uses readResult.blocks — different shape.)
     /// </summary>
     private static string ExtractOcrText(JsonElement root)
     {
@@ -371,3 +433,12 @@ public class AzureVisionExtractionProvider : IExtractionProvider
     private static string Capitalize(string s) =>
         string.IsNullOrWhiteSpace(s) ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }
+
+/// <summary>
+/// A single label-to-regex mapping used for print settings extraction.
+/// Configured under Intake:Extractor:PrintSettings:Patterns in appsettings.json.
+/// Can be extended in Azure App Settings without redeployment:
+///   Intake__Extractor__PrintSettings__Patterns__N__Label = MyLabel
+///   Intake__Extractor__PrintSettings__Patterns__N__Pattern = my-regex-here
+/// </summary>
+public record PrintSettingsPatternEntry(string Label, string Pattern);
