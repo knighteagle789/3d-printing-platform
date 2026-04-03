@@ -15,17 +15,24 @@ public class MaterialIntakeService : IMaterialIntakeService
     private readonly IMaterialRepository _materialRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IIntakeExtractionQueue _intakeExtractionQueue;
+    private readonly IFileStorageService _fileStorageService;
+
+    // SAS URL TTL for photo display in the admin UI.
+    // Long enough that a user reviewing the queue won't get an expired URL mid-session.
+    private static readonly TimeSpan PhotoDisplayTtl = TimeSpan.FromHours(1);
 
     public MaterialIntakeService(
         IMaterialIntakeRepository intakeRepository,
         IMaterialRepository materialRepository,
         IUnitOfWork unitOfWork,
-        IIntakeExtractionQueue intakeExtractionQueue)
+        IIntakeExtractionQueue intakeExtractionQueue,
+        IFileStorageService fileStorageService)
     {
         _intakeRepository = intakeRepository;
         _materialRepository = materialRepository;
         _unitOfWork = unitOfWork;
         _intakeExtractionQueue = intakeExtractionQueue;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<MaterialIntakeResponse> CreateIntakeAsync(CreateIntakeRequest request, Guid uploadedByUserId)
@@ -64,19 +71,33 @@ public class MaterialIntakeService : IMaterialIntakeService
 
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToResponse(intake);
+        var photoUrl = await ResolveSasUrlAsync(intake.PhotoBlobName, intake.PhotoUrl);
+        return MapToResponse(intake, photoUrl);
     }
 
     public async Task<MaterialIntakeResponse?> GetIntakeAsync(Guid intakeId)
     {
         var intake = await _intakeRepository.GetByIdAsync(intakeId);
-        return intake is null ? null : MapToResponse(intake);
+        if (intake is null) return null;
+
+        var photoUrl = await ResolveSasUrlAsync(intake.PhotoBlobName, intake.PhotoUrl);
+        return MapToResponse(intake, photoUrl);
     }
 
     public async Task<PagedResponse<MaterialIntakeResponse>> GetIntakeQueueAsync(IntakeQueueFilter filter)
     {
         var pagedResult = await _intakeRepository.GetPagedAsync(filter);
-        return PagedResponse<MaterialIntakeResponse>.FromPagedResult(pagedResult, MapToResponse);
+
+        // Pre-generate SAS URLs for all items in the page so the mapper stays synchronous.
+        var sasUrls = new Dictionary<Guid, string>();
+        foreach (var intake in pagedResult.Items)
+        {
+            sasUrls[intake.Id] = await ResolveSasUrlAsync(intake.PhotoBlobName, intake.PhotoUrl);
+        }
+
+        return PagedResponse<MaterialIntakeResponse>.FromPagedResult(
+            pagedResult,
+            intake => MapToResponse(intake, sasUrls.GetValueOrDefault(intake.Id)));
     }
 
     public async Task<IReadOnlyList<IntakeEventResponse>> GetIntakeEventsAsync(Guid intakeId)
@@ -149,12 +170,12 @@ public class MaterialIntakeService : IMaterialIntakeService
         var now = DateTime.UtcNow;
 
         // Merge corrections on top of draft values
-        var effectiveBrand        = request.CorrectedBrand ?? intake.DraftBrand;
-        var effectiveColor        = request.CorrectedColor ?? intake.DraftColor;
-        var effectiveTypeStr      = request.CorrectedMaterialType ?? intake.DraftMaterialType;
-        var effectiveSpoolWeight  = request.CorrectedSpoolWeightGrams ?? intake.DraftSpoolWeightGrams;
+        var effectiveBrand         = request.CorrectedBrand ?? intake.DraftBrand;
+        var effectiveColor         = request.CorrectedColor ?? intake.DraftColor;
+        var effectiveTypeStr       = request.CorrectedMaterialType ?? intake.DraftMaterialType;
+        var effectiveSpoolWeight   = request.CorrectedSpoolWeightGrams ?? intake.DraftSpoolWeightGrams;
         var effectivePrintSettings = request.CorrectedPrintSettingsHints ?? intake.DraftPrintSettingsHints;
-        var effectiveBatchOrLot   = request.CorrectedBatchOrLot ?? intake.DraftBatchOrLot;
+        var effectiveBatchOrLot    = request.CorrectedBatchOrLot ?? intake.DraftBatchOrLot;
 
         if (string.IsNullOrWhiteSpace(effectiveColor))
             throw new BusinessRuleException("Material color is required for approval but was not extracted or provided.");
@@ -204,26 +225,26 @@ public class MaterialIntakeService : IMaterialIntakeService
         }
 
         // Stamp the intake record
-        intake.Status           = IntakeStatus.Approved;
+        intake.Status             = IntakeStatus.Approved;
         intake.ApprovedMaterialId = approvedMaterialId;
-        intake.ApprovalOutcome  = outcome;
-        intake.ActionedByUserId = actionedByUserId;
-        intake.ActionedAtUtc    = now;
-        intake.UpdatedAtUtc     = now;
+        intake.ApprovalOutcome    = outcome;
+        intake.ActionedByUserId   = actionedByUserId;
+        intake.ActionedAtUtc      = now;
+        intake.UpdatedAtUtc       = now;
         intake.ReviewerCorrections = JsonSerializer.Serialize(request);
 
         await _intakeRepository.AddEventAsync(new IntakeEvent
         {
-            Id           = Guid.NewGuid(),
-            IntakeId     = intake.Id,
-            EventType    = "intake.approved",
-            ToStatus     = IntakeStatus.Approved,
-            ActorUserId  = actionedByUserId,
-            Details      = JsonSerializer.Serialize(new
+            Id            = Guid.NewGuid(),
+            IntakeId      = intake.Id,
+            EventType     = "intake.approved",
+            ToStatus      = IntakeStatus.Approved,
+            ActorUserId   = actionedByUserId,
+            Details       = JsonSerializer.Serialize(new
             {
-                outcome          = outcome.ToString(),
+                outcome = outcome.ToString(),
                 approvedMaterialId,
-                pricePerGram     = request.PricePerGram,
+                pricePerGram = request.PricePerGram,
             }),
             OccurredAtUtc = now,
         });
@@ -250,25 +271,49 @@ public class MaterialIntakeService : IMaterialIntakeService
 
         await _intakeRepository.AddEventAsync(new IntakeEvent
         {
-            Id           = Guid.NewGuid(),
-            IntakeId     = intake.Id,
-            EventType    = "intake.rejected",
-            ToStatus     = IntakeStatus.Rejected,
-            ActorUserId  = actionedByUserId,
-            Details      = JsonSerializer.Serialize(new { reason = request.Reason }),
+            Id            = Guid.NewGuid(),
+            IntakeId      = intake.Id,
+            EventType     = "intake.rejected",
+            ToStatus      = IntakeStatus.Rejected,
+            ActorUserId   = actionedByUserId,
+            Details       = JsonSerializer.Serialize(new { reason = request.Reason }),
             OccurredAtUtc = now,
         });
 
         await _unitOfWork.SaveChangesAsync();
     }
 
-    private static MaterialIntakeResponse MapToResponse(MaterialIntake intake)
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a SAS URL for the blob if a blob name is available, otherwise
+    /// falls back to the stored photo URL. The SAS URL is publicly readable for
+    /// <see cref="PhotoDisplayTtl"/>, allowing the browser to fetch the image
+    /// directly without going through a proxy in production.
+    /// </summary>
+    private async Task<string> ResolveSasUrlAsync(string? blobName, string fallbackUrl)
+    {
+        if (string.IsNullOrEmpty(blobName))
+            return fallbackUrl;
+
+        try
+        {
+            return await _fileStorageService.GenerateSasUrlAsync(blobName, PhotoDisplayTtl);
+        }
+        catch (Exception)
+        {
+            // SAS generation failed (e.g. missing key credential) — fall back to stored URL.
+            return fallbackUrl;
+        }
+    }
+
+    private static MaterialIntakeResponse MapToResponse(MaterialIntake intake, string? photoUrl = null)
     {
         return new MaterialIntakeResponse(
             intake.Id,
             intake.Status,
             intake.SourceType,
-            intake.PhotoUrl,
+            photoUrl ?? intake.PhotoUrl,
             intake.UploadNotes,
             intake.ExtractionAttemptCount,
             intake.LastExtractionError,
