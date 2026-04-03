@@ -1,3 +1,5 @@
+using PrintHub.Core.Common;
+using PrintHub.Core.DTOs.Intake;
 using PrintHub.Core.Entities;
 
 namespace PrintHub.Core.Interfaces
@@ -20,5 +22,10 @@ namespace PrintHub.Core.Interfaces
         Task<IReadOnlyList<MaterialIntake>> GetRejectedOlderThanAsync(DateTime cutoffUtc);
 
         Task AddEventAsync(IntakeEvent intakeEvent);
+
+        /// <summary>
+        /// Returns a filtered, paginated page of intake records ordered by CreatedAtUtc descending.
+        /// </summary>
+        Task<PagedResult<MaterialIntake>> GetPagedAsync(IntakeQueueFilter filter);
     }
 }

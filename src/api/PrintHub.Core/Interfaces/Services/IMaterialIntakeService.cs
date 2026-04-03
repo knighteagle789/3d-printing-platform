@@ -1,3 +1,4 @@
+using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Intake;
 using PrintHub.Core.Entities;
 
@@ -17,7 +18,7 @@ namespace PrintHub.Core.Interfaces.Services
 
         Task<MaterialIntakeResponse?> GetIntakeAsync(Guid intakeId);
 
-        Task<IReadOnlyList<MaterialIntakeResponse>> GetIntakeQueueAsync(IntakeQueueFilter filter);
+        Task<PagedResponse<MaterialIntakeResponse>> GetIntakeQueueAsync(IntakeQueueFilter filter);
 
         Task<IReadOnlyList<IntakeEventResponse>> GetIntakeEventsAsync(Guid intakeId);
 
