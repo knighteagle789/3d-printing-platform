@@ -407,7 +407,7 @@ export default function IntakeDetailPage() {
       setCorrBatchOrLot(intake.draftBatchOrLot               ?? '');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [intake?.id]);
+  }, [intake?.id, intake?.extractedAtUtc]);
 
   async function handleRetrigger() {
     setRetriggering(true);
