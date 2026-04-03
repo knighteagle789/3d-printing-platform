@@ -90,6 +90,12 @@ export interface IntakePagedResponse {
   hasNextPage: boolean;
 }
 
+export interface UploadIntakeRequest {
+  file: File;
+  sourceType?: IntakeSourceType;
+  uploadNotes?: string;
+}
+
 export interface ApproveIntakeRequest {
   correctedBrand?: string | null;
   correctedMaterialType?: string | null;
@@ -129,6 +135,16 @@ export interface ConfidenceEntry {
 // ── API client ────────────────────────────────────────────────────────────────
 
 export const intakeApi = {
+  upload: ({ file, sourceType, uploadNotes }: UploadIntakeRequest) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (sourceType)   formData.append('sourceType',   sourceType);
+    if (uploadNotes)  formData.append('uploadNotes',  uploadNotes);
+    return apiClient.post<MaterialIntakeResponse>('/material-intake', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
   getQueue: async (params?: IntakeQueueParams) => {
     const r = await apiClient.get<IntakePagedResponse>('/material-intake', { params });
     r.data.items = r.data.items.map(normalizeIntake);

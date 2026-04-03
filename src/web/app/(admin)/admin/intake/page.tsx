@@ -8,7 +8,7 @@ import { intakeApi, type IntakeStatus, type MaterialIntakeResponse } from '@/lib
 import { toProxiedUrl, formatStatus } from '@/lib/utils';
 import {
   Search, Camera, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight,
-  ClipboardCheck, RotateCcw,
+  ClipboardCheck, RotateCcw, Plus,
 } from 'lucide-react';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -131,8 +131,17 @@ export default function AdminIntakePage() {
           </p>
         </div>
 
-        {/* Search */}
-        <div className="relative shrink-0 w-60">
+        {/* Actions */}
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => router.push('/admin/intake/new')}
+            className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.15em] px-4 h-8 bg-accent text-white border border-accent hover:bg-accent/90 transition-colors`}
+          >
+            <Plus className="h-3 w-3" /> Upload Photo
+          </button>
+
+          {/* Search */}
+          <div className="relative w-60">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-text-muted pointer-events-none" />
           <input
             type="text"
@@ -141,6 +150,7 @@ export default function AdminIntakePage() {
             placeholder="Brand, type, color, notes…"
             className={`${mono.className} w-full h-8 bg-surface-alt border border-border pl-8 pr-3 text-[10px] uppercase tracking-[0.1em] text-text-secondary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`}
           />
+          </div>
         </div>
       </div>
 
