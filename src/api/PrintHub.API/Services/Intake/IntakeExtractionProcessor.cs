@@ -107,7 +107,9 @@ public class IntakeExtractionProcessor
             intake.DraftMaterialType         = result.MaterialType;
             intake.DraftColor                = result.Color;
             intake.DraftSpoolWeightGrams     = result.SpoolWeightGrams;
-            intake.DraftPrintSettingsHints   = result.PrintSettingsHints;
+            intake.DraftPrintSettingsHints   = result.PrintSettingsHints is not null
+                ? JsonSerializer.Serialize(result.PrintSettingsHints)
+                : null;
             intake.DraftBatchOrLot           = result.BatchOrLot;
             intake.ConfidenceMap             = JsonSerializer.Serialize(
                 new Dictionary<string, object?>
