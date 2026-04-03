@@ -13,33 +13,56 @@ public partial class ContentService : IContentService
 {
     private readonly IContentRepository _contentRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<ContentService> _logger;
+
+    private static readonly TimeSpan PortfolioSasTtl = TimeSpan.FromHours(1);
 
     public ContentService(
         IContentRepository contentRepo,
         IUnitOfWork unitOfWork,
+        IFileStorageService fileStorageService,
         ILogger<ContentService> logger)
     {
         _contentRepo = contentRepo;
         _unitOfWork = unitOfWork;
+        _fileStorageService = fileStorageService;
         _logger = logger;
     }
 
-    // --- Portfolio ---
+    // ── Portfolio ─────────────────────────────────────────────────────────────
 
     public async Task<IReadOnlyList<PortfolioItemResponse>> GetFeaturedPortfolioItemsAsync(
         int count = 6)
     {
         var items = await _contentRepo.GetFeaturedPortfolioItemsAsync(count);
-        return items.Select(PortfolioItemResponse.FromEntity).ToList();
+        var responses = new List<PortfolioItemResponse>();
+        foreach (var item in items)
+            responses.Add(await ToPortfolioResponseAsync(item));
+        return responses;
     }
 
     public async Task<PagedResponse<PortfolioItemResponse>> GetPortfolioItemsAsync(
         int page = 1, int pageSize = 12)
     {
-        var items = await _contentRepo.GetPortfolioItemsAsync(page, pageSize);
+        var pagedResult = await _contentRepo.GetPortfolioItemsAsync(page, pageSize);
+
+        // Pre-resolve SAS URLs for all items before sync mapping
+        var sasCache = new Dictionary<Guid, (string? modelUrl, string? timelapseUrl)>();
+        foreach (var item in pagedResult.Items)
+            sasCache[item.Id] = await ResolvePortfolioSasUrlsAsync(item);
+
         return PagedResponse<PortfolioItemResponse>.FromPagedResult(
-            items, PortfolioItemResponse.FromEntity);
+            pagedResult,
+            item =>
+            {
+                var (modelUrl, timelapseUrl) = sasCache.GetValueOrDefault(item.Id);
+                return PortfolioItemResponse.FromEntity(item) with
+                {
+                    ModelFileUrl = modelUrl,
+                    TimelapseVideoUrl = timelapseUrl,
+                };
+            });
     }
 
     public async Task<IReadOnlyList<PortfolioItemResponse>> GetPortfolioByTagAsync(string tag)
@@ -48,7 +71,10 @@ public partial class ContentService : IContentService
             return new List<PortfolioItemResponse>();
 
         var items = await _contentRepo.GetPortfolioByTagAsync(tag.Trim().ToLower());
-        return items.Select(PortfolioItemResponse.FromEntity).ToList();
+        var responses = new List<PortfolioItemResponse>();
+        foreach (var item in items)
+            responses.Add(await ToPortfolioResponseAsync(item));
+        return responses;
     }
 
     public async Task<PortfolioItemResponse> GetPortfolioItemByIdAsync(Guid id)
@@ -56,10 +82,10 @@ public partial class ContentService : IContentService
         var item = await _contentRepo.GetByIdAsync(id);
         if (item == null)
             throw new NotFoundException("Portfolio item", id);
-        return PortfolioItemResponse.FromEntity(item);
+        return await ToPortfolioResponseAsync(item);
     }
 
-    // --- Blog ---
+    // ── Blog ──────────────────────────────────────────────────────────────────
 
     public async Task<PagedResponse<BlogPostSummaryResponse>> GetPublishedBlogPostsAsync(
         int page = 1, int pageSize = 10)
@@ -172,39 +198,14 @@ public partial class ContentService : IContentService
         _logger.LogInformation("Blog post deleted: {Id}", id);
     }
 
-    // --- Tags ---
+    // ── Tags ──────────────────────────────────────────────────────────────────
 
     public async Task<IReadOnlyList<string>> GetAllTagsAsync()
     {
         return await _contentRepo.GetAllTagsAsync();
     }
 
-    // --- Private helpers ---
-
-    private static string GenerateSlug(string title)
-    {
-        var slug = title.ToLower().Trim();
-
-        // Replace spaces and special chars with hyphens
-        slug = SlugInvalidChars().Replace(slug, "-");
-
-        // Remove consecutive hyphens
-        slug = SlugConsecutiveHyphens().Replace(slug, "-");
-
-        // Trim hyphens from ends
-        slug = slug.Trim('-');
-
-        // Append a short unique suffix to prevent duplicates
-        var suffix = Guid.NewGuid().ToString("N")[..6];
-
-        return $"{slug}-{suffix}";
-    }
-
-    [GeneratedRegex(@"[^a-z0-9\-]")]
-    private static partial Regex SlugInvalidChars();
-
-    [GeneratedRegex(@"-{2,}")]
-    private static partial Regex SlugConsecutiveHyphens();
+    // ── Portfolio CRUD ────────────────────────────────────────────────────────
 
     public async Task<PortfolioItemResponse> CreatePortfolioItemAsync(CreatePortfolioItemRequest request)
     {
@@ -218,7 +219,7 @@ public partial class ContentService : IContentService
             throw new BusinessRuleException("Failed to retrieve portfolio item after creation.");
 
         _logger.LogInformation("Created portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
-        return PortfolioItemResponse.FromEntity(saved);
+        return await ToPortfolioResponseAsync(saved);
     }
 
     public async Task<PortfolioItemResponse> UpdatePortfolioItemAsync(Guid id, UpdatePortfolioItemRequest request)
@@ -233,7 +234,7 @@ public partial class ContentService : IContentService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Updated portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
-        return PortfolioItemResponse.FromEntity(entity);
+        return await ToPortfolioResponseAsync(entity);
     }
 
     public async Task DeletePortfolioItemAsync(Guid id)
@@ -250,4 +251,48 @@ public partial class ContentService : IContentService
 
         _logger.LogInformation("Unpublished portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Maps a portfolio entity to a response, replacing any blob storage URLs for
+    /// ModelFileUrl and TimelapseVideoUrl with short-lived SAS URLs.
+    /// External URLs (CDN, user-entered) pass through unchanged.
+    /// </summary>
+    private async Task<PortfolioItemResponse> ToPortfolioResponseAsync(PortfolioItem item)
+    {
+        var (modelUrl, timelapseUrl) = await ResolvePortfolioSasUrlsAsync(item);
+        return PortfolioItemResponse.FromEntity(item) with
+        {
+            ModelFileUrl = modelUrl,
+            TimelapseVideoUrl = timelapseUrl,
+        };
+    }
+
+    private async Task<(string? ModelUrl, string? TimelapseUrl)> ResolvePortfolioSasUrlsAsync(PortfolioItem item)
+    {
+        var modelUrl     = item.ModelFileUrl is not null
+            ? await _fileStorageService.GenerateSasFromUrlAsync(item.ModelFileUrl, PortfolioSasTtl)
+            : null;
+        var timelapseUrl = item.TimelapseVideoUrl is not null
+            ? await _fileStorageService.GenerateSasFromUrlAsync(item.TimelapseVideoUrl, PortfolioSasTtl)
+            : null;
+        return (modelUrl, timelapseUrl);
+    }
+
+    private static string GenerateSlug(string title)
+    {
+        var slug = title.ToLower().Trim();
+        slug = SlugInvalidChars().Replace(slug, "-");
+        slug = SlugConsecutiveHyphens().Replace(slug, "-");
+        slug = slug.Trim('-');
+        var suffix = Guid.NewGuid().ToString("N")[..6];
+        return $"{slug}-{suffix}";
+    }
+
+    [GeneratedRegex(@"[^a-z0-9\-]")]
+    private static partial Regex SlugInvalidChars();
+
+    [GeneratedRegex(@"-{2,}")]
+    private static partial Regex SlugConsecutiveHyphens();
 }

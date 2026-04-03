@@ -1,6 +1,7 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Sas;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PrintHub.Core.Interfaces.Services;
@@ -14,7 +15,7 @@ public class BlobStorageService : IFileStorageService
     private readonly bool _isDevelopment;
 
     public BlobStorageService(
-        IConfiguration configuration, 
+        IConfiguration configuration,
         ILogger<BlobStorageService> logger)
     {
         _logger = logger;
@@ -62,6 +63,34 @@ public class BlobStorageService : IFileStorageService
         return blobClient.Uri.ToString();
     }
 
+    /// <inheritdoc/>
+    public Task<string> GenerateSasUrlAsync(string blobName, TimeSpan ttl)
+    {
+        var blobClient = _containerClient.GetBlobClient(blobName);
+        var sasUri = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.UtcNow.Add(ttl));
+        return Task.FromResult(sasUri.ToString());
+    }
+
+    /// <inheritdoc/>
+    public Task<string> GenerateSasFromUrlAsync(string url, TimeSpan ttl)
+    {
+        if (string.IsNullOrEmpty(url))
+            return Task.FromResult(url);
+
+        var blobName = TryExtractBlobName(url);
+        if (blobName is null)
+            return Task.FromResult(url); // External URL — pass through unchanged
+
+        try
+        {
+            return GenerateSasUrlAsync(blobName, ttl);
+        }
+        catch
+        {
+            return Task.FromResult(url); // SAS generation failed — fall back to original URL
+        }
+    }
+
     public async Task DeleteFileAsync(string blobName)
     {
         var blobClient = _containerClient.GetBlobClient(blobName);
@@ -103,5 +132,49 @@ public class BlobStorageService : IFileStorageService
             "Committed {BlockCount} blocks for blob {BlobName}", blockIds.Count, blobName);
 
         return blobClient.Uri.ToString();
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts the blob name (path within the container) from a full blob URL.
+    /// Returns null if the URL is not a recognisable Azure or Azurite blob URL.
+    ///
+    /// Azure:   https://&lt;account&gt;.blob.core.windows.net/&lt;container&gt;/&lt;blobname&gt;
+    /// Azurite: http://127.0.0.1:10000/devstoreaccount1/&lt;container&gt;/&lt;blobname&gt;
+    /// </summary>
+    private static string? TryExtractBlobName(string url)
+    {
+        try
+        {
+            var uri = new Uri(url);
+            var isAzure   = uri.Host.EndsWith(".blob.core.windows.net", StringComparison.OrdinalIgnoreCase);
+            var isAzurite = uri.Host.Equals("127.0.0.1", StringComparison.Ordinal) && uri.Port == 10000;
+
+            if (!isAzure && !isAzurite)
+                return null;
+
+            // Split path into segments, ignoring leading slash
+            var segments = uri.AbsolutePath.TrimStart('/').Split('/');
+
+            if (isAzurite)
+            {
+                // Path: /devstoreaccount1/<container>/<blob...>
+                // Skip account name and container name → segments[2..]
+                if (segments.Length < 3) return null;
+                return string.Join("/", segments.Skip(2));
+            }
+            else
+            {
+                // Path: /<container>/<blob...>
+                // Skip container name → segments[1..]
+                if (segments.Length < 2) return null;
+                return string.Join("/", segments.Skip(1));
+            }
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

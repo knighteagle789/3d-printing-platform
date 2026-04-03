@@ -17,6 +17,8 @@ public class FileService : IFileService
     private readonly IRepository<FileAnalysis> _analysisRepo;
     private readonly IContentRepository _contentRepo;
 
+    private static readonly TimeSpan FileSasTtl = TimeSpan.FromHours(1);
+
     public FileService(
         IFileRepository fileRepo,
         IUnitOfWork unitOfWork,
@@ -106,7 +108,7 @@ public class FileService : IFileService
             }
         }
 
-        return FileResponse.FromEntity(file);
+        return await ToSasResponseAsync(file);
     }
 
     public async Task<FileResponse> CompleteChunkedUploadAsync(Guid userId, FileUploadRequest request)
@@ -188,20 +190,28 @@ public class FileService : IFileService
             }
         }
 
-        return FileResponse.FromEntity(file);
+        return await ToSasResponseAsync(file);
     }
 
     public async Task<FileResponse?> GetFileByIdAsync(Guid fileId)
     {
         var file = await _fileRepo.GetFileWithAnalysisAsync(fileId);
-        return file != null ? FileResponse.FromEntity(file) : null;
+        return file != null ? await ToSasResponseAsync(file) : null;
     }
 
     public async Task<PagedResponse<FileResponse>> GetUserFilesAsync(
         Guid userId, int page = 1, int pageSize = 20)
     {
         var files = await _fileRepo.GetUserFilesAsync(userId, page, pageSize);
-        return PagedResponse<FileResponse>.FromPagedResult(files, FileResponse.FromEntity);
+
+        // Pre-generate SAS URLs for all items so the sync mapper can use them.
+        var sasUrls = new Dictionary<Guid, string>();
+        foreach (var f in files.Items)
+            sasUrls[f.Id] = await _storageService.GenerateSasUrlAsync(f.BlobName, FileSasTtl);
+
+        return PagedResponse<FileResponse>.FromPagedResult(
+            files,
+            f => FileResponse.FromEntity(f) with { StorageUrl = sasUrls.GetValueOrDefault(f.Id, f.StorageUrl) });
     }
 
     public async Task<FileResponse> ClonePortfolioFileAsync(Guid portfolioItemId, Guid userId)
@@ -233,8 +243,9 @@ public class FileService : IFileService
         await _fileRepo.AddAsync(file);
         await _unitOfWork.SaveChangesAsync();
 
-        return FileResponse.FromEntity(file);
+        return await ToSasResponseAsync(file);
     }
+
     public async Task DeleteFileAsync(Guid fileId, Guid userId)
     {
         var file = await _fileRepo.GetByIdAsync(fileId);
@@ -253,5 +264,17 @@ public class FileService : IFileService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("File soft-deleted: {FileId} by user {UserId}", fileId, userId);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a FileResponse with StorageUrl replaced by a short-lived SAS URL
+    /// so the client can download the blob directly without a proxy.
+    /// </summary>
+    private async Task<FileResponse> ToSasResponseAsync(UploadedFile file)
+    {
+        var sasUrl = await _storageService.GenerateSasUrlAsync(file.BlobName, FileSasTtl);
+        return FileResponse.FromEntity(file) with { StorageUrl = sasUrl };
     }
 }

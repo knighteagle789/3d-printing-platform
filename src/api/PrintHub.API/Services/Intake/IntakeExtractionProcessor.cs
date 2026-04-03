@@ -35,21 +35,28 @@ public class IntakeExtractionProcessor
     private readonly IMaterialIntakeRepository _intakeRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExtractionProvider _provider;
+    private readonly IFileStorageService _fileStorageService;
     private readonly MaterialIntakeQueueOptions _options;
     private readonly ILogger<IntakeExtractionProcessor> _logger;
+
+    // Short TTL: the SAS URL only needs to live long enough for Azure Vision
+    // to fetch the image during a single extraction call.
+    private static readonly TimeSpan ExtractionSasTtl = TimeSpan.FromMinutes(15);
 
     public IntakeExtractionProcessor(
         IMaterialIntakeRepository intakeRepository,
         IUnitOfWork unitOfWork,
         IExtractionProvider provider,
+        IFileStorageService fileStorageService,
         IOptions<MaterialIntakeQueueOptions> options,
         ILogger<IntakeExtractionProcessor> logger)
     {
-        _intakeRepository = intakeRepository;
-        _unitOfWork       = unitOfWork;
-        _provider         = provider;
-        _options          = options.Value;
-        _logger           = logger;
+        _intakeRepository   = intakeRepository;
+        _unitOfWork         = unitOfWork;
+        _provider           = provider;
+        _fileStorageService = fileStorageService;
+        _options            = options.Value;
+        _logger             = logger;
     }
 
     /// <summary>
@@ -80,8 +87,15 @@ public class IntakeExtractionProcessor
         {
             intake.ExtractionAttemptCount += 1;
 
+            // Generate a short-lived SAS URL so Azure AI Vision can fetch the blob.
+            // The stored PhotoUrl is a private Azure Blob URL and is not publicly
+            // accessible — passing it directly to the Vision API returns 409.
+            var photoUrl = !string.IsNullOrEmpty(intake.PhotoBlobName)
+                ? await _fileStorageService.GenerateSasUrlAsync(intake.PhotoBlobName, ExtractionSasTtl)
+                : intake.PhotoUrl;
+
             var result = await _provider.ExtractAsync(
-                new ExtractionRequest(intake.Id, intake.PhotoUrl), cancellationToken);
+                new ExtractionRequest(intake.Id, photoUrl), cancellationToken);
 
             intake.UpdatedAtUtc = DateTime.UtcNow;
 

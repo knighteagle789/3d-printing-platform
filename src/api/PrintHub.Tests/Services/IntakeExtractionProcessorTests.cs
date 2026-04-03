@@ -21,6 +21,7 @@ public class IntakeExtractionProcessorTests
     private readonly Mock<IMaterialIntakeRepository> _repoMock       = new();
     private readonly Mock<IUnitOfWork>               _uowMock        = new();
     private readonly Mock<IExtractionProvider>       _providerMock   = new();
+    private readonly Mock<IFileStorageService>        _fileStorageMock = new();
 
     private IntakeExtractionProcessor CreateSut(int maxRetries = 3)
     {
@@ -37,10 +38,15 @@ public class IntakeExtractionProcessorTests
             VisibilityTimeoutSeconds = 30,
         });
 
+        _fileStorageMock
+            .Setup(s => s.GenerateSasUrlAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+            .ReturnsAsync((string blobName, TimeSpan _) => $"https://storage.example.com/{blobName}?sas=test");
+
         return new IntakeExtractionProcessor(
             _repoMock.Object,
             _uowMock.Object,
             _providerMock.Object,
+            _fileStorageMock.Object,
             options,
             NullLogger<IntakeExtractionProcessor>.Instance);
     }
