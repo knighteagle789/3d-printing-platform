@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IMaterialIntakeService, MaterialIntakeService>();
         services.AddSingleton<IIntakeExtractionQueue, AzureMaterialIntakeQueue>();
+        services.AddScoped<IntakeExtractionProcessor>();
 
         return services;
     }

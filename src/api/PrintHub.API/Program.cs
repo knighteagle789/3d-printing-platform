@@ -165,6 +165,9 @@ try
 
     // ─── Database Migration + Seeding ─────────────────────────────────────────
     // Must run BEFORE middleware pipeline so DB is ready for requests
+    // Skipped in the "Testing" environment (integration tests use in-memory DB).
+    if (!app.Environment.IsEnvironment("Testing"))
+    {
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
@@ -195,6 +198,7 @@ try
             Log.Error(ex, "An error occurred while migrating or seeding the database.");
             throw;
         }
+    }
     }
 
     // ─── Middleware Pipeline ──────────────────────────────────────────────────
