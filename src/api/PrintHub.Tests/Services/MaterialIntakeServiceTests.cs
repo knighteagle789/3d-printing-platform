@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using PrintHub.API.Services;
 using PrintHub.Core.Common;
+using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Intake;
 using PrintHub.Core.Entities;
 using PrintHub.Core.Exceptions;
@@ -278,5 +279,74 @@ public class MaterialIntakeServiceTests
         var act = async () => await _sut.RejectIntakeAsync(
             Guid.NewGuid(), new RejectIntakeRequest("Some reason."), Guid.NewGuid());
         await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    // ── GetIntakeQueueAsync ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetIntakeQueue_NoFilters_ReturnsAllItems()
+    {
+        // Arrange
+        var intakes = new List<MaterialIntake>
+        {
+            TestDataBuilder.CreateMaterialIntake(status: IntakeStatus.Uploaded),
+            TestDataBuilder.CreateMaterialIntake(status: IntakeStatus.NeedsReview),
+            TestDataBuilder.CreateMaterialIntake(status: IntakeStatus.Approved),
+        };
+        var filter = new IntakeQueueFilter();
+        var pagedResult = new PagedResult<MaterialIntake>(intakes, intakes.Count, 1, 25);
+
+        _intakeRepoMock.Setup(r => r.GetPagedAsync(filter)).ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _sut.GetIntakeQueueAsync(filter);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(3);
+        result.TotalCount.Should().Be(3);
+        result.Page.Should().Be(1);
+        result.PageSize.Should().Be(25);
+        _intakeRepoMock.Verify(r => r.GetPagedAsync(filter), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetIntakeQueue_StatusFilter_ForwardsFilterToRepository()
+    {
+        // Arrange
+        var intake = TestDataBuilder.CreateMaterialIntake(status: IntakeStatus.NeedsReview);
+        var filter = new IntakeQueueFilter(Status: IntakeStatus.NeedsReview);
+        var pagedResult = new PagedResult<MaterialIntake>([intake], 1, 1, 25);
+
+        _intakeRepoMock.Setup(r => r.GetPagedAsync(filter)).ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _sut.GetIntakeQueueAsync(filter);
+
+        // Assert
+        result.Items.Should().HaveCount(1);
+        result.Items[0].Status.Should().Be(IntakeStatus.NeedsReview);
+        _intakeRepoMock.Verify(r => r.GetPagedAsync(It.Is<IntakeQueueFilter>(f =>
+            f.Status == IntakeStatus.NeedsReview)), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetIntakeQueue_EmptyResult_ReturnsPagesResponseWithZeroItems()
+    {
+        // Arrange
+        var filter = new IntakeQueueFilter(SearchText: "nonexistent-brand-xyz");
+        var pagedResult = new PagedResult<MaterialIntake>([], 0, 1, 25);
+
+        _intakeRepoMock.Setup(r => r.GetPagedAsync(filter)).ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _sut.GetIntakeQueueAsync(filter);
+
+        // Assert
+        result.Items.Should().BeEmpty();
+        result.TotalCount.Should().Be(0);
+        result.TotalPages.Should().Be(0);
+        result.HasNextPage.Should().BeFalse();
+        result.HasPreviousPage.Should().BeFalse();
     }
 }

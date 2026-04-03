@@ -1,7 +1,8 @@
 using System.Text.Json;
+using PrintHub.Core.Common;
+using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Intake;
 using PrintHub.Core.Entities;
-using PrintHub.Core.Common;
 using PrintHub.Core.Exceptions;
 using PrintHub.Core.Interfaces;
 using PrintHub.Core.Interfaces.Services;
@@ -72,9 +73,10 @@ public class MaterialIntakeService : IMaterialIntakeService
         return intake is null ? null : MapToResponse(intake);
     }
 
-    public Task<IReadOnlyList<MaterialIntakeResponse>> GetIntakeQueueAsync(IntakeQueueFilter filter)
+    public async Task<PagedResponse<MaterialIntakeResponse>> GetIntakeQueueAsync(IntakeQueueFilter filter)
     {
-        throw new NotImplementedException("Queue filtering is implemented in issue #16.");
+        var pagedResult = await _intakeRepository.GetPagedAsync(filter);
+        return PagedResponse<MaterialIntakeResponse>.FromPagedResult(pagedResult, MapToResponse);
     }
 
     public async Task<IReadOnlyList<IntakeEventResponse>> GetIntakeEventsAsync(Guid intakeId)

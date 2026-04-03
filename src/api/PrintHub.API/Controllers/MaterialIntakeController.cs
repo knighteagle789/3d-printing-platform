@@ -3,6 +3,7 @@ using ImageMagick;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrintHub.API.Extensions;
+using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Intake;
 using PrintHub.Core.Entities;
 using PrintHub.Core.Interfaces.Services;
@@ -175,6 +176,18 @@ public class MaterialIntakeController : ControllerBase
                 correlationId
             });
         }
+    }
+
+    /// <summary>
+    /// Returns a filtered, paginated list of intake records.
+    /// Supports filtering by status, uploader, date range, and free-text search.
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<MaterialIntakeResponse>>> GetIntakeQueue(
+        [FromQuery] IntakeQueueFilter filter)
+    {
+        var result = await _materialIntakeService.GetIntakeQueueAsync(filter);
+        return Ok(result);
     }
 
     [HttpGet("{intakeId:guid}")]
