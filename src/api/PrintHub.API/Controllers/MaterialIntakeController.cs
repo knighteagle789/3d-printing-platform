@@ -50,6 +50,12 @@ public class MaterialIntakeController : ControllerBase
     /// <c>Intake:FeatureEnabled = false</c> in configuration.
     /// Returns null when the feature is enabled (proceed normally).
     /// </summary>
+    /// <summary>Strips newlines and control characters to prevent log injection (CWE-117).</summary>
+    private static string SanitizeLogValue(string? value)
+        => value is null ? string.Empty
+            : value.Replace("\r", "\\r", StringComparison.Ordinal)
+                   .Replace("\n", "\\n", StringComparison.Ordinal);
+
     private ObjectResult? IntakeDisabled()
     {
         var enabled = _configuration.GetValue<bool?>("Intake:FeatureEnabled") ?? _configuration.GetValue<bool?>("Intake:Enabled") ?? true;
@@ -282,7 +288,7 @@ public class MaterialIntakeController : ControllerBase
 
         _logger.LogInformation(
             "intake.rejected IntakeId={IntakeId} Reason={Reason} ActorId={ActorId}",
-            intakeId, request.Reason, userId);
+            intakeId, SanitizeLogValue(request.Reason), userId);
 
         return NoContent();
     }
