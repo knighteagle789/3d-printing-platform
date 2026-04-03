@@ -133,7 +133,17 @@ public class MaterialIntakeExtractionWorker : BackgroundService
             intake.DraftSpoolWeightGrams = result.SpoolWeightGrams;
             intake.DraftPrintSettingsHints = result.PrintSettingsHints;
             intake.DraftBatchOrLot = result.BatchOrLot;
-            intake.ConfidenceMap = JsonSerializer.Serialize(result.Confidence);
+            intake.ConfidenceMap = JsonSerializer.Serialize(
+                new Dictionary<string, object?>
+                {
+                    ["brand"]         = result.Confidence.Brand,
+                    ["type"]          = result.Confidence.MaterialType,
+                    ["color"]         = result.Confidence.Color,
+                    ["spoolWeight"]   = result.Confidence.SpoolWeightGrams,
+                    ["printSettings"] = result.Confidence.PrintSettingsHints,
+                    ["batchOrLot"]    = result.Confidence.BatchOrLot,
+                },
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             intake.LastExtractionError = null;
             intake.ExtractedAtUtc = DateTime.UtcNow;
 

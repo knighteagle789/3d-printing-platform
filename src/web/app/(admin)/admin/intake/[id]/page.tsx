@@ -21,9 +21,30 @@ type ViewMode = 'idle' | 'approving' | 'rejecting';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const KEY_MAP: Record<string, string> = {
+  Brand: 'brand',
+  MaterialType: 'type',
+  Color: 'color',
+  SpoolWeightGrams: 'spoolWeight',
+  PrintSettingsHints: 'printSettings',
+  BatchOrLot: 'batchOrLot',
+};
+
 function parseConfidenceMap(raw: string | null): ConfidenceMap {
   if (!raw) return {};
-  try { return JSON.parse(raw) as ConfidenceMap; } catch { return {}; }
+  try {
+    const parsed = JSON.parse(raw) as Record<string, { score?: number; Score?: number; sourceText?: string; SourceText?: string } | null>;
+    const result: ConfidenceMap = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (!v) continue;
+      const key = KEY_MAP[k] ?? k;
+      result[key] = {
+        score: v.score ?? v.Score ?? 0,
+        sourceText: v.sourceText ?? v.SourceText ?? undefined,
+      };
+    }
+    return result;
+  } catch { return {}; }
 }
 
 function confidenceColour(score: number): string {
@@ -75,17 +96,24 @@ function FieldRow({
       <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted shrink-0 w-36`}>
         {label}
       </span>
-      <span
-        className="text-text-primary text-sm flex-1 min-w-0 truncate"
-        style={{ fontFamily: 'var(--font-epilogue)' }}
-      >
-        {display}
-        {edited && (
-          <span className={`${mono.className} ml-2 text-[8px] uppercase tracking-[0.15em] text-blue-600`}>
-            corrected
+      <div className="flex-1 min-w-0">
+        <span
+          className="text-text-primary text-sm block truncate"
+          style={{ fontFamily: 'var(--font-epilogue)' }}
+        >
+          {display}
+          {edited && (
+            <span className={`${mono.className} ml-2 text-[8px] uppercase tracking-[0.15em] text-blue-600`}>
+              corrected
+            </span>
+          )}
+        </span>
+        {confidence?.sourceText && (
+          <span className={`${mono.className} text-[8px] text-text-muted mt-0.5 block truncate italic`}>
+            &ldquo;{confidence.sourceText}&rdquo;
           </span>
         )}
-      </span>
+      </div>
       {confidence && (
         <span className={`${mono.className} inline-flex items-center border text-[8px] px-1.5 py-0.5 shrink-0 ${confidenceColour(confidence.score)}`}>
           {pct(confidence.score)}
@@ -99,10 +127,12 @@ function FieldRow({
 
 function ApproveForm({
   intake,
+  confidenceMap,
   onSuccess,
   onCancel,
 }: {
   intake: MaterialIntakeResponse;
+  confidenceMap: ConfidenceMap;
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -114,6 +144,18 @@ function ApproveForm({
   const [price,       setPrice]       = useState('');
   const [submitting,  setSubmitting]  = useState(false);
   const [error,       setError]       = useState<string | null>(null);
+
+  // ── Confidence gate ──────────────────────────────────────────────────────
+  const gatedFields = [
+    { confKey: 'brand', label: 'Brand',         current: brand, original: intake.draftBrand       ?? '' },
+    { confKey: 'type',  label: 'Material Type', current: type,  original: intake.draftMaterialType ?? '' },
+    { confKey: 'color', label: 'Color',         current: color, original: intake.draftColor        ?? '' },
+  ];
+  const lowConfUncorrected = gatedFields.filter(({ confKey, current, original }) => {
+    const entry = confidenceMap[confKey];
+    return entry !== undefined && entry.score < 0.60 && current.trim() === original.trim();
+  });
+  const canSubmit = lowConfUncorrected.length === 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -155,24 +197,43 @@ function ApproveForm({
         </div>
       )}
 
+      {lowConfUncorrected.length > 0 && (
+        <div className="flex items-start gap-2 px-3 py-2.5 border border-amber-200 bg-amber-50 text-amber-700">
+          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <div>
+            <p className={`${mono.className} text-[9px] uppercase tracking-[0.12em] font-semibold`}>
+              Correction required before approving
+            </p>
+            <p className={`${mono.className} text-[9px] mt-0.5`}>
+              Low-confidence field{lowConfUncorrected.length > 1 ? 's' : ''} must be corrected:{' '}
+              {lowConfUncorrected.map(f => f.label).join(', ')}.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
         {[
-          { id: 'brand', label: 'Brand',        value: brand,  setter: setBrand },
-          { id: 'type',  label: 'Material Type', value: type,   setter: setType  },
-          { id: 'color', label: 'Color',         value: color,  setter: setColor },
-        ].map(({ id, label, value, setter }) => (
-          <div key={id}>
-            <label className={`${mono.className} block text-[8px] uppercase tracking-[0.2em] text-text-muted mb-1`}>
-              {label}
-            </label>
-            <input
-              type="text"
-              value={value}
-              onChange={e => setter(e.target.value)}
-              className={`${mono.className} w-full h-8 bg-surface-alt border border-border px-3 text-[10px] text-text-secondary focus:outline-none focus:border-accent transition-colors`}
-            />
-          </div>
-        ))}
+          { id: 'brand', label: 'Brand',         value: brand,  setter: setBrand, original: intake.draftBrand       ?? '' },
+          { id: 'type',  label: 'Material Type',  value: type,   setter: setType,  original: intake.draftMaterialType ?? '' },
+          { id: 'color', label: 'Color',          value: color,  setter: setColor, original: intake.draftColor        ?? '' },
+        ].map(({ id, label, value, setter, original }) => {
+          const entry = confidenceMap[id];
+          const needsCorrection = entry !== undefined && entry.score < 0.60 && value.trim() === original.trim();
+          return (
+            <div key={id}>
+              <label className={`${mono.className} block text-[8px] uppercase tracking-[0.2em] ${needsCorrection ? 'text-amber-600' : 'text-text-muted'} mb-1`}>
+                {label}
+              </label>
+              <input
+                type="text"
+                value={value}
+                onChange={e => setter(e.target.value)}
+                className={`${mono.className} w-full h-8 bg-surface-alt border ${needsCorrection ? 'border-amber-300' : 'border-border'} px-3 text-[10px] text-text-secondary focus:outline-none focus:border-accent transition-colors`}
+              />
+            </div>
+          );
+        })}
 
         <div>
           <label className={`${mono.className} block text-[8px] uppercase tracking-[0.2em] text-text-muted mb-1`}>
@@ -218,7 +279,7 @@ function ApproveForm({
       <div className="flex items-center gap-2 pt-1">
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !canSubmit}
           className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.15em] px-4 h-8 bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           <Check className="h-3 w-3" />
@@ -543,6 +604,7 @@ export default function IntakeDetailPage() {
           {viewMode === 'approving' ? (
             <ApproveForm
               intake={intake}
+              confidenceMap={confidence}
               onSuccess={handleActionSuccess}
               onCancel={() => setViewMode('idle')}
             />
