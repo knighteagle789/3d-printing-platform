@@ -103,7 +103,7 @@ export interface ApproveIntakeRequest {
   correctedSpoolWeightGrams?: number | null;
   correctedPrintSettingsHints?: string | null;
   correctedBatchOrLot?: string | null;
-  pricePerGram: number;
+  pricePerSpool: number;
 }
 
 export interface ApproveIntakeResponse {

@@ -212,8 +212,8 @@ function ApproveSection({
     e.preventDefault();
     setError(null);
     const priceVal = parseFloat(price);
-    if (isNaN(priceVal) || priceVal < 0) {
-      setError('Price per gram must be a non-negative number.');
+    if (isNaN(priceVal) || priceVal <= 0) {
+      setError('Spool price must be a positive number.');
       return;
     }
     setSubmitting(true);
@@ -225,7 +225,7 @@ function ApproveSection({
         correctedSpoolWeightGrams:   weight        !== (intake.draftSpoolWeightGrams?.toString() ?? '') ? parseFloat(weight) || null : null,
         correctedPrintSettingsHints: printSettings !== (intake.draftPrintSettingsHints   ?? '') ? printSettings || null : null,
         correctedBatchOrLot:         batchOrLot    !== (intake.draftBatchOrLot           ?? '') ? batchOrLot    || null : null,
-        pricePerGram: priceVal,
+        pricePerSpool: priceVal,
       });
       onSuccess();
     } catch (err: unknown) {
@@ -263,16 +263,16 @@ function ApproveSection({
       <div className="flex items-end gap-3 flex-wrap">
         <div>
           <label className={`${mono.className} block text-[8px] uppercase tracking-[0.2em] text-red-600 mb-1`}>
-            Price per Gram ($) *
+            Spool Price ($) *
           </label>
           <input
             required
             type="number"
-            step="0.0001"
+            step="0.01"
             min="0"
             value={price}
             onChange={e => setPrice(e.target.value)}
-            placeholder="e.g. 0.0250"
+            placeholder="e.g. 22.99"
             className={`${mono.className} w-48 h-8 bg-surface-alt border border-red-200 px-3 text-[10px] text-text-secondary focus:outline-none focus:border-accent transition-colors placeholder:text-text-muted`}
           />
         </div>
@@ -407,7 +407,7 @@ export default function IntakeDetailPage() {
       setCorrBatchOrLot(intake.draftBatchOrLot               ?? '');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [intake?.id, intake?.extractedAtUtc]);
+  }, [intake?.id]);
 
   async function handleRetrigger() {
     setRetriggering(true);

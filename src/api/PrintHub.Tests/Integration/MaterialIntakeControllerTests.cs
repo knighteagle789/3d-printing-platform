@@ -238,7 +238,7 @@ public class MaterialIntakeControllerTests : IClassFixture<IntakeWebApplicationF
             .Setup(s => s.ApproveIntakeAsync(intakeId, It.IsAny<ApproveIntakeRequest>(), It.IsAny<Guid>()))
             .ReturnsAsync(approvalResponse);
 
-        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerGram: 0.05m);
+        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerSpool: 37.50m);
         var client  = _factory.CreateAuthenticatedClient(userId: actorId, role: Role.Staff);
         var resp    = await client.PostAsJsonAsync($"{BaseUrl}/{intakeId}/approve", request);
 
@@ -257,7 +257,7 @@ public class MaterialIntakeControllerTests : IClassFixture<IntakeWebApplicationF
             .Setup(s => s.ApproveIntakeAsync(intakeId, It.IsAny<ApproveIntakeRequest>(), It.IsAny<Guid>()))
             .ThrowsAsync(new NotFoundException($"Intake {intakeId} not found."));
 
-        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerGram: 0.05m);
+        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerSpool: 37.50m);
         var client  = _factory.CreateAuthenticatedClient(role: Role.Staff);
         var resp    = await client.PostAsJsonAsync($"{BaseUrl}/{intakeId}/approve", request);
 
@@ -273,7 +273,7 @@ public class MaterialIntakeControllerTests : IClassFixture<IntakeWebApplicationF
             .Setup(s => s.ApproveIntakeAsync(intakeId, It.IsAny<ApproveIntakeRequest>(), It.IsAny<Guid>()))
             .ThrowsAsync(new InvalidIntakeTransitionException(IntakeStatus.Uploaded, IntakeStatus.Approved));
 
-        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerGram: 0.05m);
+        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerSpool: 37.50m);
         var client  = _factory.CreateAuthenticatedClient(role: Role.Staff);
         var resp    = await client.PostAsJsonAsync($"{BaseUrl}/{intakeId}/approve", request);
 
