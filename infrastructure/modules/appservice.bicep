@@ -32,6 +32,11 @@ param stripeWebhookSecret string
 
 param webAppUrl string
 
+param aiVisionEndpoint string
+
+@secure()
+param aiVisionKey string
+
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: 'plan-${appName}-${environmentName}'
   location: location
@@ -68,7 +73,10 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'Email__ResendApiKey',           value: resendApiKey }
         { name: 'Stripe__SecretKey',             value: stripeSecretKey }
         { name: 'Stripe__WebhookSecret',         value: stripeWebhookSecret }
-        { name: 'WebAppUrl',                     value: webAppUrl }
+        { name: 'WebAppUrl',                                       value: webAppUrl }
+        { name: 'Intake__Extractor__Provider',                     value: 'AzureVision' }
+        { name: 'Intake__Extractor__AzureVision__Endpoint',        value: aiVisionEndpoint }
+        { name: 'Intake__Extractor__AzureVision__Key',             value: aiVisionKey }
       ]
       connectionStrings: [
         {
