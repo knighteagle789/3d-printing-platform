@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
@@ -11,7 +12,7 @@ namespace PrintHub.Infrastructure.Services.Extraction;
 /// Azure AI Vision 4.0 Image Analysis extraction provider.
 ///
 /// Uses a single synchronous POST to:
-///   /computervision/imageanalysis:analyze?api-version=2024-02-01&amp;features=read,tags,caption
+///   /computervision/imageanalysis:analyze?api-version=2024-02-01&amp;features=read,tags
 ///
 /// - 'read':    OCR text  → brand, material type, weight, batch/lot, label-printed color name
 /// - 'tags':    visual AI → physical filament color from the image itself (the key gap in v3.2)
@@ -158,11 +159,15 @@ public class AzureVisionExtractionProvider : IExtractionProvider
             // Single synchronous call — no polling required unlike v3.2 Read
             var analyzeUrl =
                 $"{endpoint.TrimEnd('/')}/computervision/imageanalysis:analyze" +
-                "?api-version=2024-02-01&features=read,tags,caption";
+                "?api-version=2024-02-01&features=read,tags";
+
+            var jsonBody = JsonSerializer.Serialize(new { url = request.NormalizedPhotoUrl });
+            var content = new StringContent(jsonBody, Encoding.UTF8);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
 
             using var httpReq = new HttpRequestMessage(HttpMethod.Post, analyzeUrl)
             {
-                Content = JsonContent.Create(new { url = request.NormalizedPhotoUrl }),
+                Content = content,
             };
             httpReq.Headers.Add("Ocp-Apim-Subscription-Key", apiKey);
 
