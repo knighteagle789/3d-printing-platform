@@ -18,7 +18,6 @@ public class MaterialIntakeServiceTests
     private readonly Mock<IMaterialRepository> _materialRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IIntakeExtractionQueue> _queueMock = new();
-    private readonly Mock<IFileStorageService> _fileStorageMock = new();
     private readonly MaterialIntakeService _sut;
 
     // Reusable test technology list
@@ -35,16 +34,11 @@ public class MaterialIntakeServiceTests
         _materialRepoMock.Setup(r => r.GetAllTechnologiesAsync())
             .ReturnsAsync((IReadOnlyList<PrintingTechnology>)DefaultTechnologies);
 
-        _fileStorageMock
-            .Setup(s => s.GenerateSasUrlAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
-            .ReturnsAsync((string blobName, TimeSpan _) => $"https://storage.example.com/{blobName}?sas=test");
-
         _sut = new MaterialIntakeService(
             _intakeRepoMock.Object,
             _materialRepoMock.Object,
             _unitOfWorkMock.Object,
-            _queueMock.Object,
-            _fileStorageMock.Object);
+            _queueMock.Object);
     }
 
     // ── ApproveIntakeAsync ────────────────────────────────────────────────────
@@ -66,7 +60,7 @@ public class MaterialIntakeServiceTests
             CorrectedSpoolWeightGrams: null,
             CorrectedPrintSettingsHints: null,
             CorrectedBatchOrLot: null,
-            PricePerGram: 0.05m);
+            PricePerSpool: 37.50m);
 
         _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
         _materialRepoMock
@@ -108,7 +102,7 @@ public class MaterialIntakeServiceTests
             draftColor: "Black");
 
         var actorId = Guid.NewGuid();
-        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerGram: 0.05m);
+        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerSpool: 37.50m);
 
         _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
         _materialRepoMock
@@ -148,7 +142,7 @@ public class MaterialIntakeServiceTests
             CorrectedSpoolWeightGrams: 1000m,
             CorrectedPrintSettingsHints: null,
             CorrectedBatchOrLot: "LOT-2026-001",
-            PricePerGram: 0.07m);
+            PricePerSpool: 70.00m);
 
         _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
         _materialRepoMock
@@ -178,7 +172,7 @@ public class MaterialIntakeServiceTests
         var intake = TestDataBuilder.CreateMaterialIntake(status: IntakeStatus.Uploaded);
         _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
 
-        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerGram: 0.05m);
+        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerSpool: 37.50m);
 
         // Act & Assert
         var act = async () => await _sut.ApproveIntakeAsync(intake.Id, request, Guid.NewGuid());
@@ -191,7 +185,7 @@ public class MaterialIntakeServiceTests
         // Arrange
         _intakeRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((MaterialIntake?)null);
 
-        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerGram: 0.05m);
+        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerSpool: 37.50m);
 
         // Act & Assert
         var act = async () => await _sut.ApproveIntakeAsync(Guid.NewGuid(), request, Guid.NewGuid());
@@ -209,7 +203,7 @@ public class MaterialIntakeServiceTests
 
         _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
 
-        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerGram: 0.05m);
+        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerSpool: 37.50m);
 
         // Act & Assert
         var act = async () => await _sut.ApproveIntakeAsync(intake.Id, request, Guid.NewGuid());
@@ -228,7 +222,7 @@ public class MaterialIntakeServiceTests
 
         _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
 
-        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerGram: 0.05m);
+        var request = new ApproveIntakeRequest(null, null, null, null, null, null, PricePerSpool: 37.50m);
 
         // Act & Assert
         var act = async () => await _sut.ApproveIntakeAsync(intake.Id, request, Guid.NewGuid());
