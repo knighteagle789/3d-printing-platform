@@ -180,6 +180,23 @@ public class MaterialIntakeService : IMaterialIntakeService
         if (!Enum.TryParse<MaterialType>(effectiveTypeStr, ignoreCase: true, out var effectiveType))
             throw new BusinessRuleException($"Invalid material type: '{effectiveTypeStr}'. Must be a recognised MaterialType.");
 
+        // Validate print settings is well-formed JSON before attempting to write to the jsonb column.
+        // Malformed input (e.g. extra braces typed by the reviewer) would otherwise reach PostgreSQL
+        // and cause a 22P02 error that surfaces as an unhandled 500.
+        if (!string.IsNullOrWhiteSpace(effectivePrintSettings))
+        {
+            try
+            {
+                JsonDocument.Parse(effectivePrintSettings);
+            }
+            catch (JsonException)
+            {
+                throw new BusinessRuleException(
+                    "Print settings must be valid JSON — e.g. {\"hotendTemp\":\"210-230\",\"bedTemp\":\"60\"}. " +
+                    "Check for extra or missing braces.");
+            }
+        }
+
         // Auto-infer printing technology: Resin -> SLA, everything else -> FDM
         var technologies = await _materialRepository.GetAllTechnologiesAsync();
         var technologyName = effectiveType == MaterialType.Resin ? "SLA" : "FDM";
