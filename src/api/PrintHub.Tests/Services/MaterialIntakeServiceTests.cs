@@ -130,12 +130,13 @@ public class MaterialIntakeServiceTests
 
         var actorId = Guid.NewGuid();
         // Reviewer confirms it's 1000g, paid $40 → $0.04/g (cheaper than existing $0.05/g)
+        // New spool label also has print settings that should be applied to the existing material
         var request = new ApproveIntakeRequest(
             CorrectedBrand: null,
             CorrectedMaterialType: null,
             CorrectedColor: null,
             CorrectedSpoolWeightGrams: 1000m,
-            CorrectedPrintSettingsHints: null,
+            CorrectedPrintSettingsHints: "{\"printTemp\":215,\"bedTemp\":60,\"fanSpeed\":100}",
             CorrectedBatchOrLot: null,
             PricePerSpool: 40.00m,
             AllowMerge: true);
@@ -152,8 +153,9 @@ public class MaterialIntakeServiceTests
         result.Outcome.Should().Be(IntakeApprovalOutcome.Updated);
         result.MaterialId.Should().Be(existingMaterial.Id);
 
-        existingMaterial.StockGrams.Should().Be(2000m);         // 1000 + 1000
-        existingMaterial.PricePerGram.Should().Be(0.04m);       // overwritten with new price
+        existingMaterial.StockGrams.Should().Be(2000m);              // 1000 + 1000
+        existingMaterial.PricePerGram.Should().Be(0.04m);             // overwritten with new price
+        existingMaterial.PrintSettings.Should().Be("{\"printTemp\":215,\"bedTemp\":60,\"fanSpeed\":100}"); // applied from intake
 
         _materialRepoMock.Verify(r => r.AddAsync(It.IsAny<Material>()), Times.Never);
         _materialRepoMock.Verify(r => r.Update(existingMaterial), Times.Once);
