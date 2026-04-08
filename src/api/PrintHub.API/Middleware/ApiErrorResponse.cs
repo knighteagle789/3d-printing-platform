@@ -19,4 +19,7 @@ public class ApiErrorResponse
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, string[]>? Errors { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object? Data { get; set; }
 }

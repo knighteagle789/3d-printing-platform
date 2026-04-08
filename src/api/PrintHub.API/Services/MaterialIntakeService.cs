@@ -176,9 +176,32 @@ public class MaterialIntakeService : IMaterialIntakeService
 
         if (duplicates.Count > 0)
         {
-            // Flag for human merge review — do not create a new material record
-            approvedMaterialId = duplicates[0].Id;
-            outcome = IntakeApprovalOutcome.NeedsMergeReview;
+            var existing = duplicates[0];
+
+            if (!request.AllowMerge)
+            {
+                // First attempt — return structured 409 so the caller can confirm
+                throw new DuplicateMaterialException(
+                    existing.Id,
+                    existing.Brand,
+                    existing.Color,
+                    existing.Type.ToString(),
+                    existing.StockGrams,
+                    existing.PricePerGram);
+            }
+
+            // Confirmed merge: add spool weight to stock, overwrite price/g with latest price
+            var newPricePerGram = effectiveSpoolWeight is > 0
+                ? request.PricePerSpool / effectiveSpoolWeight.Value
+                : existing.PricePerGram;
+
+            existing.StockGrams    += effectiveSpoolWeight ?? 0m;
+            existing.PricePerGram   = newPricePerGram;
+            existing.UpdatedAt      = now;
+            _materialRepository.Update(existing);
+
+            approvedMaterialId = existing.Id;
+            outcome = IntakeApprovalOutcome.Updated;
         }
         else
         {

@@ -92,7 +92,7 @@ public class MaterialIntakeServiceTests
     }
 
     [Fact]
-    public async Task ApproveIntake_DuplicateDetected_ReturnsMergeReviewWithoutCreatingMaterial()
+    public async Task ApproveIntake_DuplicateDetected_WithoutAllowMerge_ThrowsDuplicateMaterialException()
     {
         // Arrange
         var existingMaterial = TestDataBuilder.CreateMaterial(color: "Black");
@@ -109,18 +109,54 @@ public class MaterialIntakeServiceTests
             .Setup(r => r.FindDuplicatesAsync(MaterialType.PLA, "Black", null))
             .ReturnsAsync((IReadOnlyList<Material>)[existingMaterial]);
 
+        // Act & Assert — should throw before saving anything
+        await _sut.Invoking(s => s.ApproveIntakeAsync(intake.Id, request, actorId))
+            .Should().ThrowAsync<DuplicateMaterialException>()
+            .WithMessage("*already exists*");
+
+        _materialRepoMock.Verify(r => r.AddAsync(It.IsAny<Material>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ApproveIntake_DuplicateDetected_WithAllowMerge_AddsStockAndOverwritesPricePerGram()
+    {
+        // Arrange
+        var existingMaterial = TestDataBuilder.CreateMaterial(color: "Black", pricePerGram: 0.05m); // 1000g stock
+        var intake = TestDataBuilder.CreateMaterialIntake(
+            status: IntakeStatus.NeedsReview,
+            draftMaterialType: "PLA",
+            draftColor: "Black");
+
+        var actorId = Guid.NewGuid();
+        // Reviewer confirms it's 1000g, paid $40 → $0.04/g (cheaper than existing $0.05/g)
+        var request = new ApproveIntakeRequest(
+            CorrectedBrand: null,
+            CorrectedMaterialType: null,
+            CorrectedColor: null,
+            CorrectedSpoolWeightGrams: 1000m,
+            CorrectedPrintSettingsHints: null,
+            CorrectedBatchOrLot: null,
+            PricePerSpool: 40.00m,
+            AllowMerge: true);
+
+        _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
+        _materialRepoMock
+            .Setup(r => r.FindDuplicatesAsync(MaterialType.PLA, "Black", null))
+            .ReturnsAsync((IReadOnlyList<Material>)[existingMaterial]);
+
         // Act
         var result = await _sut.ApproveIntakeAsync(intake.Id, request, actorId);
 
         // Assert
-        result.Outcome.Should().Be(IntakeApprovalOutcome.NeedsMergeReview);
+        result.Outcome.Should().Be(IntakeApprovalOutcome.Updated);
         result.MaterialId.Should().Be(existingMaterial.Id);
 
-        intake.Status.Should().Be(IntakeStatus.Approved);
-        intake.ApprovedMaterialId.Should().Be(existingMaterial.Id);
+        existingMaterial.StockGrams.Should().Be(2000m);         // 1000 + 1000
+        existingMaterial.PricePerGram.Should().Be(0.04m);       // overwritten with new price
 
-        // No new material should have been created
         _materialRepoMock.Verify(r => r.AddAsync(It.IsAny<Material>()), Times.Never);
+        _materialRepoMock.Verify(r => r.Update(existingMaterial), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
