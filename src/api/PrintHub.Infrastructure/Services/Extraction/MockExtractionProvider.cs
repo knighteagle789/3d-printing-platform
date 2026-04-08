@@ -31,7 +31,7 @@ namespace PrintHub.Infrastructure.Services.Extraction
                 MaterialType: "PLA",
                 Color: "Galaxy Black",
                 SpoolWeightGrams: 1000m,
-                PrintSettingsHints: """{"bedTemp":60,"nozzleTemp":215,"printSpeed":60}""",
+                PrintSettingsHints: """{"hotendTemp":"215","bedTemp":"60","printSpeed":"60"}""",
                 BatchOrLot: "MOCK-BATCH-001",
 
                 Confidence: new ExtractionConfidence(
