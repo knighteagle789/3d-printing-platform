@@ -18,6 +18,7 @@ public class MaterialIntakeServiceTests
     private readonly Mock<IMaterialRepository> _materialRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IIntakeExtractionQueue> _queueMock = new();
+    private readonly Mock<IFileStorageService> _fileStorageMock = new();
     private readonly MaterialIntakeService _sut;
 
     // Reusable test technology list
@@ -38,7 +39,8 @@ public class MaterialIntakeServiceTests
             _intakeRepoMock.Object,
             _materialRepoMock.Object,
             _unitOfWorkMock.Object,
-            _queueMock.Object);
+            _queueMock.Object,
+            _fileStorageMock.Object);
     }
 
     // ── ApproveIntakeAsync ────────────────────────────────────────────────────
