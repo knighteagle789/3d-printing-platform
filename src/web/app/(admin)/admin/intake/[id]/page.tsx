@@ -616,13 +616,13 @@ export default function IntakeDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* ── Photo ── */}
-        <div className="border border-border bg-surface-alt flex items-center justify-center aspect-square">
+        <div className="border border-border bg-surface-alt flex items-center justify-center min-h-[280px]">
           {intake.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={toProxiedUrl(intake.photoUrl)}
               alt="Material photo"
-              className="w-full h-full object-contain"
+              className="max-w-full max-h-[65vh] object-contain"
             />
           ) : (
             <Camera className="h-10 w-10 text-text-muted" />

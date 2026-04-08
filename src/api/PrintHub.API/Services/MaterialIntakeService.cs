@@ -15,17 +15,23 @@ public class MaterialIntakeService : IMaterialIntakeService
     private readonly IMaterialRepository _materialRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IIntakeExtractionQueue _intakeExtractionQueue;
+    private readonly IFileStorageService _fileStorageService;
+
+    // Long enough for a reviewer to examine the photo without the URL expiring mid-session.
+    private static readonly TimeSpan PhotoDisplaySasTtl = TimeSpan.FromHours(2);
 
     public MaterialIntakeService(
         IMaterialIntakeRepository intakeRepository,
         IMaterialRepository materialRepository,
         IUnitOfWork unitOfWork,
-        IIntakeExtractionQueue intakeExtractionQueue)
+        IIntakeExtractionQueue intakeExtractionQueue,
+        IFileStorageService fileStorageService)
     {
-        _intakeRepository = intakeRepository;
-        _materialRepository = materialRepository;
-        _unitOfWork = unitOfWork;
+        _intakeRepository     = intakeRepository;
+        _materialRepository   = materialRepository;
+        _unitOfWork           = unitOfWork;
         _intakeExtractionQueue = intakeExtractionQueue;
+        _fileStorageService   = fileStorageService;
     }
 
     public async Task<MaterialIntakeResponse> CreateIntakeAsync(CreateIntakeRequest request, Guid uploadedByUserId)
@@ -70,7 +76,19 @@ public class MaterialIntakeService : IMaterialIntakeService
     public async Task<MaterialIntakeResponse?> GetIntakeAsync(Guid intakeId)
     {
         var intake = await _intakeRepository.GetByIdAsync(intakeId);
-        return intake is null ? null : MapToResponse(intake);
+        if (intake is null) return null;
+
+        var response = MapToResponse(intake);
+
+        // Generate a time-limited SAS URL so the admin can view the private blob photo.
+        // The raw PhotoUrl stored in the DB is a private Azure Blob URL without a token.
+        if (!string.IsNullOrEmpty(intake.PhotoBlobName))
+        {
+            var sasUrl = await _fileStorageService.GenerateSasUrlAsync(intake.PhotoBlobName, PhotoDisplaySasTtl);
+            response = response with { PhotoUrl = sasUrl };
+        }
+
+        return response;
     }
 
     public async Task<PagedResponse<MaterialIntakeResponse>> GetIntakeQueueAsync(IntakeQueueFilter filter)
