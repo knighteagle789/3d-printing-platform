@@ -197,6 +197,7 @@ public class MaterialIntakeService : IMaterialIntakeService
 
             existing.StockGrams    += effectiveSpoolWeight ?? 0m;
             existing.PricePerGram   = newPricePerGram;
+            existing.PrintSettings  = effectivePrintSettings ?? existing.PrintSettings;
             existing.UpdatedAt      = now;
             _materialRepository.Update(existing);
 
