@@ -1,0 +1,17 @@
+# CodeQL Model-as-Data extension for NoCo Make Lab
+#
+# Declares LogSanitizer.SanitizeForLog as a neutral summary — meaning CodeQL
+# will not propagate taint through this method. This prevents false-positive
+# "Log entries created from user input" (CWE-117) alerts on log calls where
+# user-controlled strings have been sanitized via this extension method.
+#
+# Placed in .github/codeql/extensions/ so GitHub's default CodeQL setup
+# picks it up automatically on every scan.
+
+extensions:
+  - addsTo:
+      pack: codeql/csharp-all
+      extensible: neutralModel
+    data:
+      # [namespace, type, method, signature, kind, provenance]
+      - ["PrintHub.Core.Common", "LogSanitizer", "SanitizeForLog", "(System.String)", "summary", "manual"]

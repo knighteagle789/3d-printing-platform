@@ -185,7 +185,7 @@ public class OrderService : IOrderService
     {
         if (!Enum.TryParse<OrderStatus>(newStatus, ignoreCase: true, out var status))
         {
-            _logger.LogWarning("Invalid status for order update: {Status}", newStatus);
+            _logger.LogWarning("Invalid status for order update: {Status}", newStatus.SanitizeForLog());
             throw new BusinessRuleException($"Invalid status for order update: {newStatus}");
         }
 
