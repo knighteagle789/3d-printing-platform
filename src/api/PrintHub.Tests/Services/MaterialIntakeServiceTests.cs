@@ -270,6 +270,32 @@ public class MaterialIntakeServiceTests
             .WithMessage("*color*");
     }
 
+    [Fact]
+    public async Task ApproveIntake_InvalidPrintSettingsJson_ThrowsBusinessRuleException()
+    {
+        // Arrange — reviewer-corrected JSON with trailing extra brace (real production error)
+        var intake = TestDataBuilder.CreateMaterialIntake(
+            status: IntakeStatus.NeedsReview,
+            draftMaterialType: "PLA",
+            draftColor: "Black");
+
+        _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
+
+        var request = new ApproveIntakeRequest(
+            CorrectedBrand: null,
+            CorrectedMaterialType: null,
+            CorrectedColor: null,
+            CorrectedSpoolWeightGrams: null,
+            CorrectedPrintSettingsHints: """{"hotendTemp":"215","bedTemp":"60"}}""",  // extra }
+            CorrectedBatchOrLot: null,
+            PricePerSpool: 25m);
+
+        // Act & Assert
+        var act = async () => await _sut.ApproveIntakeAsync(intake.Id, request, Guid.NewGuid());
+        await act.Should().ThrowAsync<BusinessRuleException>()
+            .WithMessage("*valid JSON*");
+    }
+
     // ── RejectIntakeAsync ─────────────────────────────────────────────────────
 
     [Fact]
