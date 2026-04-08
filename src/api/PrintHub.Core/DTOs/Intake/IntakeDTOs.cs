@@ -24,7 +24,13 @@ namespace PrintHub.Core.DTOs.Intake
         string? CorrectedPrintSettingsHints,
         string? CorrectedBatchOrLot,
         /// <summary>Total price paid for the spool. Price per gram is derived by dividing by the spool weight. Required when creating a new material record.</summary>
-        decimal PricePerSpool = 0m
+        decimal PricePerSpool = 0m,
+        /// <summary>
+        /// When true and a duplicate material is found, merges the new spool into the existing record:
+        /// adds spool weight to StockGrams and overwrites PricePerGram with the new price.
+        /// When false (default) and a duplicate is found, a 409 is returned with the existing material's details.
+        /// </summary>
+        bool AllowMerge = false
     );
 
     public record RejectIntakeRequest(

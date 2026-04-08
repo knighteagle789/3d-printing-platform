@@ -45,6 +45,7 @@ public class GlobalExceptionMiddleware
             NotFoundException ex => (StatusCodes.Status404NotFound, ex.Message),
             BusinessRuleException ex => (StatusCodes.Status400BadRequest, ex.Message),
             ForbiddenException ex => (StatusCodes.Status403Forbidden, ex.Message),
+            DuplicateMaterialException ex => (StatusCodes.Status409Conflict, ex.Message),
             ConflictException ex => (StatusCodes.Status409Conflict, ex.Message),
             InvalidIntakeTransitionException ex => (StatusCodes.Status409Conflict, ex.Message),
             InvalidOperationException ex => (StatusCodes.Status400BadRequest, ex.Message),
@@ -76,6 +77,20 @@ public class GlobalExceptionMiddleware
                 ? exception.ToString()
                 : null
         };
+
+        if (exception is DuplicateMaterialException dupEx)
+        {
+            response.Data = new
+            {
+                type = "duplicate_material",
+                materialId = dupEx.MaterialId,
+                brand = dupEx.Brand,
+                color = dupEx.Color,
+                materialType = dupEx.MaterialType,
+                currentStockGrams = dupEx.CurrentStockGrams,
+                currentPricePerGram = dupEx.CurrentPricePerGram,
+            };
+        }
 
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";

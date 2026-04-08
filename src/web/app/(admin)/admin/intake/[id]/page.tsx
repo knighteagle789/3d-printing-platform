@@ -7,6 +7,8 @@ import { useRouter, useParams } from 'next/navigation';
 import {
   intakeApi,
   type MaterialIntakeResponse,
+  type ApproveIntakeResponse,
+  type DuplicateMaterialConflict,
   type IntakeApprovalOutcome,
   type ConfidenceEntry,
 } from '@/lib/api/intake';
@@ -190,12 +192,17 @@ function ApproveSection({
   intake: MaterialIntakeResponse;
   confidenceMap: ConfidenceMap;
   brand: string; type: string; color: string; weight: string; printSettings: string; batchOrLot: string;
-  onSuccess: () => void;
+  onSuccess: (res: ApproveIntakeResponse) => void;
   onCancel: () => void;
 }) {
-  const [price,      setPrice]      = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error,      setError]      = useState<string | null>(null);
+  const [price,        setPrice]        = useState('');
+  const [submitting,   setSubmitting]   = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
+  const [mergeConfirm, setMergeConfirm] = useState<{
+    conflict: DuplicateMaterialConflict;
+    newSpoolWeightGrams: number;
+    newPricePerSpool: number;
+  } | null>(null);
 
   const gatedFields = [
     { confKey: 'brand', label: 'Brand',         current: brand, original: intake.draftBrand       ?? '' },
@@ -208,9 +215,23 @@ function ApproveSection({
   });
   const canSubmit = lowConfUncorrected.length === 0;
 
+  function buildRequest(allowMerge = false) {
+    return {
+      correctedBrand:              brand         !== (intake.draftBrand                ?? '') ? brand         || null : null,
+      correctedMaterialType:       type          !== (intake.draftMaterialType         ?? '') ? type          || null : null,
+      correctedColor:              color         !== (intake.draftColor                ?? '') ? color         || null : null,
+      correctedSpoolWeightGrams:   weight        !== (intake.draftSpoolWeightGrams?.toString() ?? '') ? parseFloat(weight) || null : null,
+      correctedPrintSettingsHints: printSettings !== (intake.draftPrintSettingsHints   ?? '') ? printSettings || null : null,
+      correctedBatchOrLot:         batchOrLot    !== (intake.draftBatchOrLot           ?? '') ? batchOrLot    || null : null,
+      pricePerSpool: parseFloat(price),
+      allowMerge,
+    };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setMergeConfirm(null);
     const priceVal = parseFloat(price);
     if (isNaN(priceVal) || priceVal <= 0) {
       setError('Spool price must be a positive number.');
@@ -218,22 +239,108 @@ function ApproveSection({
     }
     setSubmitting(true);
     try {
-      await intakeApi.approve(intake.id, {
-        correctedBrand:              brand         !== (intake.draftBrand                ?? '') ? brand         || null : null,
-        correctedMaterialType:       type          !== (intake.draftMaterialType         ?? '') ? type          || null : null,
-        correctedColor:              color         !== (intake.draftColor                ?? '') ? color         || null : null,
-        correctedSpoolWeightGrams:   weight        !== (intake.draftSpoolWeightGrams?.toString() ?? '') ? parseFloat(weight) || null : null,
-        correctedPrintSettingsHints: printSettings !== (intake.draftPrintSettingsHints   ?? '') ? printSettings || null : null,
-        correctedBatchOrLot:         batchOrLot    !== (intake.draftBatchOrLot           ?? '') ? batchOrLot    || null : null,
-        pricePerSpool: priceVal,
-      });
-      onSuccess();
+      const res = await intakeApi.approve(intake.id, buildRequest(false));
+      onSuccess(res.data);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? 'Approval failed. Please try again.');
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string; data?: DuplicateMaterialConflict } } };
+      if (axiosErr.response?.status === 409 && axiosErr.response.data?.data?.type === 'duplicate_material') {
+        const conflict = axiosErr.response.data.data;
+        const weightGrams = parseFloat(weight) || intake.draftSpoolWeightGrams || 0;
+        setMergeConfirm({ conflict, newSpoolWeightGrams: weightGrams, newPricePerSpool: priceVal });
+      } else {
+        setError(axiosErr.response?.data?.message ?? 'Approval failed. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleConfirmMerge() {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await intakeApi.approve(intake.id, buildRequest(true));
+      onSuccess(res.data);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg ?? 'Merge failed. Please try again.');
+      setMergeConfirm(null);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // ── Merge confirmation card ────────────────────────────────────────────────
+  if (mergeConfirm) {
+    const { conflict, newSpoolWeightGrams, newPricePerSpool } = mergeConfirm;
+    const newTotal = conflict.currentStockGrams + newSpoolWeightGrams;
+    const newPricePerGram = newSpoolWeightGrams > 0 ? newPricePerSpool / newSpoolWeightGrams : conflict.currentPricePerGram;
+    const usd = (v: number) => `$${v.toFixed(4)}`;
+    const grams = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(2)} kg` : `${v} g`;
+
+    return (
+      <div className="space-y-4">
+        <div className="border border-amber-300 bg-amber-50 p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <p className={`${mono.className} text-[9px] uppercase tracking-[0.15em] font-semibold text-amber-800`}>
+                Existing material found
+              </p>
+              <p className={`${mono.className} text-[9px] text-amber-700 mt-0.5`}>
+                {[conflict.brand, conflict.color, conflict.materialType].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="border border-amber-200 bg-white px-3 py-2">
+              <p className={`${mono.className} text-[8px] uppercase tracking-[0.18em] text-text-muted`}>Stock</p>
+              <p className={`${mono.className} text-[11px] text-text-primary`}>
+                {grams(conflict.currentStockGrams)}
+                <span className="text-emerald-600 ml-1">→ {grams(newTotal)}</span>
+              </p>
+              <p className={`${mono.className} text-[8px] text-text-muted`}>+{grams(newSpoolWeightGrams)}</p>
+            </div>
+            <div className="border border-amber-200 bg-white px-3 py-2">
+              <p className={`${mono.className} text-[8px] uppercase tracking-[0.18em] text-text-muted`}>Price / g</p>
+              <p className={`${mono.className} text-[11px] text-text-primary`}>
+                {usd(conflict.currentPricePerGram)}
+                <span className="text-emerald-600 ml-1">→ {usd(newPricePerGram)}</span>
+              </p>
+              <p className={`${mono.className} text-[8px] text-text-muted`}>overwrite with latest price</p>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="flex items-start gap-2 px-3 py-2.5 border border-red-200 bg-red-50 text-red-700">
+            <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <p className={`${mono.className} text-[9px] uppercase tracking-[0.12em]`}>{error}</p>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={handleConfirmMerge}
+            className={`${mono.className} inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.15em] px-4 h-8 bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            <Check className="h-3 w-3" />
+            {submitting ? 'Merging…' : 'Confirm Merge'}
+          </button>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => setMergeConfirm(null)}
+            className={`${mono.className} text-[9px] uppercase tracking-[0.15em] px-4 h-8 border border-border text-text-muted hover:text-text-secondary hover:border-border-strong transition-colors`}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -423,7 +530,19 @@ export default function IntakeDetailPage() {
     }
   }
 
-  async function handleActionSuccess() {
+  async function handleApproveSuccess(res: ApproveIntakeResponse) {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['admin', 'intake'] }),
+      queryClient.invalidateQueries({ queryKey: ['admin', 'materials'] }),
+    ]);
+    if (res.outcome === 'NeedsMergeReview') {
+      router.push(`/admin/materials/${res.materialId}`);
+    } else {
+      router.push('/admin/intake');
+    }
+  }
+
+  async function handleRejectSuccess() {
     await queryClient.invalidateQueries({ queryKey: ['admin', 'intake'] });
     router.push('/admin/intake');
   }
@@ -643,13 +762,13 @@ export default function IntakeDetailPage() {
               weight={corrWeight}
               printSettings={corrPrintSettings}
               batchOrLot={corrBatchOrLot}
-              onSuccess={handleActionSuccess}
+              onSuccess={handleApproveSuccess}
               onCancel={() => setViewMode('idle')}
             />
           ) : (
             <RejectForm
               intake={intake}
-              onSuccess={handleActionSuccess}
+              onSuccess={handleRejectSuccess}
               onCancel={() => setViewMode('idle')}
             />
           )}
