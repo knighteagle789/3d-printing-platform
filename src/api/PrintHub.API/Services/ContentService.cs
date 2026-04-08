@@ -148,7 +148,7 @@ public partial class ContentService : IContentService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Blog post created: {Slug} by author {AuthorId}",
-            post.Slug, authorId);
+            post.Slug.SanitizeForLog(), authorId);
 
         var created = await _contentRepo.GetBlogPostByIdAsync(post.Id);
         return BlogPostResponse.FromEntity(created!);
@@ -218,7 +218,7 @@ public partial class ContentService : IContentService
         if (saved == null)
             throw new BusinessRuleException("Failed to retrieve portfolio item after creation.");
 
-        _logger.LogInformation("Created portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
+        _logger.LogInformation("Created portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title.SanitizeForLog());
         return await ToPortfolioResponseAsync(saved);
     }
 
@@ -233,7 +233,7 @@ public partial class ContentService : IContentService
         _contentRepo.Update(entity);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Updated portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
+        _logger.LogInformation("Updated portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title.SanitizeForLog());
         return await ToPortfolioResponseAsync(entity);
     }
 
@@ -249,7 +249,7 @@ public partial class ContentService : IContentService
         _contentRepo.Update(entity);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Unpublished portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title);
+        _logger.LogInformation("Unpublished portfolio item {PortfolioId}: {Title}", entity.Id, entity.Title.SanitizeForLog());
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

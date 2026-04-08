@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using PrintHub.Core.Common;
 using PrintHub.Core.Exceptions;
 
 namespace PrintHub.API.Middleware;
@@ -58,13 +59,13 @@ public class GlobalExceptionMiddleware
         {
             _logger.LogError(exception,
                 "Unhandled exception. TraceId: {TraceId}, Path: {Path}",
-                traceId, context.Request.Path);
+                traceId, context.Request.Path.ToString().SanitizeForLog());
         }
         else
         {
             _logger.LogWarning(
                 "Request failed with {StatusCode}: {Message}. TraceId: {TraceId}, Path: {Path}",
-                statusCode, message, traceId, context.Request.Path);
+                statusCode, message.SanitizeForLog(), traceId, context.Request.Path.ToString().SanitizeForLog());
         }
 
         // Build response

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PrintHub.Core.Common;
 using PrintHub.Core.DTOs.Contact;
 using PrintHub.Core.Interfaces.Services;
 
@@ -24,7 +25,8 @@ public class ContactController : ControllerBase
             request.Name, request.Email, request.Subject, request.Message);
 
         _logger.LogInformation(
-            "Contact form submitted by {Name} ({Email})", request.Name, request.Email);
+            "Contact form submitted by {Name} ({Email})",
+            request.Name.SanitizeForLog(), request.Email.SanitizeForLog());
 
         return Ok(new { message = "Message sent successfully." });
     }

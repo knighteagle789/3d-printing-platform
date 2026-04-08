@@ -220,7 +220,7 @@ public class ResendEmailService : IEmailService
         if (!_isEnabled)
         {
             _logger.LogInformation(
-                "[Email disabled] Would send '{Subject}' to {Email}", subject, toEmail);
+                "[Email disabled] Would send '{Subject}'", subject);
             return;
         }
 
@@ -237,13 +237,13 @@ public class ResendEmailService : IEmailService
             await _resend.EmailSendAsync(message);
 
             _logger.LogInformation(
-                "Email sent: '{Subject}' to {Email}", subject, toEmail);
+                "Email sent: '{Subject}'", subject);
         }
         catch (Exception ex)
         {
             // Never let email failures crash the main flow
             _logger.LogError(ex,
-                "Failed to send email '{Subject}' to {Email}", subject, toEmail);
+                "Failed to send email '{Subject}'", subject);
         }
     }
 
