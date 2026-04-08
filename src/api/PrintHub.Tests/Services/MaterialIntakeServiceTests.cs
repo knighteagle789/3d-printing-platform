@@ -136,7 +136,7 @@ public class MaterialIntakeServiceTests
             CorrectedMaterialType: null,
             CorrectedColor: null,
             CorrectedSpoolWeightGrams: 1000m,
-            CorrectedPrintSettingsHints: "{\"printTemp\":215,\"bedTemp\":60,\"fanSpeed\":100}",
+            CorrectedPrintSettingsHints: "{\"hotendTemp\":\"215\",\"bedTemp\":\"60\",\"coolingFanSpeed\":\"100%\"}",
             CorrectedBatchOrLot: null,
             PricePerSpool: 40.00m,
             AllowMerge: true);
@@ -155,7 +155,7 @@ public class MaterialIntakeServiceTests
 
         existingMaterial.StockGrams.Should().Be(2000m);              // 1000 + 1000
         existingMaterial.PricePerGram.Should().Be(0.04m);             // overwritten with new price
-        existingMaterial.PrintSettings.Should().Be("{\"printTemp\":215,\"bedTemp\":60,\"fanSpeed\":100}"); // applied from intake
+        existingMaterial.PrintSettings.Should().Be("{\"hotendTemp\":\"215\",\"bedTemp\":\"60\",\"coolingFanSpeed\":\"100%\"}"); // applied from intake
 
         _materialRepoMock.Verify(r => r.AddAsync(It.IsAny<Material>()), Times.Never);
         _materialRepoMock.Verify(r => r.Update(existingMaterial), Times.Once);

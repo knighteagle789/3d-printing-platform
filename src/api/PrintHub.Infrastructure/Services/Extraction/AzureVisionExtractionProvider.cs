@@ -129,10 +129,10 @@ public class AzureVisionExtractionProvider : IExtractionProvider
     /// </summary>
     private static readonly IReadOnlyList<PrintSettingsPatternEntry> DefaultPrintSettingsPatterns =
     [
-        new("Nozzle", @"(?:printing\s+temp(?:erature)?|nozzle|hotend)[:\s]+(\d+(?:\s*[–\-]\s*\d+)?\s*°C)"),
-        new("Bed",    @"(?:bed\s+temp(?:erature)?|build\s+plate)[:\s]+(\d+(?:\s*[–\-]\s*\d+)?\s*°C)"),
-        new("Speed",  @"(?:printing\s+speed|print\s+speed)[:\s]+(\d+(?:\s*[–\-]\s*\d+)?\s*mm/s)"),
-        new("Fan",    @"(?:fan|cooling)[:\s]+(\w+)"),
+        new("Nozzle", @"(?:printing\s+temp(?:erature)?|nozzle|hotend)[:\s]+(\d+(?:\s*[\u2013\-]\s*\d+)?\s*°C)") { Key = "hotendTemp" },
+        new("Bed",    @"(?:bed\s+temp(?:erature)?|build\s+plate)[:\s]+(\d+(?:\s*[\u2013\-]\s*\d+)?\s*°C)")    { Key = "bedTemp" },
+        new("Speed",  @"(?:printing\s+speed|print\s+speed)[:\s]+(\d+(?:\s*[\u2013\-]\s*\d+)?\s*mm/s)")        { Key = "printSpeed" },
+        new("Fan",    @"(?:fan|cooling)[:\s]+(\w+)")                                                            { Key = "coolingFanSpeed" },
     ];
 
     // ── Instance ──────────────────────────────────────────────────────────────
@@ -321,22 +321,32 @@ public class AzureVisionExtractionProvider : IExtractionProvider
     // ── Print settings extraction ─────────────────────────────────────────────
 
     /// <summary>
-    /// Applies each configured pattern against the OCR text and collects all matches
-    /// into a structured hints string e.g. "Nozzle: 230-240°C, Bed: 70-80°C, Fan: OFF".
+    /// Applies each configured pattern against the OCR text and returns a JSON object
+    /// matching the Material.PrintSettings JSONB schema, e.g.
+    /// <c>{"hotendTemp":"230-240","bedTemp":"70-80","coolingFanSpeed":"off"}</c>.
+    /// Units (°C, mm/s) are stripped from captured values so they match DB format.
     /// All patterns are evaluated independently — the first match per pattern is used.
     /// Invalid regex patterns from config are skipped with a warning rather than throwing.
     /// </summary>
     private string? ExtractPrintSettings(string ocrText)
     {
-        var hints = new List<string>();
+        var settings = new Dictionary<string, string>();
 
         foreach (var entry in _printSettingsPatterns)
         {
+            var jsonKey = string.IsNullOrEmpty(entry.Key)
+                ? entry.Label.ToLowerInvariant()
+                : entry.Key;
+
             try
             {
                 var match = Regex.Match(ocrText, entry.Pattern, RegexOptions.IgnoreCase);
                 if (match.Success && match.Groups.Count > 1)
-                    hints.Add($"{entry.Label}: {match.Groups[1].Value.Trim()}");
+                {
+                    var rawValue  = match.Groups[1].Value.Trim();
+                    var cleanValue = StripPrintSettingUnits(rawValue);
+                    settings[jsonKey] = cleanValue;
+                }
             }
             catch (ArgumentException ex)
             {
@@ -346,8 +356,14 @@ public class AzureVisionExtractionProvider : IExtractionProvider
             }
         }
 
-        return hints.Count > 0 ? string.Join(", ", hints) : null;
+        return settings.Count > 0
+            ? JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = false })
+            : null;
     }
+
+    /// <summary>Strips trailing units (°C, mm/s) so DB values stay as plain numbers/ranges.</summary>
+    private static string StripPrintSettingUnits(string value) =>
+        Regex.Replace(value, @"\s*(°C|mm/s|°)\s*$", string.Empty, RegexOptions.IgnoreCase).Trim();
 
     // ── OCR helpers ───────────────────────────────────────────────────────────
 
@@ -439,6 +455,14 @@ public class AzureVisionExtractionProvider : IExtractionProvider
 /// Configured under Intake:Extractor:PrintSettings:Patterns in appsettings.json.
 /// Can be extended in Azure App Settings without redeployment:
 ///   Intake__Extractor__PrintSettings__Patterns__N__Label = MyLabel
+///   Intake__Extractor__PrintSettings__Patterns__N__Key = jsonbKey
 ///   Intake__Extractor__PrintSettings__Patterns__N__Pattern = my-regex-here
 /// </summary>
-public record PrintSettingsPatternEntry(string Label, string Pattern);
+public record PrintSettingsPatternEntry(string Label, string Pattern)
+{
+    /// <summary>
+    /// The JSONB key used in Material.PrintSettings (e.g. "hotendTemp", "bedTemp").
+    /// Falls back to a lowercased Label when empty.
+    /// </summary>
+    public string Key { get; init; } = string.Empty;
+}
