@@ -220,12 +220,12 @@ export default function NewIntakePage() {
         {/* Preview — shown once a file is selected (from file picker or webcam capture) */}
         {preview && file && (
           <div className="space-y-3">
-            <div className="relative border border-border bg-surface-alt aspect-video flex items-center justify-center overflow-hidden">
+            <div className="relative border border-border bg-surface-alt flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={preview}
                 alt="Selected material photo"
-                className="max-h-full max-w-full object-contain"
+                className="max-w-full max-h-[60vh] object-contain"
               />
               {!mutation.isPending && (
                 <button
