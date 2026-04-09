@@ -94,6 +94,14 @@ namespace PrintHub.Core.Entities
         /// Null if print time was unavailable at the time of order.
         /// </summary>
         public decimal? MachineCost { get; set; }
+
+        /// <summary>
+        /// Handling fee snapshot for this item — flat per model, regardless of quantity.
+        /// Covers printer setup, filament load, slicer prep, QC, and shipping handling.
+        /// Captured at order creation so the rate never drifts retroactively.
+        /// Null for orders created before this field was introduced.
+        /// </summary>
+        public decimal? HandlingFee { get; set; }
         
         public PrintQuality Quality { get; set; } = PrintQuality.Standard;
         

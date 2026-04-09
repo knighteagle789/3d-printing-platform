@@ -39,6 +39,19 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// Update a Draft order's items and header fields.
+    /// Only the order owner may call this endpoint, and only while the order is in Draft status.
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<OrderResponse>> UpdateOrder(
+        Guid id, UpdateOrderRequest request)
+    {
+        var userId = User.GetUserId();
+        var order = await _orderService.UpdateOrderAsync(id, userId, request);
+        return Ok(order);
+    }
+
+    /// <summary>
     /// Get a specific order by ID.
     /// </summary>
     [HttpGet("{id:guid}")]
