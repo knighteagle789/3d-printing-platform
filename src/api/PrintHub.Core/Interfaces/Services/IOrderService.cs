@@ -11,6 +11,17 @@ public interface IOrderService
 {
     // --- Customer operations ---
     Task<OrderResponse> CreateOrderAsync(Guid userId, CreateOrderRequest request);
+
+    /// <summary>
+    /// Update a Draft order's items and header fields.
+    /// Throws <see cref="PrintHub.Core.Exceptions.NotFoundException"/> if the order does not exist.
+    /// Throws <see cref="PrintHub.Core.Exceptions.ForbiddenException"/> if <paramref name="userId"/>
+    /// does not own the order.
+    /// Throws <see cref="PrintHub.Core.Exceptions.BusinessRuleException"/> if the order is not in
+    /// Draft status.
+    /// </summary>
+    Task<OrderResponse> UpdateOrderAsync(Guid orderId, Guid userId, UpdateOrderRequest request);
+
     Task<OrderResponse> GetOrderByIdAsync(Guid orderId);
     Task<PagedResponse<OrderResponse>> GetUserOrdersAsync(
         Guid userId, int page = 1, int pageSize = 20);

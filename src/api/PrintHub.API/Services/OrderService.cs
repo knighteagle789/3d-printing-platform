@@ -19,6 +19,7 @@ public class OrderService : IOrderService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<OrderService> _logger;
     private readonly decimal _machineRatePerHour;
+    private readonly decimal _handlingFeePerModel;
 
     public OrderService(
         IOrderRepository orderRepo,
@@ -38,6 +39,7 @@ public class OrderService : IOrderService
         _unitOfWork = unitOfWork;
         _logger = logger;
         _machineRatePerHour = configuration.GetValue<decimal>("Pricing:MachineRatePerHour", 3.50m);
+        _handlingFeePerModel = configuration.GetValue<decimal>("Pricing:HandlingFeePerModel", 4.00m);
     }
 
     // --- Customer operations ---
@@ -83,8 +85,9 @@ public class OrderService : IOrderService
                 FileId = itemRequest.FileId,
                 Quantity = itemRequest.Quantity,
                 UnitPrice = unitPrice,
-                TotalPrice = unitPrice * itemRequest.Quantity + machineCost,
+                TotalPrice = unitPrice * itemRequest.Quantity + machineCost + _handlingFeePerModel,
                 MachineCost = machineCost > 0 ? machineCost : null,
+                HandlingFee = _handlingFeePerModel,
                 Color = itemRequest.Color,
                 SpecialInstructions = itemRequest.SpecialInstructions,
                 Quality = Enum.Parse<PrintQuality>(itemRequest.Quality, ignoreCase: true),
@@ -127,6 +130,89 @@ public class OrderService : IOrderService
         }
 
         return OrderResponse.FromEntity(created!);
+    }
+
+    public async Task<OrderResponse> UpdateOrderAsync(
+        Guid orderId, Guid userId, UpdateOrderRequest request)
+    {
+        // Load the order header only — avoids navigation-collection change-tracker
+        // conflicts that arise when clearing and re-adding items on a tracked aggregate.
+        var order = await _orderRepo.GetByIdAsync(orderId);
+        if (order == null)
+            throw new NotFoundException("Order", orderId);
+
+        if (order.UserId != userId)
+            throw new ForbiddenException("You do not have permission to edit this order.");
+
+        if (order.Status != OrderStatus.Draft)
+            throw new BusinessRuleException(
+                $"Only Draft orders can be edited. This order is currently {order.Status}.");
+
+        // Build replacement items
+        var newItems = new List<OrderItem>();
+        decimal totalPrice = 0;
+
+        foreach (var itemRequest in request.Items)
+        {
+            var material = await _materialRepo.GetByIdAsync(itemRequest.MaterialId);
+            if (material == null)
+                throw new NotFoundException("Material", itemRequest.MaterialId);
+
+            if (!material.IsActive)
+                throw new BusinessRuleException(
+                    $"Material is no longer available: {material.Type} {material.Color}");
+
+            var file = await _fileRepo.GetFileWithAnalysisAsync(itemRequest.FileId);
+            if (file == null)
+                throw new NotFoundException("File", itemRequest.FileId);
+
+            var unitPrice   = CalculateUnitPrice(material, file, itemRequest);
+            var machineCost = CalculateMachineCost(file, itemRequest.Quantity);
+
+            var orderItem = new OrderItem
+            {
+                Id                  = Guid.NewGuid(),
+                OrderId             = orderId,
+                MaterialId          = itemRequest.MaterialId,
+                FileId              = itemRequest.FileId,
+                Quantity            = itemRequest.Quantity,
+                UnitPrice           = unitPrice,
+                TotalPrice          = unitPrice * itemRequest.Quantity + machineCost + _handlingFeePerModel,
+                MachineCost         = machineCost > 0 ? machineCost : null,
+                HandlingFee         = _handlingFeePerModel,
+                Color               = itemRequest.Color,
+                SpecialInstructions = itemRequest.SpecialInstructions,
+                Quality             = Enum.Parse<PrintQuality>(itemRequest.Quality, ignoreCase: true),
+                Infill              = itemRequest.Infill ?? 20,
+                SupportStructures   = itemRequest.SupportStructures,
+                EstimatedWeight     = file.Analysis?.EstimatedWeightGrams,
+                EstimatedPrintTime  = file.Analysis?.EstimatedPrintTimeHours,
+                CreatedAt           = DateTime.UtcNow
+            };
+
+            newItems.Add(orderItem);
+            totalPrice += orderItem.TotalPrice;
+        }
+
+        // Atomically swap items via the DbSet — bypasses the navigation collection
+        // so EF sees clean Deleted + Added states with no ambiguity.
+        await _orderRepo.ReplaceItemsAsync(orderId, newItems);
+
+        // Update order header (entity is tracked from GetByIdAsync above)
+        order.TotalPrice      = totalPrice;
+        order.Notes           = request.Notes;
+        order.ShippingAddress = request.ShippingAddress;
+        order.RequiredByDate  = request.RequiredByDate;
+        order.UpdatedAt       = DateTime.UtcNow;
+
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Draft order updated: {OrderNumber} by user {UserId}, new total: {TotalPrice:C}",
+            order.OrderNumber, userId, totalPrice);
+
+        var updated = await _orderRepo.GetOrderWithDetailsAsync(order.Id);
+        return OrderResponse.FromEntity(updated!);
     }
 
     public async Task<OrderResponse> GetOrderByIdAsync(Guid orderId)
