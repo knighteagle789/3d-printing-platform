@@ -1,3 +1,4 @@
+using PrintHub.Core.Common;
 using PrintHub.Core.DTOs.Common;
 using PrintHub.Core.DTOs.Files;
 using PrintHub.Core.Entities;
@@ -67,7 +68,7 @@ public class FileService : IFileService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("File uploaded: {FileName} ({FileSize} bytes) by user {UserId}",
-            request.OriginalFileName, request.FileSizeBytes, userId);
+            request.OriginalFileName.SanitizeForLog(), request.FileSizeBytes, userId);
 
         // Run analysis if STL
         if (fileType == FileType.STL)
@@ -104,7 +105,7 @@ public class FileService : IFileService
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("File analyzed: {FileName}, volume: {Volume}mm³, weight: {Weight}g",
-                    request.OriginalFileName, analysis.VolumeInCubicMm, analysis.EstimatedWeightGrams);
+                    request.OriginalFileName.SanitizeForLog(), analysis.VolumeInCubicMm, analysis.EstimatedWeightGrams);
             }
         }
 
@@ -142,7 +143,7 @@ public class FileService : IFileService
 
         _logger.LogInformation(
             "Chunked upload committed: {FileName} ({FileSize} bytes, {BlockCount} blocks) by user {UserId}",
-            request.OriginalFileName, request.FileSizeBytes, request.BlockIds.Count, userId);
+            request.OriginalFileName.SanitizeForLog(), request.FileSizeBytes, request.BlockIds.Count, userId);
 
         // Run analysis if STL
         if (fileType == FileType.STL)
@@ -186,7 +187,7 @@ public class FileService : IFileService
                 // Analysis failure should not fail the upload
                 _logger.LogWarning(ex,
                     "STL analysis failed for chunked upload {FileName} — file was saved successfully",
-                    request.OriginalFileName);
+                    request.OriginalFileName.SanitizeForLog());
             }
         }
 

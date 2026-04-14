@@ -15,17 +15,23 @@ public class MaterialIntakeService : IMaterialIntakeService
     private readonly IMaterialRepository _materialRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IIntakeExtractionQueue _intakeExtractionQueue;
+    private readonly IFileStorageService _fileStorageService;
+
+    // Long enough for a reviewer to examine the photo without the URL expiring mid-session.
+    private static readonly TimeSpan PhotoDisplaySasTtl = TimeSpan.FromHours(2);
 
     public MaterialIntakeService(
         IMaterialIntakeRepository intakeRepository,
         IMaterialRepository materialRepository,
         IUnitOfWork unitOfWork,
-        IIntakeExtractionQueue intakeExtractionQueue)
+        IIntakeExtractionQueue intakeExtractionQueue,
+        IFileStorageService fileStorageService)
     {
-        _intakeRepository = intakeRepository;
-        _materialRepository = materialRepository;
-        _unitOfWork = unitOfWork;
+        _intakeRepository     = intakeRepository;
+        _materialRepository   = materialRepository;
+        _unitOfWork           = unitOfWork;
         _intakeExtractionQueue = intakeExtractionQueue;
+        _fileStorageService   = fileStorageService;
     }
 
     public async Task<MaterialIntakeResponse> CreateIntakeAsync(CreateIntakeRequest request, Guid uploadedByUserId)
@@ -70,7 +76,19 @@ public class MaterialIntakeService : IMaterialIntakeService
     public async Task<MaterialIntakeResponse?> GetIntakeAsync(Guid intakeId)
     {
         var intake = await _intakeRepository.GetByIdAsync(intakeId);
-        return intake is null ? null : MapToResponse(intake);
+        if (intake is null) return null;
+
+        var response = MapToResponse(intake);
+
+        // Generate a time-limited SAS URL so the admin can view the private blob photo.
+        // The raw PhotoUrl stored in the DB is a private Azure Blob URL without a token.
+        if (!string.IsNullOrEmpty(intake.PhotoBlobName))
+        {
+            var sasUrl = await _fileStorageService.GenerateSasUrlAsync(intake.PhotoBlobName, PhotoDisplaySasTtl);
+            response = response with { PhotoUrl = sasUrl };
+        }
+
+        return response;
     }
 
     public async Task<PagedResponse<MaterialIntakeResponse>> GetIntakeQueueAsync(IntakeQueueFilter filter)
@@ -162,6 +180,23 @@ public class MaterialIntakeService : IMaterialIntakeService
         if (!Enum.TryParse<MaterialType>(effectiveTypeStr, ignoreCase: true, out var effectiveType))
             throw new BusinessRuleException($"Invalid material type: '{effectiveTypeStr}'. Must be a recognised MaterialType.");
 
+        // Validate print settings is well-formed JSON before attempting to write to the jsonb column.
+        // Malformed input (e.g. extra braces typed by the reviewer) would otherwise reach PostgreSQL
+        // and cause a 22P02 error that surfaces as an unhandled 500.
+        if (!string.IsNullOrWhiteSpace(effectivePrintSettings))
+        {
+            try
+            {
+                JsonDocument.Parse(effectivePrintSettings);
+            }
+            catch (JsonException)
+            {
+                throw new BusinessRuleException(
+                    "Print settings must be valid JSON — e.g. {\"hotendTemp\":\"210-230\",\"bedTemp\":\"60\"}. " +
+                    "Check for extra or missing braces.");
+            }
+        }
+
         // Auto-infer printing technology: Resin -> SLA, everything else -> FDM
         var technologies = await _materialRepository.GetAllTechnologiesAsync();
         var technologyName = effectiveType == MaterialType.Resin ? "SLA" : "FDM";
@@ -176,9 +211,33 @@ public class MaterialIntakeService : IMaterialIntakeService
 
         if (duplicates.Count > 0)
         {
-            // Flag for human merge review — do not create a new material record
-            approvedMaterialId = duplicates[0].Id;
-            outcome = IntakeApprovalOutcome.NeedsMergeReview;
+            var existing = duplicates[0];
+
+            if (!request.AllowMerge)
+            {
+                // First attempt — return structured 409 so the caller can confirm
+                throw new DuplicateMaterialException(
+                    existing.Id,
+                    existing.Brand,
+                    existing.Color,
+                    existing.Type.ToString(),
+                    existing.StockGrams,
+                    existing.PricePerGram);
+            }
+
+            // Confirmed merge: add spool weight to stock, overwrite price/g with latest price
+            var newPricePerGram = effectiveSpoolWeight is > 0
+                ? request.PricePerSpool / effectiveSpoolWeight.Value
+                : existing.PricePerGram;
+
+            existing.StockGrams    += effectiveSpoolWeight ?? 0m;
+            existing.PricePerGram   = newPricePerGram;
+            existing.PrintSettings  = effectivePrintSettings ?? existing.PrintSettings;
+            existing.UpdatedAt      = now;
+            _materialRepository.Update(existing);
+
+            approvedMaterialId = existing.Id;
+            outcome = IntakeApprovalOutcome.Updated;
         }
         else
         {

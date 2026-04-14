@@ -34,6 +34,14 @@ public interface IOrderRepository : IRepository<Order>
     /// Excludes cancelled orders from revenue totals.
     /// </summary>
     Task<OrderRevenueBySource> GetRevenueBySourceAsync(int days);
+
+    /// <summary>
+    /// Deletes all existing items for an order and stages the provided replacements
+    /// as Added — all within the current unit of work, committed by the caller.
+    /// Bypasses the navigation collection to avoid EF change-tracker state conflicts
+    /// that arise when clearing and re-adding items on a tracked aggregate.
+    /// </summary>
+    Task ReplaceItemsAsync(Guid orderId, IEnumerable<OrderItem> newItems);
 }
 
 /// <summary>

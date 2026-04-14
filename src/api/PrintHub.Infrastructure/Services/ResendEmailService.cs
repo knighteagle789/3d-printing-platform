@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PrintHub.Core.Common;
 using PrintHub.Core.Interfaces.Services;
 using Resend;
 
@@ -220,7 +221,7 @@ public class ResendEmailService : IEmailService
         if (!_isEnabled)
         {
             _logger.LogInformation(
-                "[Email disabled] Would send '{Subject}' to {Email}", subject, toEmail);
+                "[Email disabled] Would send '{Subject}'", subject.SanitizeForLog());
             return;
         }
 
@@ -237,13 +238,13 @@ public class ResendEmailService : IEmailService
             await _resend.EmailSendAsync(message);
 
             _logger.LogInformation(
-                "Email sent: '{Subject}' to {Email}", subject, toEmail);
+                "Email sent: '{Subject}'", subject.SanitizeForLog());
         }
         catch (Exception ex)
         {
             // Never let email failures crash the main flow
             _logger.LogError(ex,
-                "Failed to send email '{Subject}' to {Email}", subject, toEmail);
+                "Failed to send email '{Subject}'", subject.SanitizeForLog());
         }
     }
 

@@ -104,6 +104,18 @@ export interface ApproveIntakeRequest {
   correctedPrintSettingsHints?: string | null;
   correctedBatchOrLot?: string | null;
   pricePerSpool: number;
+  /** When true and a duplicate is found, merges spool weight into existing stock and overwrites price/g. */
+  allowMerge?: boolean;
+}
+
+export interface DuplicateMaterialConflict {
+  type: 'duplicate_material';
+  materialId: string;
+  brand: string | null;
+  color: string;
+  materialType: string;
+  currentStockGrams: number;
+  currentPricePerGram: number;
 }
 
 export interface ApproveIntakeResponse {

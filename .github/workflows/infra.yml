@@ -20,6 +20,8 @@ jobs:
   validate:
     name: Validate & What-If
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -56,6 +58,8 @@ jobs:
     needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: staging
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -102,6 +106,8 @@ jobs:
   #   needs: deploy-staging
   #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
   #   environment: production
+  #   permissions:
+  #     contents: read
 
   #   steps:
   #     - name: Checkout

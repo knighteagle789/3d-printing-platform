@@ -1,3 +1,4 @@
+using PrintHub.Core.Common;
 using PrintHub.Core.DTOs.Materials;
 using PrintHub.Core.Entities;
 using PrintHub.Core.Exceptions;
@@ -103,7 +104,7 @@ public class MaterialService : IMaterialService
             ?? throw new NotFoundException(nameof(Material), material.Id);
 
         _logger.LogInformation("Material created: {Type} {Color} (Id: {Id})",
-            created.Type, created.Color, created.Id);
+            created.Type, created.Color.SanitizeForLog(), created.Id);
 
         return AdminMaterialResponse.FromEntity(created);
     }
@@ -118,7 +119,7 @@ public class MaterialService : IMaterialService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Material updated: {Type} {Color} (Id: {Id})",
-            material.Type, material.Color, material.Id);
+            material.Type, material.Color.SanitizeForLog(), material.Id);
 
         return AdminMaterialResponse.FromEntity(material);
     }

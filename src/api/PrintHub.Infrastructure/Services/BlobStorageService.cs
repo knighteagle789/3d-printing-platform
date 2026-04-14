@@ -4,6 +4,7 @@ using Azure.Storage.Blobs.Specialized;
 using Azure.Storage.Sas;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PrintHub.Core.Common;
 using PrintHub.Core.Interfaces.Services;
 
 namespace PrintHub.Infrastructure.Services;
@@ -35,7 +36,7 @@ public class BlobStorageService : IFileStorageService
 
         if (_isDevelopment)
         {
-            _logger.LogInformation("Blob storage initialized in development mode. Container: {ContainerName}", containerName);
+            _logger.LogInformation("Blob storage initialized in development mode. Container: {ContainerName}", containerName.SanitizeForLog());
             try { _containerClient.SetAccessPolicy(PublicAccessType.Blob); }
             catch (Exception ex)
             {
@@ -48,7 +49,7 @@ public class BlobStorageService : IFileStorageService
     {
         if (_isDevelopment)
         {
-            _logger.LogInformation("Uploading blob (development mode): {BlobName}", blobName);
+            _logger.LogInformation("Uploading blob (development mode): {BlobName}", blobName.SanitizeForLog());
         }
 
         var blobClient = _containerClient.GetBlobClient(blobName);
@@ -58,7 +59,7 @@ public class BlobStorageService : IFileStorageService
             ContentType = contentType
         });
 
-        _logger.LogInformation("Uploaded blob: {BlobName}", blobName);
+        _logger.LogInformation("Uploaded blob: {BlobName}", blobName.SanitizeForLog());
 
         return blobClient.Uri.ToString();
     }
@@ -95,7 +96,7 @@ public class BlobStorageService : IFileStorageService
     {
         var blobClient = _containerClient.GetBlobClient(blobName);
         await blobClient.DeleteIfExistsAsync();
-        _logger.LogInformation("Deleted blob: {BlobName}", blobName);
+        _logger.LogInformation("Deleted blob: {BlobName}", blobName.SanitizeForLog());
     }
 
     public async Task<Stream> DownloadFileAsync(string blobName)
@@ -116,7 +117,7 @@ public class BlobStorageService : IFileStorageService
     {
         var blobClient = _containerClient.GetBlockBlobClient(blobName);
         await blobClient.StageBlockAsync(blockId, blockData);
-        _logger.LogDebug("Staged block {BlockId} for blob {BlobName}", blockId, blobName);
+        _logger.LogDebug("Staged block {BlockId} for blob {BlobName}", blockId.SanitizeForLog(), blobName.SanitizeForLog());
     }
 
     public async Task<string> CommitBlocksAsync(
@@ -129,7 +130,7 @@ public class BlobStorageService : IFileStorageService
         });
 
         _logger.LogInformation(
-            "Committed {BlockCount} blocks for blob {BlobName}", blockIds.Count, blobName);
+            "Committed {BlockCount} blocks for blob {BlobName}", blockIds.Count, blobName.SanitizeForLog());
 
         return blobClient.Uri.ToString();
     }
