@@ -245,4 +245,13 @@ export default function RegisterPage() {
 
           <p className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted mt-8`}>
             Already have an account?{' '}
-            <Link href="/login" className="text-accent hover:text-accent-d
+            <Link href="/login" className="text-accent hover:text-accent-dark transition-colors">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  );
+}

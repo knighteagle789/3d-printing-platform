@@ -771,4 +771,19 @@ export default function HomePage() {
                   >
                     {isAuthenticated ? 'Start Printing' : 'Create Account'} <ArrowRight className="h-3.5 w-3.5" />
                   </button>
-                  <L
+                  <Link
+                    href="/contact"
+                    className={`${mono.className} inline-flex items-center border border-white/30 text-white text-[11px] uppercase tracking-[0.18em] font-semibold px-8 h-12 hover:bg-white/10 transition-colors`}
+                  >
+                    Talk to Us
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </>
+  );
+}
