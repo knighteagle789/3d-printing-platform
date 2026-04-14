@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { contentApi } from '@/lib/api/content';
+import Image from 'next/image';
 import { ArrowLeft, ArrowRight, Calendar, User } from 'lucide-react';
 
 
@@ -89,10 +90,11 @@ export default function BlogPostContent({
         {/* Featured image */}
         {post.featuredImageUrl && (
           <div className="absolute inset-0">
-            <img
+            <Image
               src={post.featuredImageUrl}
               alt=""
-              className="w-full h-full object-cover opacity-10"
+              fill
+              className="object-cover opacity-10"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-page/60 via-page/80 to-page" />
           </div>
@@ -227,9 +229,10 @@ export default function BlogPostContent({
                 },
                 hr: () => <hr className="border-border my-10" />,
                 img: ({ src, alt }) => (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={src}
-                    alt={alt}
+                    alt={alt ?? ''}
                     className="w-full my-8 border border-border"
                   />
                 ),

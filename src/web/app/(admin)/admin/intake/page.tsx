@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { intakeApi, type IntakeStatus, type MaterialIntakeResponse } from '@/lib/api/intake';
 import { toProxiedUrl, formatStatus } from '@/lib/utils';
 import {
-  Search, Camera, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight,
+  Search, Camera, AlertTriangle, ChevronLeft, ChevronRight,
   ClipboardCheck, RotateCcw, Plus,
 } from 'lucide-react';
 

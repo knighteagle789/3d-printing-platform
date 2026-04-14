@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { ArrowRight } from 'lucide-react';
@@ -30,8 +30,9 @@ const inputCls = `w-full h-11 bg-surface border border-border px-3 text-sm text-
   placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors`;
 
 export default function RegisterPage() {
-  const router  = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const setAuth      = useAuthStore((state) => state.setAuth);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterFormValues>({
@@ -49,7 +50,8 @@ export default function RegisterPage() {
         password:  values.password,
       });
       setAuth(response.data.user, response.data.token);
-      router.push('/orders');
+      const redirect = searchParams.get('redirect') ?? '/upload';
+      router.push(redirect);
     } catch (error: unknown) {
       if (
         error &&

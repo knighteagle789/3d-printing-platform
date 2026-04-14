@@ -1,11 +1,11 @@
 'use client';
 
-import { display, mono } from '@/lib/fonts';
+import { mono } from '@/lib/fonts';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { quotesApi, QuoteAnalytics } from '@/lib/api/quotes';
-import { useAuthStore } from '@/lib/stores/auth-store';
+
 import { ArrowLeft, TrendingUp, Clock, CheckCircle2, DollarSign } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -127,7 +127,6 @@ function fmtCurrency(n: number): string {
 
 export default function QuoteAnalyticsPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
   const [window, setWindow] = useState<Window>(30);
 
   const { data, isLoading, isError } = useQuery({

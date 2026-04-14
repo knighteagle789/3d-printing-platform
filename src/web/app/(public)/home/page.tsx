@@ -3,11 +3,13 @@
 import { display, mono } from '@/lib/fonts';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, X } from 'lucide-react';
 import { materialsApi, type Material } from '@/lib/api/materials';
 import { contentApi, type PortfolioItemResponse } from '@/lib/api/content';
 import { groupMaterials, type MaterialGroup } from '@/lib/utils';
+import { useAuthStore } from '@/lib/stores/auth-store';
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
 
@@ -280,8 +282,18 @@ function PortfolioCard({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
+  const router          = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [layerCount,    setLayerCount]    = useState(0);
   const [selectedGroup, setSelectedGroup] = useState<MaterialGroup | null>(null);
+
+  const handleStartPrinting = () => {
+    if (isAuthenticated) {
+      router.push('/upload');
+    } else {
+      router.push('/register?redirect=/upload');
+    }
+  };
 
   const { data: materialsData } = useQuery({
     queryKey: ['materials-public'],
@@ -385,12 +397,12 @@ export default function HomePage() {
               </div>
 
               <div className="fade-up flex flex-wrap gap-3" style={{ animationDelay: '0.45s' }}>
-                <Link
-                  href="/register"
+                <button
+                  onClick={handleStartPrinting}
                   className={`${mono.className} inline-flex items-center gap-2.5 bg-accent text-white text-[11px] font-semibold uppercase tracking-[0.18em] px-7 h-12 hover:bg-accent/90 transition-colors`}
                 >
                   Start Printing <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+                </button>
                 <Link
                   href="/portfolio"
                   className={`${mono.className} inline-flex items-center border border-border text-text-secondary text-[11px] uppercase tracking-[0.18em] px-7 h-12 hover:text-text-primary hover:border-border-strong transition-colors`}
@@ -753,12 +765,12 @@ export default function HomePage() {
                   Upload your file, configure your print, and get an estimate in minutes.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Link
-                    href="/register"
+                  <button
+                    onClick={handleStartPrinting}
                     className={`${mono.className} inline-flex items-center gap-2 bg-white text-accent text-[11px] uppercase tracking-[0.18em] font-semibold px-8 h-12 hover:bg-white/90 transition-colors`}
                   >
-                    Create Account <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                    {isAuthenticated ? 'Start Printing' : 'Create Account'} <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
                   <Link
                     href="/contact"
                     className={`${mono.className} inline-flex items-center border border-white/30 text-white text-[11px] uppercase tracking-[0.18em] font-semibold px-8 h-12 hover:bg-white/10 transition-colors`}

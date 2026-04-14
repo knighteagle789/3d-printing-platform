@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ordersApi } from '@/lib/api/orders';
 import { pricingApi } from '@/lib/api/pricing';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2, Activity, Receipt, Pencil } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2, Activity, Receipt } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
 import { StatusTimeline } from '@/components/orders/StatusTimeline';
 
@@ -95,10 +95,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     enabled:  isAuthenticated,
   });
 
-  const { data: pricingData } = useQuery({
+  useQuery({
     queryKey: ['pricing-config'],
     queryFn:  () => pricingApi.getConfig(),
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 5 * 60 * 1000,
   });
 
   const payMutation = useMutation({
@@ -160,17 +160,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               Placed {formatDate(order.createdAt)}
             </p>
           </div>
-          <div className="mt-1 flex items-center gap-3">
+          <div className="mt-1">
             <StatusPill status={order.status} />
-            {order.status === 'Draft' && (
-              <button
-                onClick={() => router.push(`/orders/${id}/edit`)}
-                className={`${mono.className} flex items-center gap-1.5 px-3 h-7 border border-border text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-secondary hover:border-border transition-colors`}
-              >
-                <Pencil className="h-3 w-3" />
-                Edit Order
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -257,14 +248,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {/* Items */}
         <Section icon={Package} title={`Items (${order.items.length})`}>
           <div className="space-y-4">
-            {order.items.map((item, i) => {
-              const materialSubtotal = item.quantity * item.unitPrice;
-              return (
-                <div key={item.id}>
-                  {i > 0 && <div className="border-t border-border mb-4" />}
-
-                  {/* File + print settings */}
-                  <div className="mb-3 space-y-1">
+            {order.items.map((item, i) => (
+              <div key={item.id}>
+                {i > 0 && <div className="border-t border-border mb-4" />}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1 flex-1">
                     <p className={`${mono.className} text-[11px] text-text-secondary`}>
                       {item.file?.originalFileName ?? 'Unknown file'}
                     </p>
@@ -272,14 +260,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       {item.material ? `${item.material.type} — ${item.material.color}` : '—'}
                       &nbsp;·&nbsp; {item.quality} quality
                       &nbsp;·&nbsp; {item.infill ?? '—'}% infill
-                      {item.supportStructures && <>&nbsp;·&nbsp; supports</>}
                     </p>
+                    {item.supportStructures && (
+                      <p className={`${mono.className} text-[9px] text-text-muted`}>Support structures included</p>
+                    )}
                     {item.estimatedWeight != null && (
                       <p className={`${mono.className} text-[9px] text-text-muted`}>
                         Est. weight: {item.estimatedWeight.toFixed(1)} g
-                        {item.estimatedPrintTime != null && (
-                          <>&nbsp;·&nbsp; Est. print time: {item.estimatedPrintTime.toFixed(1)} h</>
-                        )}
+                      </p>
+                    )}
+                    {item.machineCost != null ? (
+                      <p className={`${mono.className} text-[9px] text-text-muted`}>
+                        Machine time: ${item.machineCost.toFixed(2)}
+                      </p>
+                    ) : item.estimatedPrintTime != null && (
+                      <p className={`${mono.className} text-[9px] text-text-muted`}>
+                        Est. print time: {item.estimatedPrintTime.toFixed(1)} h
                       </p>
                     )}
                     {item.specialInstructions && (
@@ -288,76 +284,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       </p>
                     )}
                   </div>
-
-                  {/* Cost breakdown */}
-                  <div className="border border-border bg-surface-alt">
-                    {/* Material */}
-                    <div className="flex items-baseline justify-between gap-4 px-3 py-1.5 border-b border-border">
-                      <div>
-                        <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
-                          Material
-                        </span>
-                        <span className={`${mono.className} text-[8px] text-text-muted/70 ml-2`}>
-                          {item.quantity} × ${item.unitPrice.toFixed(2)}/ea
-                        </span>
-                      </div>
-                      <span className={`${mono.className} text-[11px] text-text-secondary tabular-nums shrink-0`}>
-                        ${materialSubtotal.toFixed(2)}
-                      </span>
-                    </div>
-
-                    {/* Handling */}
-                    <div className="flex items-baseline justify-between gap-4 px-3 py-1.5 border-b border-border">
-                      <div>
-                        <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
-                          Handling
-                        </span>
-                        <span className={`${mono.className} text-[8px] text-text-muted/70 ml-2`}>
-                          setup, slicing &amp; shipping
-                        </span>
-                      </div>
-                      <span className={`${mono.className} text-[11px] tabular-nums shrink-0 ${
-                        item.handlingFee != null ? 'text-text-secondary' : 'text-text-muted/50'
-                      }`}>
-                        {item.handlingFee != null ? `$${item.handlingFee.toFixed(2)}` : '—'}
-                      </span>
-                    </div>
-
-                    {/* Machine */}
-                    <div className="flex items-baseline justify-between gap-4 px-3 py-1.5 border-b border-border">
-                      <div>
-                        <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
-                          Machine
-                        </span>
-                        {item.machineCost != null && item.estimatedPrintTime != null && (
-                          <span className={`${mono.className} text-[8px] text-text-muted/70 ml-2`}>
-                            {item.estimatedPrintTime.toFixed(1)} h × {item.quantity}
-                          </span>
-                        )}
-                      </div>
-                      <span className={`${mono.className} text-[11px] tabular-nums shrink-0 ${
-                        item.machineCost != null ? 'text-text-secondary' : 'text-text-muted/50'
-                      }`}>
-                        {item.machineCost != null
-                          ? `$${item.machineCost.toFixed(2)}`
-                          : '—'}
-                      </span>
-                    </div>
-
-                    {/* Item total */}
-                    <div className="flex items-baseline justify-between gap-4 px-3 py-1.5">
-                      <span className={`${mono.className} text-[9px] uppercase tracking-[0.12em] text-text-muted`}>
-                        Item total
-                      </span>
-                      <span className={`${mono.className} text-[13px] text-text-primary tabular-nums shrink-0`}>
-                        ${item.totalPrice.toFixed(2)}
-                      </span>
-                    </div>
+                  <div className="text-right shrink-0">
+                    <p className={`${mono.className} text-[12px] text-text-primary`}>
+                      ${item.totalPrice.toFixed(2)}
+                    </p>
+                    <p className={`${mono.className} text-[9px] text-text-muted mt-0.5`}>
+                      {item.quantity} × ${item.unitPrice.toFixed(2)}
+                    </p>
                   </div>
-
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </Section>
 
