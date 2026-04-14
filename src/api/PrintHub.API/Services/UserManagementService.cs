@@ -66,7 +66,7 @@ public class UserManagementService : IUserManagementService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Updated roles for user {UserId}: {Roles}",
-            id, string.Join(", ", roles));
+            id, string.Join(", ", roles).SanitizeForLog());
 
         var updated = await _userRepo.GetWithRolesAsync(id);
         return UserResponse.FromEntity(updated!);

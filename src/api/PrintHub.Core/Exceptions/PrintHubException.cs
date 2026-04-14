@@ -49,3 +49,29 @@ public class ConflictException : PrintHubException
 {
     public ConflictException(string message) : base(message) { }
 }
+
+/// <summary>
+/// Thrown during intake approval when a material with the same type, color, and brand already exists.
+/// Returns 409 with structured duplicate data so the caller can confirm a stock merge.
+/// </summary>
+public class DuplicateMaterialException : PrintHubException
+{
+    public Guid MaterialId { get; }
+    public string? Brand { get; }
+    public string Color { get; }
+    public string MaterialType { get; }
+    public decimal CurrentStockGrams { get; }
+    public decimal CurrentPricePerGram { get; }
+
+    public DuplicateMaterialException(Guid materialId, string? brand, string color, string materialType,
+        decimal currentStockGrams, decimal currentPricePerGram)
+        : base("A material with the same type, color, and brand already exists in inventory.")
+    {
+        MaterialId = materialId;
+        Brand = brand;
+        Color = color;
+        MaterialType = materialType;
+        CurrentStockGrams = currentStockGrams;
+        CurrentPricePerGram = currentPricePerGram;
+    }
+}

@@ -18,6 +18,7 @@ public class MaterialIntakeServiceTests
     private readonly Mock<IMaterialRepository> _materialRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IIntakeExtractionQueue> _queueMock = new();
+    private readonly Mock<IFileStorageService> _fileStorageMock = new();
     private readonly MaterialIntakeService _sut;
 
     // Reusable test technology list
@@ -38,7 +39,8 @@ public class MaterialIntakeServiceTests
             _intakeRepoMock.Object,
             _materialRepoMock.Object,
             _unitOfWorkMock.Object,
-            _queueMock.Object);
+            _queueMock.Object,
+            _fileStorageMock.Object);
     }
 
     // ── ApproveIntakeAsync ────────────────────────────────────────────────────
@@ -92,7 +94,7 @@ public class MaterialIntakeServiceTests
     }
 
     [Fact]
-    public async Task ApproveIntake_DuplicateDetected_ReturnsMergeReviewWithoutCreatingMaterial()
+    public async Task ApproveIntake_DuplicateDetected_WithoutAllowMerge_ThrowsDuplicateMaterialException()
     {
         // Arrange
         var existingMaterial = TestDataBuilder.CreateMaterial(color: "Black");
@@ -109,18 +111,56 @@ public class MaterialIntakeServiceTests
             .Setup(r => r.FindDuplicatesAsync(MaterialType.PLA, "Black", null))
             .ReturnsAsync((IReadOnlyList<Material>)[existingMaterial]);
 
+        // Act & Assert — should throw before saving anything
+        await _sut.Invoking(s => s.ApproveIntakeAsync(intake.Id, request, actorId))
+            .Should().ThrowAsync<DuplicateMaterialException>()
+            .WithMessage("*already exists*");
+
+        _materialRepoMock.Verify(r => r.AddAsync(It.IsAny<Material>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ApproveIntake_DuplicateDetected_WithAllowMerge_AddsStockAndOverwritesPricePerGram()
+    {
+        // Arrange
+        var existingMaterial = TestDataBuilder.CreateMaterial(color: "Black", pricePerGram: 0.05m); // 1000g stock
+        var intake = TestDataBuilder.CreateMaterialIntake(
+            status: IntakeStatus.NeedsReview,
+            draftMaterialType: "PLA",
+            draftColor: "Black");
+
+        var actorId = Guid.NewGuid();
+        // Reviewer confirms it's 1000g, paid $40 → $0.04/g (cheaper than existing $0.05/g)
+        // New spool label also has print settings that should be applied to the existing material
+        var request = new ApproveIntakeRequest(
+            CorrectedBrand: null,
+            CorrectedMaterialType: null,
+            CorrectedColor: null,
+            CorrectedSpoolWeightGrams: 1000m,
+            CorrectedPrintSettingsHints: "{\"hotendTemp\":\"215\",\"bedTemp\":\"60\",\"coolingFanSpeed\":\"100%\"}",
+            CorrectedBatchOrLot: null,
+            PricePerSpool: 40.00m,
+            AllowMerge: true);
+
+        _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
+        _materialRepoMock
+            .Setup(r => r.FindDuplicatesAsync(MaterialType.PLA, "Black", null))
+            .ReturnsAsync((IReadOnlyList<Material>)[existingMaterial]);
+
         // Act
         var result = await _sut.ApproveIntakeAsync(intake.Id, request, actorId);
 
         // Assert
-        result.Outcome.Should().Be(IntakeApprovalOutcome.NeedsMergeReview);
+        result.Outcome.Should().Be(IntakeApprovalOutcome.Updated);
         result.MaterialId.Should().Be(existingMaterial.Id);
 
-        intake.Status.Should().Be(IntakeStatus.Approved);
-        intake.ApprovedMaterialId.Should().Be(existingMaterial.Id);
+        existingMaterial.StockGrams.Should().Be(2000m);              // 1000 + 1000
+        existingMaterial.PricePerGram.Should().Be(0.04m);             // overwritten with new price
+        existingMaterial.PrintSettings.Should().Be("{\"hotendTemp\":\"215\",\"bedTemp\":\"60\",\"coolingFanSpeed\":\"100%\"}"); // applied from intake
 
-        // No new material should have been created
         _materialRepoMock.Verify(r => r.AddAsync(It.IsAny<Material>()), Times.Never);
+        _materialRepoMock.Verify(r => r.Update(existingMaterial), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -228,6 +268,32 @@ public class MaterialIntakeServiceTests
         var act = async () => await _sut.ApproveIntakeAsync(intake.Id, request, Guid.NewGuid());
         await act.Should().ThrowAsync<BusinessRuleException>()
             .WithMessage("*color*");
+    }
+
+    [Fact]
+    public async Task ApproveIntake_InvalidPrintSettingsJson_ThrowsBusinessRuleException()
+    {
+        // Arrange — reviewer-corrected JSON with trailing extra brace (real production error)
+        var intake = TestDataBuilder.CreateMaterialIntake(
+            status: IntakeStatus.NeedsReview,
+            draftMaterialType: "PLA",
+            draftColor: "Black");
+
+        _intakeRepoMock.Setup(r => r.GetByIdAsync(intake.Id)).ReturnsAsync(intake);
+
+        var request = new ApproveIntakeRequest(
+            CorrectedBrand: null,
+            CorrectedMaterialType: null,
+            CorrectedColor: null,
+            CorrectedSpoolWeightGrams: null,
+            CorrectedPrintSettingsHints: """{"hotendTemp":"215","bedTemp":"60"}}""",  // extra }
+            CorrectedBatchOrLot: null,
+            PricePerSpool: 25m);
+
+        // Act & Assert
+        var act = async () => await _sut.ApproveIntakeAsync(intake.Id, request, Guid.NewGuid());
+        await act.Should().ThrowAsync<BusinessRuleException>()
+            .WithMessage("*valid JSON*");
     }
 
     // ── RejectIntakeAsync ─────────────────────────────────────────────────────

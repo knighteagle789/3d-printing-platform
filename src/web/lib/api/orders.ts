@@ -27,6 +27,7 @@ export interface OrderItem {
   estimatedWeight: number | null;
   estimatedPrintTime: number | null;
   machineCost: number | null;
+  handlingFee: number | null;
   quality: string;
   infill: number | null;
   supportStructures: boolean;
@@ -120,6 +121,22 @@ export const ordersApi = {
       supportStructures: boolean;
     }[];
   }) => apiClient.post<Order>('/Orders', data),
+
+  update: (id: string, data: {
+    notes?: string;
+    shippingAddress?: string;
+    requiredByDate?: string;
+    items: {
+      fileId: string;
+      materialId: string;
+      quantity: number;
+      color?: string;
+      specialInstructions?: string;
+      quality: string;
+      infill?: number;
+      supportStructures: boolean;
+    }[];
+  }) => apiClient.put<Order>(`/Orders/${id}`, data),
 
   createPaymentSession: (orderId: string) =>
     apiClient.post<{ url: string }>(`/Payments/create-session/${orderId}`),

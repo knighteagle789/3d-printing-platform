@@ -140,4 +140,17 @@ public class OrderRepository : Repository<Order>, IOrderRepository
 
         return new OrderRevenueBySource(quoteOriginated, direct);
     }
+
+    public async Task ReplaceItemsAsync(Guid orderId, IEnumerable<OrderItem> newItems)
+    {
+        // Work directly against the DbSet to avoid navigation-collection change-tracker
+        // conflicts. Removing via the DbSet marks existing rows as Deleted, and adding
+        // via the DbSet marks new rows as Added — no ambiguity for EF.
+        var existing = await _context.Set<OrderItem>()
+            .Where(i => i.OrderId == orderId)
+            .ToListAsync();
+
+        _context.Set<OrderItem>().RemoveRange(existing);
+        await _context.Set<OrderItem>().AddRangeAsync(newItems);
+    }
 }

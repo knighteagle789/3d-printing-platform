@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PrintHub.Core.Common;
 using PrintHub.Core.Interfaces.Services;
 using System.Numerics;
 
@@ -87,7 +88,7 @@ public class StlAnalyzerService : IStlAnalyzerService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to analyze STL file: {FileName}", fileName);
+            _logger.LogError(ex, "Failed to analyze STL file: {FileName}", fileName.SanitizeForLog());
             return null;
         }
     }
