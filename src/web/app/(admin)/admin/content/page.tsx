@@ -36,10 +36,6 @@ interface BlogPost {
 
 interface PagedResponse<T> { items: T[]; totalCount: number; totalPages: number; }
 
-function formatDate(d: string | null) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
 
 export default function AdminContentPage() {
   const router       = useRouter();
@@ -93,9 +89,11 @@ export default function AdminContentPage() {
 
   const handleDelete = () => {
     if (!deleteTarget) return;
-    deleteTarget.type === 'portfolio'
-      ? deletePortfolio.mutate(deleteTarget.id)
-      : deleteBlog.mutate(deleteTarget.id);
+    if (deleteTarget.type === 'portfolio') {
+      deletePortfolio.mutate(deleteTarget.id);
+    } else {
+      deleteBlog.mutate(deleteTarget.id);
+    }
   };
 
   const isDeleting = deletePortfolio.isPending || deleteBlog.isPending;

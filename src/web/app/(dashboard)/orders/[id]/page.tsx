@@ -95,10 +95,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     enabled:  isAuthenticated,
   });
 
-  const { data: pricingData } = useQuery({
+  useQuery({
     queryKey: ['pricing-config'],
     queryFn:  () => pricingApi.getConfig(),
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 5 * 60 * 1000,
   });
 
   const payMutation = useMutation({

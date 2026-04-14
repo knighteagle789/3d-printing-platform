@@ -4,7 +4,7 @@ import { mono } from '@/lib/fonts';
 import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { ordersApi, type OrderStatusHistory } from '@/lib/api/orders';
+import { ordersApi } from '@/lib/api/orders';
 import { formatStatus } from '@/lib/utils';
 import { StatusTimeline } from '@/components/orders/StatusTimeline';
 import {
