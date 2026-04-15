@@ -16,14 +16,6 @@ namespace PrintHub.Core.Entities
         
         public QuoteStatus Status { get; set; }
         
-        public Guid? FileId { get; set; }
-        
-        public int Quantity { get; set; } = 1;
-        
-        public Guid? PreferredMaterialId { get; set; }
-        
-        public string? PreferredColor { get; set; }
-        
         public DateTime? RequiredByDate { get; set; }
         
         public string? SpecialRequirements { get; set; }
@@ -116,8 +108,14 @@ namespace PrintHub.Core.Entities
             };
         }
         
+        /// <summary>
+        /// One-time setup/job fee applied per quote request — covers slicing, bed prep, and job coordination.
+        /// Snapshotted at creation time from appsettings so rate changes don't affect existing quotes.
+        /// </summary>
+        public decimal? SetupFee { get; set; }
+
         public DateTime CreatedAt { get; set; }
-        
+
         public DateTime? UpdatedAt { get; set; }
 
         /// <summary>
@@ -126,15 +124,71 @@ namespace PrintHub.Core.Entities
         public Guid? OrderId { get; set; }
 
         public virtual Order? Order { get; set; }
-        
+
         // Navigation properties
         public virtual User User { get; set; } = null!;
-        
-        public virtual UploadedFile? File { get; set; }
-        
-        public virtual Material? PreferredMaterial { get; set; }
-        
+
+        public virtual ICollection<QuoteRequestFile> Files { get; set; } = new List<QuoteRequestFile>();
+
         public virtual ICollection<QuoteResponse> Responses { get; set; } = new List<QuoteResponse>();
+    }
+
+    /// <summary>
+    /// Represents a single file entry within a multi-file quote request.
+    /// Mirrors the OrderItem pattern on Order.
+    /// </summary>
+    public class QuoteRequestFile
+    {
+        public Guid Id { get; set; }
+
+        public Guid QuoteRequestId { get; set; }
+
+        public Guid FileId { get; set; }
+
+        public Guid? MaterialId { get; set; }
+
+        public int Quantity { get; set; } = 1;
+
+        public string? Color { get; set; }
+
+        // ── Analysis snapshot (copied from file's existing analysis at quote creation time) ──
+
+        public decimal? DimensionX { get; set; }
+        public decimal? DimensionY { get; set; }
+        public decimal? DimensionZ { get; set; }
+
+        /// <summary>Estimated material weight in grams (volume × infill fraction × density).</summary>
+        public decimal? EstimatedWeightGrams { get; set; }
+
+        /// <summary>Estimated print time in hours.</summary>
+        public decimal? EstimatedPrintTimeHours { get; set; }
+
+        // ── Computed cost breakdown (informational — admin sets final price via QuoteResponse) ──
+
+        /// <summary>
+        /// Material cost snapshot: EstimatedWeightGrams × material.PricePerGram × Quantity.
+        /// Null if file has no analysis or no material was selected.
+        /// </summary>
+        public decimal? MaterialCost { get; set; }
+
+        /// <summary>
+        /// Machine cost for this print run. Null for v1 (conservative: admin prices manually).
+        /// Future: print time × machine rate, with bin-packing for batched runs.
+        /// </summary>
+        public decimal? MachineCost { get; set; }
+
+        /// <summary>
+        /// True if any dimension exceeds the CR-10 build volume (300×300×400 mm).
+        /// Flagged as a warning on the quote review screen but does not block submission.
+        /// </summary>
+        public bool ExceedsBuildVolume { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        // Navigation properties
+        public virtual QuoteRequest QuoteRequest { get; set; } = null!;
+        public virtual UploadedFile File { get; set; } = null!;
+        public virtual Material? Material { get; set; }
     }
     
     /// <summary>
