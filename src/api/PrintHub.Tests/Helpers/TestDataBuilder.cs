@@ -110,16 +110,27 @@ public static class TestDataBuilder
         Guid? fileId = null,
         Guid? materialId = null)
     {
+        var quoteFiles = new List<QuoteRequestFile>();
+        if (fileId.HasValue)
+        {
+            quoteFiles.Add(new QuoteRequestFile
+            {
+                Id = Guid.NewGuid(),
+                FileId = fileId.Value,
+                MaterialId = materialId,
+                Quantity = 1,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
         return new QuoteRequest
         {
             Id = id ?? Guid.NewGuid(),
             UserId = userId ?? Guid.NewGuid(),
             RequestNumber = "QR-2026-00001",
             Status = status,
-            FileId = fileId,
-            PreferredMaterialId = materialId,
-            Quantity = 1,
             CreatedAt = DateTime.UtcNow,
+            Files = quoteFiles,
             Responses = new List<QuoteResponse>()
         };
     }
