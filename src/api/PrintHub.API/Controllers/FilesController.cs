@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -171,7 +172,7 @@ public class FilesController : ControllerBase
         return Ok(new { url });
     }
 
-    // ─── Chunked upload ───────────────────────────────────────────────────
+    // ─── Chunked upload ────────────────────────────────────────────────────
 
     /// <summary>
     /// Initiate a chunked upload session.
@@ -248,11 +249,102 @@ public class FilesController : ControllerBase
         }
     }
 
-    // ─── Private helpers ──────────────────────────────────────────────────
+    // ─── ZIP bulk upload ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Upload a ZIP archive containing one or more 3D model files.
+    /// Each supported file inside the archive is extracted and stored as a separate upload.
+    /// Returns a summary with the list of successfully created file records and any skipped entries.
+    /// Supports up to 25 model files per archive; unsupported extensions are silently skipped.
+    /// </summary>
+    [HttpPost("upload-zip")]
+    [RequestSizeLimit(262_144_000)]                              // 250MB total ZIP
+    [RequestFormLimits(MultipartBodyLengthLimit = 262_144_000)]
+    public async Task<ActionResult<ZipUploadResponse>> UploadZip(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file provided." });
+
+        var ext = Path.GetExtension(file.FileName).ToLower();
+        if (ext != ".zip")
+            return BadRequest(new { message = "Only .zip archives are supported by this endpoint." });
+
+        var userId = User.GetUserId();
+        var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { ".stl", ".obj", ".3mf", ".step", ".iges", ".amf", ".ply" };
+
+        var uploaded = new List<FileResponse>();
+        var skipped  = new List<string>();
+
+        using var zipStream = file.OpenReadStream();
+        using var archive   = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: false);
+
+        // Filter to valid model entries (skip directories and unsupported extensions).
+        var modelEntries = archive.Entries
+            .Where(e => !string.IsNullOrEmpty(e.Name) &&
+                        allowedExtensions.Contains(Path.GetExtension(e.Name)))
+            .ToList();
+
+        if (modelEntries.Count == 0)
+            return BadRequest(new { message = "The archive contains no supported 3D model files (.stl, .obj, .3mf, .step, .iges, .amf, .ply)." });
+
+        if (modelEntries.Count > 25)
+            return BadRequest(new { message = $"The archive contains {modelEntries.Count} model files, which exceeds the limit of 25 per upload." });
+
+        // Track skipped entries (wrong extension).
+        skipped.AddRange(archive.Entries
+            .Where(e => !string.IsNullOrEmpty(e.Name) &&
+                        !allowedExtensions.Contains(Path.GetExtension(e.Name)) &&
+                        e.Length > 0)
+            .Select(e => e.Name));
+
+        foreach (var entry in modelEntries)
+        {
+            // Buffer each entry so the ZIP stream position doesn't interfere.
+            using var entryStream = entry.Open();
+            using var buffer      = new MemoryStream((int)Math.Min(entry.Length, 256 * 1024 * 1024));
+            await entryStream.CopyToAsync(buffer);
+            buffer.Position = 0;
+
+            var entryExt      = Path.GetExtension(entry.Name).ToLower();
+            var fileType      = entryExt.TrimStart('.').ToUpper();
+            if (fileType == "3MF") fileType = "ThreeMF";
+            var contentType   = entryExt == ".stl" ? "application/octet-stream" : "application/octet-stream";
+
+            var uploadRequest = new FileUploadRequest(
+                OriginalFileName: entry.Name,
+                ContentType:      contentType,
+                FileSizeBytes:    buffer.Length,
+                FileType:         fileType,
+                FileStream:       buffer);
+
+            try
+            {
+                var result = await _fileService.UploadFileAsync(userId, uploadRequest);
+                uploaded.Add(result);
+            }
+            catch (Exception ex)
+            {
+                // Log and record as skipped — don't fail the whole batch.
+                skipped.Add(entry.Name);
+                // We don't have a logger injected here; rely on middleware to log unhandled paths.
+                _ = ex; // suppress unused-variable warning
+            }
+        }
+
+        return Ok(new ZipUploadResponse(
+            Uploaded: uploaded,
+            SkippedFiles: skipped,
+            TotalExtracted: modelEntries.Count,
+            SuccessCount: uploaded.Count,
+            SkippedCount: skipped.Count));
+    }
+
+    // ─── Private helpers ─────────────────────────────────────────────────────
 
 }
 
-// ─── Request / response records ───────────────────────────────────────────────
+// ─── Request / response records ───────────────────────────────────────────────────────────────
 
 public record InitiateUploadRequest(string FileName);
 public record InitiateUploadResponse(string BlobName);
@@ -262,3 +354,10 @@ public record CompleteUploadRequest(
     string ContentType,
     long   FileSizeBytes,
     IReadOnlyList<string> BlockIds);
+
+public record ZipUploadResponse(
+    IReadOnlyList<FileResponse> Uploaded,
+    IReadOnlyList<string> SkippedFiles,
+    int TotalExtracted,
+    int SuccessCount,
+    int SkippedCount);

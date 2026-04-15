@@ -39,21 +39,100 @@ public class QuoteService : IQuoteService
         _logger = logger;
     }
 
+    // CR-10 build volume limits (mm)
+    private const decimal BuildVolumeX = 300m;
+    private const decimal BuildVolumeY = 300m;
+    private const decimal BuildVolumeZ = 400m;
+    private const int MaxFilesPerQuote = 25;
+
     // --- Customer operations ---
 
     public async Task<QuoteRequestResponse> CreateQuoteRequestAsync(
         Guid userId, CreateQuoteRequest request)
     {
+        if (request.Files.Count == 0)
+            throw new BusinessRuleException("At least one file is required.");
+
+        if (request.Files.Count > MaxFilesPerQuote)
+            throw new BusinessRuleException(
+                $"A maximum of {MaxFilesPerQuote} files may be included in a single quote request.");
+
+        // Fetch all files and materials concurrently, then build QuoteRequestFile entries.
+        var fileEntities = await Task.WhenAll(
+            request.Files.Select(f => _fileRepo.GetFileWithAnalysisAsync(f.FileId)));
+
+        var quoteFiles = new List<QuoteRequestFile>();
+
+        for (var i = 0; i < request.Files.Count; i++)
+        {
+            var item = request.Files[i];
+            var file = fileEntities[i];
+
+            if (file == null)
+                throw new NotFoundException("File", item.FileId);
+
+            if (file.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "User {UserId} attempted to quote file {FileId} owned by {OwnerId}",
+                    userId, item.FileId, file.UserId);
+                throw new ForbiddenException("You do not have access to one or more of the specified files.");
+            }
+
+            var analysis = file.Analysis;
+
+            // Snapshot dimensions from analysis at quote creation time.
+            var dimX = analysis?.DimensionX;
+            var dimY = analysis?.DimensionY;
+            var dimZ = analysis?.DimensionZ;
+
+            var exceedsBuildVolume =
+                (dimX.HasValue && dimX.Value > BuildVolumeX) ||
+                (dimY.HasValue && dimY.Value > BuildVolumeY) ||
+                (dimZ.HasValue && dimZ.Value > BuildVolumeZ);
+
+            // Compute material cost snapshot if both material and weight are known.
+            decimal? materialCost = null;
+            Material? material = null;
+
+            if (item.MaterialId.HasValue)
+            {
+                material = await _materialRepo.GetByIdAsync(item.MaterialId.Value);
+                if (material == null)
+                    throw new NotFoundException("Material", item.MaterialId.Value);
+
+                if (analysis?.EstimatedWeightGrams.HasValue == true)
+                {
+                    materialCost = Math.Round(
+                        analysis.EstimatedWeightGrams.Value * material.PricePerGram * item.Quantity,
+                        2);
+                }
+            }
+
+            quoteFiles.Add(new QuoteRequestFile
+            {
+                Id = Guid.NewGuid(),
+                FileId = item.FileId,
+                MaterialId = item.MaterialId,
+                Quantity = item.Quantity,
+                Color = item.Color,
+                DimensionX = dimX,
+                DimensionY = dimY,
+                DimensionZ = dimZ,
+                EstimatedWeightGrams = analysis?.EstimatedWeightGrams,
+                EstimatedPrintTimeHours = analysis?.EstimatedPrintTimeHours,
+                MaterialCost = materialCost,
+                ExceedsBuildVolume = exceedsBuildVolume,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
         var quote = new QuoteRequest
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             RequestNumber = await GenerateRequestNumberAsync(),
             Status = QuoteStatus.Pending,
-            FileId = request.FileId,
-            Quantity = request.Quantity,
-            PreferredMaterialId = request.PreferredMaterialId,
-            PreferredColor = request.PreferredColor,
             RequiredByDate = request.RequiredByDate.HasValue
                 ? DateTime.SpecifyKind(request.RequiredByDate.Value, DateTimeKind.Utc)
                 : null,
@@ -64,12 +143,14 @@ public class QuoteService : IQuoteService
                 : null,
             BudgetMin = request.BudgetMin,
             BudgetMax = request.BudgetMax,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Files = quoteFiles,
         };
 
         await _quoteRepo.AddAsync(quote);
         await _unitOfWork.SaveChangesAsync();
 
+        var fileCount = request.Files.Count;
         _ = Task.Run(async () =>
         {
             var user = await _userRepo.GetByIdAsync(userId);
@@ -79,12 +160,12 @@ public class QuoteService : IQuoteService
             await _emailService.SendNewQuoteRequestAdminAsync(
                 quote.RequestNumber,
                 $"{user.FullName}",
-                request.FileId.HasValue ? "Attached" : null);
+                fileCount > 0 ? $"{fileCount} file(s) attached" : null);
         });
 
         _logger.LogInformation(
-            "Quote request created: {RequestNumber} by user {UserId}",
-            quote.RequestNumber, userId);
+            "Quote request {RequestNumber} created by user {UserId} with {FileCount} file(s)",
+            quote.RequestNumber, userId, quoteFiles.Count);
 
         var created = await _quoteRepo.GetQuoteWithResponsesAsync(quote.Id);
         return QuoteRequestResponse.FromEntity(created!);
@@ -167,29 +248,19 @@ public class QuoteService : IQuoteService
         if (quote.OrderId != null)
             throw new BusinessRuleException("This quote has already been converted to an order.");
 
-        if (quote.FileId == null)
-            throw new BusinessRuleException("Cannot convert a quote without an uploaded file.");
+        if (!quote.Files.Any())
+            throw new BusinessRuleException("Cannot convert a quote with no attached files.");
 
         var acceptedResponse = quote.Responses.FirstOrDefault(r => r.IsAccepted);
         if (acceptedResponse == null)
             throw new BusinessRuleException("No accepted response found on this quote.");
 
-        var materialId = acceptedResponse.RecommendedMaterialId ?? quote.PreferredMaterialId;
-        if (materialId == null)
-            throw new BusinessRuleException(
-                "Cannot convert quote to order: no material specified. " +
-                "Please contact us to update the quote with a material.");
-
-        var material = await _materialRepo.GetByIdAsync(materialId.Value);
-        if (material == null)
-            throw new NotFoundException("Material", materialId.Value);
-
-        var file = await _fileRepo.GetFileWithAnalysisAsync(quote.FileId.Value);
-        if (file == null)
-            throw new NotFoundException("File", quote.FileId.Value);
-
-        var color = acceptedResponse.RecommendedColor ?? quote.PreferredColor;
-        var unitPrice = Math.Round(acceptedResponse.Price / quote.Quantity, 2);
+        // Distribute the accepted price across order items proportionally by material cost.
+        // Fall back to equal distribution if no material costs were captured.
+        var totalWeightedCost = quote.Files.Sum(f => f.MaterialCost ?? 0m);
+        var distributeEqually = totalWeightedCost == 0m;
+        var fileCount = quote.Files.Count;
+        var totalPrice = acceptedResponse.Price;
 
         var order = new Order
         {
@@ -197,7 +268,7 @@ public class QuoteService : IQuoteService
             UserId = userId,
             OrderNumber = await GenerateOrderNumberAsync(),
             Status = OrderStatus.Submitted,
-            TotalPrice = acceptedResponse.Price,
+            TotalPrice = totalPrice,
             ShippingCost = acceptedResponse.ShippingCost,
             RequiredByDate = quote.RequiredByDate,
             Notes = quote.SpecialRequirements ?? quote.Notes,
@@ -205,22 +276,57 @@ public class QuoteService : IQuoteService
             QuoteRequestId = quote.Id,
         };
 
-        order.Items.Add(new OrderItem
+        decimal allocatedTotal = 0m;
+        var fileList = quote.Files.ToList();
+
+        for (var i = 0; i < fileList.Count; i++)
         {
-            Id = Guid.NewGuid(),
-            MaterialId = materialId.Value,
-            FileId = quote.FileId.Value,
-            Quantity = quote.Quantity,
-            UnitPrice = unitPrice,
-            TotalPrice = acceptedResponse.Price,
-            Color = color,
-            SpecialInstructions = quote.SpecialRequirements,
-            EstimatedWeight = file.Analysis?.EstimatedWeightGrams,
-            EstimatedPrintTime = file.Analysis?.EstimatedPrintTimeHours,
-            Quality = PrintQuality.Standard,
-            Infill = 20,
-            CreatedAt = DateTime.UtcNow,
-        });
+            var qf = fileList[i];
+            var isLast = i == fileList.Count - 1;
+
+            // Resolve material: per-file material, then response recommendation, then fail.
+            var materialId = qf.MaterialId ?? acceptedResponse.RecommendedMaterialId;
+            if (materialId == null)
+                throw new BusinessRuleException(
+                    $"Cannot convert quote to order: no material specified for file '{qf.File?.OriginalFileName ?? qf.FileId.ToString()}'. " +
+                    "Please contact us to update the quote.");
+
+            // Proportional item total price — last item gets the remainder to avoid rounding drift.
+            decimal itemTotal;
+            if (isLast)
+            {
+                itemTotal = totalPrice - allocatedTotal;
+            }
+            else if (distributeEqually)
+            {
+                itemTotal = Math.Round(totalPrice / fileCount, 2);
+            }
+            else
+            {
+                var proportion = (qf.MaterialCost ?? 0m) / totalWeightedCost;
+                itemTotal = Math.Round(totalPrice * proportion, 2);
+            }
+
+            allocatedTotal += itemTotal;
+            var unitPrice = qf.Quantity > 0 ? Math.Round(itemTotal / qf.Quantity, 2) : itemTotal;
+
+            order.Items.Add(new OrderItem
+            {
+                Id = Guid.NewGuid(),
+                MaterialId = materialId.Value,
+                FileId = qf.FileId,
+                Quantity = qf.Quantity,
+                UnitPrice = unitPrice,
+                TotalPrice = itemTotal,
+                Color = acceptedResponse.RecommendedColor ?? qf.Color,
+                SpecialInstructions = quote.SpecialRequirements,
+                EstimatedWeight = qf.EstimatedWeightGrams,
+                EstimatedPrintTime = qf.EstimatedPrintTimeHours,
+                Quality = PrintQuality.Standard,
+                Infill = 20,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
 
         order.StatusHistory.Add(new OrderStatusHistory
         {
@@ -250,8 +356,8 @@ public class QuoteService : IQuoteService
         });
 
         _logger.LogInformation(
-            "Quote {RequestNumber} converted to order {OrderNumber} by user {UserId}",
-            quote.RequestNumber, order.OrderNumber, userId);
+            "Quote {RequestNumber} converted to order {OrderNumber} with {ItemCount} item(s) by user {UserId}",
+            quote.RequestNumber, order.OrderNumber, fileList.Count, userId);
 
         var created = await _orderRepo.GetOrderWithDetailsAsync(order.Id);
         return OrderResponse.FromEntity(created!);
@@ -355,14 +461,14 @@ public class QuoteService : IQuoteService
         var rows     = await _quoteRepo.GetConversionAnalyticsDataAsync(days);
         var revenue  = await _orderRepo.GetRevenueBySourceAsync(days);
 
-        // ── Volume counts ─────────────────────────────────────────────────────
+        // ── Volume counts ────────────────────────────────────────────────────────────────────────
         var total     = rows.Count;
         var accepted  = rows.Count(r => r.Status == QuoteStatus.Accepted);
         var declined  = rows.Count(r => r.Status == QuoteStatus.Declined);
         var expired   = rows.Count(r => r.Status == QuoteStatus.Expired);
         var converted = rows.Count(r => r.HasOrder);
 
-        // ── Rates ─────────────────────────────────────────────────────────────
+        // ── Rates ─────────────────────────────────────────────────────────────────────────────
         var conversionRate = total > 0
             ? Math.Round((decimal)converted / total * 100, 1)
             : (decimal?)null;
@@ -372,7 +478,7 @@ public class QuoteService : IQuoteService
             ? Math.Round((decimal)accepted / terminalCount * 100, 1)
             : (decimal?)null;
 
-        // ── Time-to-conversion ────────────────────────────────────────────────
+        // ── Time-to-conversion ────────────────────────────────────────────────────────────────
         // Duration from quote accepted → order created, in fractional days.
         var conversionDurations = rows
             .Where(r => r.HasOrder && r.AcceptedAt.HasValue && r.OrderCreatedAt.HasValue)
@@ -391,7 +497,7 @@ public class QuoteService : IQuoteService
             ? Math.Round(conversionDurations.Max(), 1)
             : null;
 
-        // ── Revenue ───────────────────────────────────────────────────────────
+        // ── Revenue ───────────────────────────────────────────────────────────────────────────
         var totalRevenue = revenue.QuoteOriginated + revenue.Direct;
         var revenueShare = totalRevenue > 0
             ? Math.Round(revenue.QuoteOriginated / totalRevenue * 100, 1)
