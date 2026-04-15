@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ordersApi } from '@/lib/api/orders';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import { Package } from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
 
 
@@ -67,16 +67,25 @@ export default function OrdersPage() {
     <div className="p-8">
 
       {/* Header */}
-      <div className="mb-8">
-        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
-          Orders
-        </p>
-        <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
-          My Orders
-        </h1>
-        <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>
-          Track and manage your 3D printing orders
-        </p>
+      <div className="mb-8 flex items-end justify-between">
+        <div>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-amber-400/70 mb-2`}>
+            Orders
+          </p>
+          <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
+            My Orders
+          </h1>
+          <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>
+            Track and manage your 3D printing orders
+          </p>
+        </div>
+        <button
+          onClick={() => router.push('/orders/new')}
+          className={`${mono.className} flex items-center gap-2 h-9 px-4 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-400 transition-colors`}
+        >
+          <Plus className="h-3 w-3" />
+          New Order
+        </button>
       </div>
 
       {/* Flash */}
@@ -117,9 +126,16 @@ export default function OrdersPage() {
         {!isLoading && !isError && orders.length === 0 && (
           <div className="px-4 py-12 text-center">
             <Package className="h-8 w-8 text-text-muted mx-auto mb-3" />
-            <p className={`${mono.className} text-[10px] text-text-muted`}>
-              No orders yet — upload a model to get started.
+            <p className={`${mono.className} text-[10px] text-text-muted mb-4`}>
+              No orders yet — place your first one.
             </p>
+            <button
+              onClick={() => router.push('/orders/new')}
+              className={`${mono.className} inline-flex items-center gap-2 h-9 px-4 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-400 transition-colors`}
+            >
+              <Plus className="h-3 w-3" />
+              New Order
+            </button>
           </div>
         )}
 
