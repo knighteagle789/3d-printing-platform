@@ -10,7 +10,7 @@ public class StlAnalyzerService : IStlAnalyzerService
 {
     private readonly ILogger<StlAnalyzerService> _logger;
 
-    // ── Physical constants ──────────────────────────────────────────────────
+    // ── Physical constants ────────────────────────────────────────────────────────
     // PLA density in g/cm³ — used for weight estimation.
     // A future improvement could pull density from material PrintSettings.
     private const decimal PlaDensity = 1.24m;
@@ -30,7 +30,7 @@ public class StlAnalyzerService : IStlAnalyzerService
     // Overhead per print: heat-up, homing, skirt, cooling = ~8 minutes.
     private const decimal OverheadMinutes = 8m;
 
-    // ── Configurable default print speed ───────────────────────────────────
+    // ── Configurable default print speed ───────────────────────────────────────────
     // Pulled from FileAnalysis:DefaultPrintSpeedMmPerSec in appsettings.
     // Falls back to 50 mm/s — a conservative CR-10 FDM speed.
     // Individual materials override this via their PrintSettings JSONB,
@@ -49,7 +49,19 @@ public class StlAnalyzerService : IStlAnalyzerService
     {
         try
         {
-            var triangles = await ParseStlAsync(fileStream, fileName);
+            // Azure Blob download streams (RetriableStream) are neither seekable nor
+            // Length-aware. Buffer into a MemoryStream before parsing so that
+            // ParseStlAsync can call stream.Length and stream.Seek freely.
+            Stream parseStream = fileStream;
+            if (!fileStream.CanSeek)
+            {
+                var ms = new MemoryStream();
+                await fileStream.CopyToAsync(ms);
+                ms.Seek(0, SeekOrigin.Begin);
+                parseStream = ms;
+            }
+
+            var triangles = await ParseStlAsync(parseStream, fileName);
             if (triangles.Count == 0)
                 return null;
 
@@ -139,7 +151,7 @@ public class StlAnalyzerService : IStlAnalyzerService
         return Math.Round(totalSeconds / 3600m, 2);
     }
 
-    // ── STL parsing (unchanged) ─────────────────────────────────────────────
+    // ── STL parsing (unchanged) ────────────────────────────────────────────────────
 
     private static async Task<List<(Vector3 v1, Vector3 v2, Vector3 v3)>> ParseStlAsync(
         Stream stream, string fileName)
@@ -219,7 +231,7 @@ public class StlAnalyzerService : IStlAnalyzerService
         return triangles;
     }
 
-    // ── Geometry helpers (unchanged) ────────────────────────────────────────
+    // ── Geometry helpers (unchanged) ──────────────────────────────────────────────────
 
     private static decimal CalculateVolume(List<(Vector3 v1, Vector3 v2, Vector3 v3)> triangles)
     {
