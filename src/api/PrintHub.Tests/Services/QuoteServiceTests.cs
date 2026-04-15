@@ -202,6 +202,7 @@ public class QuoteServiceTests
         var response = TestDataBuilder.CreateQuoteResponse(isAccepted: true);
         response.RecommendedMaterialId = material.Id;
 
+        // CreateQuoteRequest now builds Files from fileId/materialId args
         var quote = TestDataBuilder.CreateQuoteRequest(
             userId: user.Id,
             status: QuoteStatus.Accepted,
@@ -213,10 +214,6 @@ public class QuoteServiceTests
 
         _quoteRepoMock.Setup(r => r.GetQuoteWithResponsesAsync(quote.Id))
             .ReturnsAsync(quote);
-        _materialRepoMock.Setup(r => r.GetByIdAsync(material.Id))
-            .ReturnsAsync(material);
-        _fileRepoMock.Setup(r => r.GetFileWithAnalysisAsync(file.Id))
-            .ReturnsAsync(file);
         _orderRepoMock.Setup(r => r.CountAsync()).ReturnsAsync(0);
         _orderRepoMock.Setup(r => r.AddAsync(It.IsAny<Order>()))
             .ReturnsAsync(It.IsAny<Order>());

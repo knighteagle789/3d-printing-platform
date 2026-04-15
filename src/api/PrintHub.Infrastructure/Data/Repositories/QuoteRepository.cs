@@ -28,6 +28,10 @@ public class QuoteRepository : Repository<QuoteRequest>, IQuoteRepository
         var totalCount = await query.CountAsync();
         var items = await query
             .Include(q => q.User)
+            .Include(q => q.Files)
+                .ThenInclude(f => f.File)
+            .Include(q => q.Files)
+                .ThenInclude(f => f.Material)
             .Include(q => q.Responses)
             .OrderByDescending(q => q.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -47,6 +51,10 @@ public class QuoteRepository : Repository<QuoteRequest>, IQuoteRepository
 
         var totalCount = await query.CountAsync();
         var items = await query
+            .Include(q => q.Files)
+                .ThenInclude(f => f.File)
+            .Include(q => q.Files)
+                .ThenInclude(f => f.Material)
             .Include(q => q.Responses)
             .OrderByDescending(q => q.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -60,8 +68,11 @@ public class QuoteRepository : Repository<QuoteRequest>, IQuoteRepository
     {
         return await _dbSet
             .Include(q => q.User)
-            .Include(q => q.File)
-            .Include(q => q.PreferredMaterial)
+            .Include(q => q.Files)
+                .ThenInclude(f => f.File)
+                    .ThenInclude(f => f.Analysis)
+            .Include(q => q.Files)
+                .ThenInclude(f => f.Material)
             .Include(q => q.Responses)
                 .ThenInclude(r => r.CreatedBy)
             .Include(q => q.Responses)
@@ -80,6 +91,10 @@ public class QuoteRepository : Repository<QuoteRequest>, IQuoteRepository
         var totalCount = await query.CountAsync();
         var items = await query
             .Include(q => q.User)
+            .Include(q => q.Files)
+                .ThenInclude(f => f.File)
+            .Include(q => q.Files)
+                .ThenInclude(f => f.Material)
             .OrderBy(q => q.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

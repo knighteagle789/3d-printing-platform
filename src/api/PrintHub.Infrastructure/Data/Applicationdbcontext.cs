@@ -28,6 +28,7 @@ namespace PrintHub.Infrastructure.Data
 
         // Quotes
         public DbSet<QuoteRequest> QuoteRequests { get; set; } = null!;
+        public DbSet<QuoteRequestFile> QuoteRequestFiles { get; set; } = null!;
         public DbSet<QuoteResponse> QuoteResponses { get; set; } = null!;
 
         // Payments
