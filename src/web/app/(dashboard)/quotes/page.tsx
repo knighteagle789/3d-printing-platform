@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { quotesApi } from '@/lib/api/quotes';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import { FileText } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
 
 
@@ -63,16 +63,25 @@ export default function QuotesPage() {
     <div className="p-8">
 
       {/* Header */}
-      <div className="mb-8">
-        <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-accent/70 mb-2`}>
-          Quotes
-        </p>
-        <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
-          My Quotes
-        </h1>
-        <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>
-          Request and track pricing for your projects
-        </p>
+      <div className="mb-8 flex items-end justify-between">
+        <div>
+          <p className={`${mono.className} text-[9px] uppercase tracking-[0.2em] text-accent/70 mb-2`}>
+            Quotes
+          </p>
+          <h1 className={`${display.className} text-4xl text-text-primary tracking-wide`}>
+            My Quotes
+          </h1>
+          <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>
+            Request and track pricing for your projects
+          </p>
+        </div>
+        <button
+          onClick={() => router.push('/quotes/new')}
+          className={`${mono.className} flex items-center gap-2 h-9 px-4 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-400 transition-colors`}
+        >
+          <Plus className="h-3 w-3" />
+          New Quote
+        </button>
       </div>
 
       {/* Flash */}
@@ -113,9 +122,16 @@ export default function QuotesPage() {
         {!isLoading && !isError && quotes.length === 0 && (
           <div className="px-4 py-12 text-center">
             <FileText className="h-8 w-8 text-text-muted mx-auto mb-3" />
-            <p className={`${mono.className} text-[10px] text-text-muted`}>
-              No quote requests yet — upload a model to get started.
+            <p className={`${mono.className} text-[10px] text-text-muted mb-4`}>
+              No quote requests yet — submit your first one.
             </p>
+            <button
+              onClick={() => router.push('/quotes/new')}
+              className={`${mono.className} inline-flex items-center gap-2 h-9 px-4 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-400 transition-colors`}
+            >
+              <Plus className="h-3 w-3" />
+              New Quote
+            </button>
           </div>
         )}
 
