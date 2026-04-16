@@ -21,8 +21,8 @@ const quoteSchema = z.object({
   requiredByDate:      z.string().optional(),
   specialRequirements: z.string().optional(),
   notes:               z.string().optional(),
-  budgetMin:           z.number().min(0).optional(),
-  budgetMax:           z.number().min(0).optional(),
+  budgetMin:           z.union([z.number().min(0), z.nan()]).optional().transform(v => (typeof v === 'number' && isNaN(v) ? undefined : v)),
+  budgetMax:           z.union([z.number().min(0), z.nan()]).optional().transform(v => (typeof v === 'number' && isNaN(v) ? undefined : v)),
 });
 
 type QuoteFormValues = z.infer<typeof quoteSchema>;
