@@ -21,11 +21,12 @@ const quoteSchema = z.object({
   requiredByDate:      z.string().optional(),
   specialRequirements: z.string().optional(),
   notes:               z.string().optional(),
-  budgetMin:           z.number().min(0).optional(),
-  budgetMax:           z.number().min(0).optional(),
+  budgetMin:           z.union([z.number().min(0), z.nan()]).optional().transform(v => (typeof v === 'number' && isNaN(v) ? undefined : v)),
+  budgetMax:           z.union([z.number().min(0), z.nan()]).optional().transform(v => (typeof v === 'number' && isNaN(v) ? undefined : v)),
 });
 
-type QuoteFormValues = z.infer<typeof quoteSchema>;
+type QuoteFormInput = z.input<typeof quoteSchema>;
+type QuoteFormValues = z.output<typeof quoteSchema>;
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ export default function NewQuotePage() {
   });
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
-    useForm<QuoteFormValues>({
+    useForm<QuoteFormInput, unknown, QuoteFormValues>({
       resolver: zodResolver(quoteSchema),
       defaultValues: { quantity: 1 },
     });
