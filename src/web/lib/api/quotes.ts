@@ -57,14 +57,19 @@ export interface QuoteAnalytics {
   quoteOriginatedRevenueShare: number | null;
 }
 
-export interface CreateQuoteRequest {
-  fileId?: string;
+export interface QuoteFileItemRequest {
+  fileId: string;
+  materialId?: string;
   quantity: number;
-  preferredMaterialId?: string;
-  preferredColor?: string;
+  color?: string;
+}
+
+export interface CreateQuoteRequest {
+  files: QuoteFileItemRequest[];
   requiredByDate?: string;
   specialRequirements?: string;
   notes?: string;
+  budgetRange?: string;
   budgetMin?: number;
   budgetMax?: number;
 }

@@ -49,7 +49,19 @@ public class StlAnalyzerService : IStlAnalyzerService
     {
         try
         {
-            var triangles = await ParseStlAsync(fileStream, fileName);
+            // Azure Blob download streams (RetriableStream) are neither seekable nor
+            // Length-aware. Buffer into a MemoryStream before parsing so that
+            // ParseStlAsync can call stream.Length and stream.Seek freely.
+            Stream parseStream = fileStream;
+            if (!fileStream.CanSeek)
+            {
+                var ms = new MemoryStream();
+                await fileStream.CopyToAsync(ms);
+                ms.Seek(0, SeekOrigin.Begin);
+                parseStream = ms;
+            }
+
+            var triangles = await ParseStlAsync(parseStream, fileName);
             if (triangles.Count == 0)
                 return null;
 

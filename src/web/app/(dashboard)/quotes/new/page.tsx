@@ -21,11 +21,12 @@ const quoteSchema = z.object({
   requiredByDate:      z.string().optional(),
   specialRequirements: z.string().optional(),
   notes:               z.string().optional(),
-  budgetMin:           z.number().min(0).optional(),
-  budgetMax:           z.number().min(0).optional(),
+  budgetMin:           z.union([z.number().min(0), z.nan()]).optional().transform(v => (typeof v === 'number' && isNaN(v) ? undefined : v)),
+  budgetMax:           z.union([z.number().min(0), z.nan()]).optional().transform(v => (typeof v === 'number' && isNaN(v) ? undefined : v)),
 });
 
-type QuoteFormValues = z.infer<typeof quoteSchema>;
+type QuoteFormInput = z.input<typeof quoteSchema>;
+type QuoteFormValues = z.output<typeof quoteSchema>;
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
@@ -78,22 +79,34 @@ export default function NewQuotePage() {
   });
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
-    useForm<QuoteFormValues>({
+    useForm<QuoteFormInput, unknown, QuoteFormValues>({
       resolver: zodResolver(quoteSchema),
       defaultValues: { quantity: 1 },
     });
 
   const onSubmit = async (values: QuoteFormValues) => {
+    if (!fileId) return;
+
+    // Normalize optional string fields: empty strings from form inputs must be
+    // sent as undefined so they omit cleanly from the JSON payload — the
+    // backend expects Guid?/DateTime?/string? and rejects empty strings.
+    const materialId     = values.preferredMaterialId?.trim() || undefined;
+    const requiredByDate = values.requiredByDate?.trim() || undefined;
+    const specialReqs    = values.specialRequirements?.trim() || undefined;
+    const notes          = values.notes?.trim() || undefined;
+
     try {
       const response = await quotesApi.create({
-        fileId:              fileId ?? undefined,
-        quantity:            values.quantity,
-        preferredMaterialId: values.preferredMaterialId,
-        requiredByDate:      values.requiredByDate,
-        specialRequirements: values.specialRequirements,
-        notes:               values.notes,
-        budgetMin:           values.budgetMin,
-        budgetMax:           values.budgetMax,
+        files: [{
+          fileId,
+          materialId,
+          quantity: values.quantity,
+        }],
+        requiredByDate,
+        specialRequirements: specialReqs,
+        notes,
+        budgetMin: values.budgetMin,
+        budgetMax: values.budgetMax,
       });
       router.push(`/quotes?created=${response.data.id}`);
     } catch {
