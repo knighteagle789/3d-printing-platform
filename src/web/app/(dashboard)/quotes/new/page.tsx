@@ -84,16 +84,28 @@ export default function NewQuotePage() {
     });
 
   const onSubmit = async (values: QuoteFormValues) => {
+    if (!fileId) return;
+
+    // Normalize optional string fields: empty strings from form inputs must be
+    // sent as undefined so they omit cleanly from the JSON payload — the
+    // backend expects Guid?/DateTime?/string? and rejects empty strings.
+    const materialId     = values.preferredMaterialId?.trim() || undefined;
+    const requiredByDate = values.requiredByDate?.trim() || undefined;
+    const specialReqs    = values.specialRequirements?.trim() || undefined;
+    const notes          = values.notes?.trim() || undefined;
+
     try {
       const response = await quotesApi.create({
-        fileId:              fileId ?? undefined,
-        quantity:            values.quantity,
-        preferredMaterialId: values.preferredMaterialId,
-        requiredByDate:      values.requiredByDate,
-        specialRequirements: values.specialRequirements,
-        notes:               values.notes,
-        budgetMin:           values.budgetMin,
-        budgetMax:           values.budgetMax,
+        files: [{
+          fileId,
+          materialId,
+          quantity: values.quantity,
+        }],
+        requiredByDate,
+        specialRequirements: specialReqs,
+        notes,
+        budgetMin: values.budgetMin,
+        budgetMax: values.budgetMax,
       });
       router.push(`/quotes?created=${response.data.id}`);
     } catch {
