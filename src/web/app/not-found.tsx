@@ -91,7 +91,7 @@ export default function NotFound() {
                 My Orders
               </Link>
               <Link
-                href="/upload"
+                href="/orders/new"
                 className={`${mono.className} inline-flex items-center gap-2 text-text-muted text-[10px] uppercase tracking-[0.18em] hover:text-text-secondary transition-colors`}
               >
                 Start a Print

@@ -12,12 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Package, Upload, FileText, User, LogOut, ShieldCheck } from 'lucide-react';
+import { Package, FileText, User, LogOut, ShieldCheck } from 'lucide-react';
 
 const navLinks = [
   { href: '/orders',  label: 'Orders',  icon: Package  },
   { href: '/quotes',  label: 'Quotes',  icon: FileText },
-  { href: '/upload',  label: 'Upload',  icon: Upload   },
 ];
 
 export function Navbar() {

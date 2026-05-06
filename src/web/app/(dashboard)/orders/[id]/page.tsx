@@ -2,12 +2,12 @@
 
 import { display, mono } from '@/lib/fonts';
 import { use, useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ordersApi } from '@/lib/api/orders';
 import { pricingApi } from '@/lib/api/pricing';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
-import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2, Activity, Receipt } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, FileText, CreditCard, CheckCircle2, Activity, Receipt, Send } from 'lucide-react';
 import { formatStatus } from '@/lib/utils';
 import { StatusTimeline } from '@/components/orders/StatusTimeline';
 
@@ -79,6 +79,7 @@ function DataRow({ label, value }: { label: string; value: React.ReactNode }) {
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id }   = use(params);
   const router   = useRouter();
+  const queryClient = useQueryClient();
   const { isAuthenticated, isInitialized } = useRequireAuth();
   const searchParams = useSearchParams();
 
@@ -105,6 +106,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     mutationFn: () => ordersApi.createPaymentSession(id),
     onSuccess:  (res) => { window.location.href = res.data.url; },
     onError:    () => setFlash({ type: 'info', msg: 'Failed to start checkout — please try again.' }),
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: () => ordersApi.submit(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['order', id] });
+      await queryClient.invalidateQueries({ queryKey: ['orders'] });
+      setFlash({ type: 'success', msg: 'Order submitted successfully.' });
+    },
+    onError: () => {
+      setFlash({ type: 'info', msg: 'Unable to submit order - please try again.' });
+    },
   });
 
   if (!isInitialized || !isAuthenticated) return null;
@@ -178,6 +191,36 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       )}
 
       <div className="space-y-4">
+
+        {/* Draft submission CTA */}
+        {order.status === 'Draft' && (
+          <div className="border border-sky-400/20 bg-sky-400/[0.03] p-5 flex items-center justify-between gap-4">
+            <div>
+              <p className={`${mono.className} text-[10px] uppercase tracking-[0.15em] text-sky-700 mb-1`}>
+                Ready to Submit
+              </p>
+              <p className={`${mono.className} text-[10px] text-text-muted`}>
+                Submit this draft order to move it into review and payment.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => router.push(`/orders/${id}/edit`)}
+                className={`${mono.className} px-3 h-9 border border-border text-[9px] uppercase tracking-[0.15em] text-text-muted hover:text-text-secondary hover:border-border transition-colors`}
+              >
+                Edit Draft
+              </button>
+              <button
+                onClick={() => submitMutation.mutate()}
+                disabled={submitMutation.isPending}
+                className={`${mono.className} flex items-center gap-2 px-4 h-9 bg-amber-500 border border-amber-400/30 text-[9px] uppercase tracking-[0.15em] text-amber-700 hover:bg-amber-500 hover:text-accent transition-colors disabled:opacity-40`}
+              >
+                <Send className="h-3.5 w-3.5" />
+                {submitMutation.isPending ? 'Submitting...' : 'Submit Order'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Payment CTA */}
         {order.status === 'Submitted' && (

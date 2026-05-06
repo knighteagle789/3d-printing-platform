@@ -158,10 +158,10 @@ export default function AdminDashboardPage() {
       {/* ── Quick actions ── */}
       <div className="flex flex-wrap gap-2">
         {[
-          { label: 'New Material',   icon: Plus,    href: '/admin/materials/new' },
           { label: 'All Orders',     icon: Package, href: '/admin/orders'        },
           { label: 'All Quotes',     icon: FileText,href: '/admin/quotes'        },
           { label: 'Materials',      icon: Layers,  href: '/admin/materials'     },
+          { label: 'Add Material',   icon: Plus,    href: '/admin/intake/new'    },
         ].map(({ label, icon: Icon, href }) => (
           <button
             key={href}
@@ -213,7 +213,7 @@ export default function AdminDashboardPage() {
               View Pricing Page <ArrowRight className="h-3 w-3" />
             </button>
             <button
-              onClick={() => router.push('/admin/materials/new')}
+              onClick={() => router.push('/admin/intake/new')}
               className={`${mono.className} inline-flex items-center gap-2 border border-border text-text-secondary text-[10px] uppercase tracking-[0.18em] px-5 h-9 hover:text-text-primary hover:border-border transition-colors`}
             >
               <Plus className="h-3 w-3" /> Add Material

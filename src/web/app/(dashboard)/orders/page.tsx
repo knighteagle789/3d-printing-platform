@@ -1,7 +1,7 @@
 'use client';
 
 import { display, mono } from '@/lib/fonts';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ordersApi } from '@/lib/api/orders';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -44,14 +44,16 @@ export default function OrdersPage() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isInitialized } = useRequireAuth();
+  const created = searchParams.get('created');
 
   const [flash] = useState<string | null>(
-    searchParams.get('created') ? 'Order placed successfully.' : null
+    created ? 'Order placed successfully.' : null
   );
-  // Clean up the ?created= param once on mount without triggering a cascade
-  if (searchParams.get('created') && typeof window !== 'undefined') {
+
+  useEffect(() => {
+    if (!created || typeof window === 'undefined') return;
     window.history.replaceState(null, '', '/orders');
-  }
+  }, [created]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['orders'],

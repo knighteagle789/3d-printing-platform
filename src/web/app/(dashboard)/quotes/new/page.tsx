@@ -2,6 +2,7 @@
 
 import { display, mono } from '@/lib/fonts';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +12,10 @@ import { quotesApi } from '@/lib/api/quotes';
 import { filesApi } from '@/lib/api/files';
 import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { FileDropzone } from '../../upload/file-dropzone';
+import { FileAnalysisPanel } from '../../upload/file-analysis';
+import { StlViewer } from '@/components/3d-viewer/StlViewer';
+import { toProxiedUrl } from '@/lib/utils';
 
 
 // ── Schema ────────────────────────────────────────────────────────────────────
@@ -63,13 +68,21 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function NewQuotePage() {
   const router       = useRouter();
   const searchParams = useSearchParams();
-  const fileId       = searchParams.get('fileId');
+  const urlFileId    = searchParams.get('fileId');
   const { isAuthenticated, isInitialized } = useRequireAuth();
 
+  const [localFileId, setLocalFileId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const effectiveFileId = urlFileId || localFileId;
+
   const { data: fileData } = useQuery({
-    queryKey: ['file', fileId],
-    queryFn:  () => filesApi.getById(fileId!),
-    enabled:  !!fileId && isAuthenticated,
+    queryKey: ['file', effectiveFileId],
+    queryFn:  () => filesApi.getById(effectiveFileId!),
+    enabled:  !!effectiveFileId && isAuthenticated,
   });
 
   const { data: materialsData } = useQuery({
@@ -84,8 +97,31 @@ export default function NewQuotePage() {
       defaultValues: { quantity: 1 },
     });
 
+  const handleFileSelect = async (file: File) => {
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+
+    if (file.name.toLowerCase().endsWith('.stl')) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
+
+    try {
+      const uploaded = await filesApi.uploadChunked(file, setUploadProgress);
+      setLocalFileId(uploaded.id);
+    } catch {
+      setUploadError('Upload failed - please try again.');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
   const onSubmit = async (values: QuoteFormValues) => {
-    if (!fileId) return;
+    if (!effectiveFileId) return;
 
     // Normalize optional string fields: empty strings from form inputs must be
     // sent as undefined so they omit cleanly from the JSON payload — the
@@ -98,7 +134,7 @@ export default function NewQuotePage() {
     try {
       const response = await quotesApi.create({
         files: [{
-          fileId,
+          fileId: effectiveFileId,
           materialId,
           quantity: values.quantity,
         }],
@@ -135,20 +171,51 @@ export default function NewQuotePage() {
           Request a Quote
         </h1>
         <p className={`${mono.className} text-[11px] text-text-muted mt-1`}>
-          Tell us about your project and we&apos;ll get back to you with pricing
+          {effectiveFileId ? "Tell us about your project and we'll get back to you with pricing" : 'Start by uploading your 3D model file'}
         </p>
       </div>
 
-      {/* File summary */}
-      {fileData && (
-        <div className="mb-4 border border-amber-400/10 bg-amber-400/[0.02] px-4 py-3 flex items-center justify-between">
-          <span className={`${mono.className} text-[10px] text-text-muted`}>File</span>
-          <span className={`${mono.className} text-[11px] text-text-secondary`}>
-            {fileData.data.originalFileName}
-          </span>
+      {!effectiveFileId && (
+        <div className="space-y-4 mb-2">
+          <Section title="Step 1 - Upload Your 3D Model">
+            <FileDropzone
+              onFileSelect={handleFileSelect}
+              isUploading={isUploading}
+              uploadProgress={uploadProgress}
+            />
+            {uploadError && (
+              <p className={`${mono.className} text-[10px] text-red-400`}>{uploadError}</p>
+            )}
+          </Section>
+
+          {previewUrl && (
+            <div className="border border-border overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-surface">
+                <span className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-text-muted`}>
+                  3D Preview
+                </span>
+                {isUploading && (
+                  <span className={`${mono.className} text-[9px] text-accent/70 animate-pulse`}>
+                    Uploading...
+                  </span>
+                )}
+              </div>
+              <StlViewer
+                url={toProxiedUrl(previewUrl)}
+                className="w-full h-[360px]"
+              />
+            </div>
+          )}
         </div>
       )}
 
+      {effectiveFileId && fileData && (
+        <div className="mb-4">
+          <FileAnalysisPanel file={fileData.data} />
+        </div>
+      )}
+
+      {effectiveFileId && (
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
         {/* Preferences */}
@@ -264,6 +331,7 @@ export default function NewQuotePage() {
         </div>
 
       </form>
+      )}
     </div>
   );
 }

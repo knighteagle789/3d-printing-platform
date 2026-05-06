@@ -5,11 +5,10 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import { Upload, Package, FileText, User, LogOut, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Package, FileText, User, LogOut, ShieldCheck, ExternalLink } from 'lucide-react';
 
 
 const navLinks = [
-  { href: '/upload',  label: 'Upload',  icon: Upload   },
   { href: '/orders',  label: 'Orders',  icon: Package  },
   { href: '/quotes',  label: 'Quotes',  icon: FileText },
   { href: '/profile', label: 'Profile', icon: User     },
@@ -44,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {/* Wordmark */}
         <div className="h-14 flex items-center px-5 border-b border-border shrink-0">
-          <Link href="/upload" className="flex items-baseline gap-1.5">
+          <Link href="/orders" className="flex items-baseline gap-1.5">
             <span className={`${display.className} text-2xl text-text-primary tracking-wide leading-none`}>
               NOCO
             </span>
@@ -67,7 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5">
           {navLinks.map(({ href, label, icon: Icon }) => {
-            const isActive = pathname === href || (href !== '/upload' && pathname.startsWith(href));
+            const isActive = pathname === href || pathname.startsWith(href);
             return (
               <Link
                 key={href}

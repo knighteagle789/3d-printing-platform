@@ -85,7 +85,7 @@ export default function AdminMaterialsPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push('/admin/materials/new')}
+          onClick={() => router.push('/admin/intake/new')}
           className={`${mono.className} inline-flex items-center gap-2 bg-accent-light text-accent-dark text-[10px] uppercase tracking-[0.18em] font-semibold px-5 h-9 hover:bg-amber-300 transition-colors shrink-0`}
         >
           <Plus className="h-3.5 w-3.5" /> New Material
@@ -145,7 +145,7 @@ export default function AdminMaterialsPage() {
           </p>
           {!search && (
             <button
-              onClick={() => router.push('/admin/materials/new')}
+              onClick={() => router.push('/admin/intake/new')}
               className={`${mono.className} text-[9px] uppercase tracking-[0.18em] text-accent hover:text-amber-300 transition-colors mt-1`}
             >
               Add your first material →

@@ -82,8 +82,8 @@ export const materialsApi = {
   getByIdAdmin: (id: string) =>
     apiClient.get<AdminMaterial>(`/Materials/admin/${id}`),
 
-  create: (data: CreateMaterialRequest) =>
-    apiClient.post<AdminMaterial>('/Materials', data),
+  // NOTE: Materials are ONLY created via Material Intake workflow (api/material-intake)
+  // Do NOT add direct create here. See: /admin/intake to start a new material intake.
 
   update: (id: string, data: UpdateMaterialRequest) =>
     apiClient.put<AdminMaterial>(`/Materials/${id}`, data),
