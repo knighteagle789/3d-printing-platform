@@ -14,8 +14,16 @@ import { useRequireAuth } from '@/lib/hooks/use-require-auth';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { FileDropzone } from '../../upload/file-dropzone';
 import { FileAnalysisPanel } from '../../upload/file-analysis';
-import { StlViewer } from '@/components/3d-viewer/StlViewer';
+import dynamic from 'next/dynamic';
 import { toProxiedUrl } from '@/lib/utils';
+
+// Dynamically imported with ssr:false — @react-three/fiber's Canvas references
+// browser globals (WebGL, window) at module evaluation time, which breaks
+// next build's Node.js static analysis even inside 'use client' components.
+const StlViewer = dynamic(
+  () => import('@/components/3d-viewer/StlViewer').then(m => m.StlViewer),
+  { ssr: false }
+);
 
 
 // ── Schema ────────────────────────────────────────────────────────────────────
