@@ -21,8 +21,8 @@ const materialFormSchema = z.object({
   grade:                  z.string().optional(),
   description:            z.string().optional(),
   brand:                  z.string().optional(),
-  pricePerGram:           z.number({ invalid_type_error: 'Price is required' }).positive('Price must be positive'),
-  stockGrams:             z.number({ invalid_type_error: 'Stock is required' }).min(0, 'Stock cannot be negative'),
+  pricePerGram:           z.number().positive('Price must be positive'),
+  stockGrams:             z.number().min(0, 'Stock cannot be negative'),
   lowStockThresholdGrams: z.number().min(0).optional(),
   notes:                  z.string().optional(),
   printSettings:          z.string().optional(),
@@ -212,7 +212,9 @@ export function MaterialForm({
               step="1"
               min="0"
               placeholder="200"
-              {...register('lowStockThresholdGrams', { valueAsNumber: true, setValueAs: v => v === '' || isNaN(Number(v)) ? undefined : Number(v) })}
+              {...register('lowStockThresholdGrams', {
+                setValueAs: v => (v === '' || isNaN(Number(v))) ? undefined : Number(v),
+              })}
               className={inputClass}
             />
             <FieldError msg={errors.lowStockThresholdGrams?.message} />
