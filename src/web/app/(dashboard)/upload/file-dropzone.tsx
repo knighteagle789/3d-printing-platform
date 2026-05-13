@@ -2,7 +2,7 @@
 
 import { mono } from '@/lib/fonts';
 import { useCallback, useState } from 'react';
-import { Upload, File, X } from 'lucide-react';
+import { Upload, File as FileIcon, X } from 'lucide-react';
 
 
 const ALLOWED_EXTENSIONS = ['.stl', '.obj', '.3mf', '.step', '.iges', '.gcode'];
@@ -58,7 +58,7 @@ export function FileDropzone({ onFileSelect, isUploading, uploadProgress = 0 }: 
       <div className="border border-accent/20 bg-accent-light">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <File className="h-4 w-4 text-accent/60 shrink-0" />
+            <FileIcon className="h-4 w-4 text-accent/60 shrink-0" />
             <div>
               <p className={`${mono.className} text-[11px] text-text-primary`}>
                 {selectedFile.name}
