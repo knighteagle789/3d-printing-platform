@@ -292,10 +292,10 @@ export default function PortfolioDetailPage({
               ) : (
                 <>
                   <p className="text-text-secondary text-sm leading-relaxed">
-                    Inspired by this project? Upload your own model to get started.
+                    Inspired by this project? Place your own order to get started.
                   </p>
                   <Link
-                    href={isAuthenticated ? '/upload' : '/register'}
+                    href={isAuthenticated ? '/orders/new' : '/register'}
                     className={`${mono.className} w-full flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.15em] font-semibold bg-accent text-white h-12 hover:bg-accent/90 transition-colors`}
                   >
                     <ArrowRight className="h-3.5 w-3.5" /> Start Your Own Project

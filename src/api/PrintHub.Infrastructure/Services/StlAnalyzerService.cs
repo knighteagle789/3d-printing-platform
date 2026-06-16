@@ -49,19 +49,7 @@ public class StlAnalyzerService : IStlAnalyzerService
     {
         try
         {
-            // Azure Blob download streams (RetriableStream) are neither seekable nor
-            // Length-aware. Buffer into a MemoryStream before parsing so that
-            // ParseStlAsync can call stream.Length and stream.Seek freely.
-            Stream parseStream = fileStream;
-            if (!fileStream.CanSeek)
-            {
-                var ms = new MemoryStream();
-                await fileStream.CopyToAsync(ms);
-                ms.Seek(0, SeekOrigin.Begin);
-                parseStream = ms;
-            }
-
-            var triangles = await ParseStlAsync(parseStream, fileName);
+            var triangles = await ParseStlAsync(fileStream, fileName);
             if (triangles.Count == 0)
                 return null;
 
@@ -156,25 +144,76 @@ public class StlAnalyzerService : IStlAnalyzerService
     private static async Task<List<(Vector3 v1, Vector3 v2, Vector3 v3)>> ParseStlAsync(
         Stream stream, string fileName)
     {
-        var triangles = new List<(Vector3, Vector3, Vector3)>();
+        var parseStream = stream;
+        var ownsParseStream = false;
 
-        var header = new byte[80];
-        await stream.ReadExactlyAsync(header, 0, 80);
+        try
+        {
+            // Azure blob retriable streams may not support Length/Seek; buffer once.
+            if (!TryPrepareForRead(parseStream) || !TryGetLength(parseStream, out _))
+            {
+                var buffered = new MemoryStream();
+                if (parseStream.CanSeek)
+                    parseStream.Seek(0, SeekOrigin.Begin);
 
-        var countBytes = new byte[4];
-        await stream.ReadExactlyAsync(countBytes, 0, 4);
-        var triangleCount = BitConverter.ToUInt32(countBytes, 0);
+                await parseStream.CopyToAsync(buffered);
+                buffered.Position = 0;
+                parseStream = buffered;
+                ownsParseStream = true;
+            }
 
-        var expectedBinarySize = 84 + (long)triangleCount * 50;
-        var isBinary = stream.Length == expectedBinarySize && triangleCount < 5_000_000;
+            var header = new byte[80];
+            await parseStream.ReadExactlyAsync(header, 0, 80);
 
-        stream.Seek(0, SeekOrigin.Begin);
+            var countBytes = new byte[4];
+            await parseStream.ReadExactlyAsync(countBytes, 0, 4);
+            var triangleCount = BitConverter.ToUInt32(countBytes, 0);
 
-        triangles = isBinary
-            ? await ParseBinaryStlAsync(stream)
-            : await ParseAsciiStlAsync(stream);
+            var expectedBinarySize = 84 + (long)triangleCount * 50;
+            var hasLength = TryGetLength(parseStream, out var actualLength);
+            var isBinary = hasLength && actualLength == expectedBinarySize && triangleCount < 5_000_000;
 
-        return triangles;
+            parseStream.Seek(0, SeekOrigin.Begin);
+
+            return isBinary
+                ? await ParseBinaryStlAsync(parseStream)
+                : await ParseAsciiStlAsync(parseStream);
+        }
+        finally
+        {
+            if (ownsParseStream)
+                await parseStream.DisposeAsync();
+        }
+    }
+
+    private static bool TryPrepareForRead(Stream stream)
+    {
+        if (!stream.CanSeek)
+            return false;
+
+        try
+        {
+            stream.Seek(0, SeekOrigin.Begin);
+            return true;
+        }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryGetLength(Stream stream, out long length)
+    {
+        length = 0;
+        try
+        {
+            length = stream.Length;
+            return true;
+        }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
     }
 
     private static async Task<List<(Vector3, Vector3, Vector3)>> ParseBinaryStlAsync(Stream stream)

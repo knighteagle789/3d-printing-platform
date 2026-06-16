@@ -1,7 +1,7 @@
 'use client';
 
 import { display, mono } from '@/lib/fonts';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { quotesApi } from '@/lib/api/quotes';
@@ -41,13 +41,16 @@ export default function QuotesPage() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isInitialized } = useRequireAuth();
+  const created = searchParams.get('created');
 
   const [flash] = useState<string | null>(
-    searchParams.get('created') ? "Quote request submitted — we'll respond shortly." : null
+    created ? "Quote request submitted — we'll respond shortly." : null
   );
-  if (searchParams.get('created') && typeof window !== 'undefined') {
+
+  useEffect(() => {
+    if (!created || typeof window === 'undefined') return;
     window.history.replaceState(null, '', '/quotes');
-  }
+  }, [created]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['quotes'],

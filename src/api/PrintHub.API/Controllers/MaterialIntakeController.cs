@@ -10,6 +10,22 @@ using PrintHub.Core.Interfaces.Services;
 
 namespace PrintHub.API.Controllers;
 
+/// <summary>
+/// Material Intake Workflow — THE PRIMARY ENTRY POINT for adding new materials to inventory.
+/// 
+/// This controller manages the complete lifecycle of material acquisition:
+/// 1. Upload material photo (JPEG/PNG/WebP/HEIC)
+/// 2. Server extracts material properties via AI vision (brand, type, color, spool weight, print settings)
+/// 3. Staff reviews extracted data and corrects any errors
+/// 4. Approval creates the Material record and adds to inventory (with optional merge if duplicate detected)
+/// 5. Audit trail captures all events and who approved what
+///
+/// IMPORTANT: Materials are ONLY created through this intake workflow, never via direct API calls.
+/// This ensures consistency, traceability, and complete metadata capture.
+///
+/// States: Pending → Extracted → InReview → Approved/Rejected
+/// For details, see https://github.com/your-org/3d-printing-platform/wiki/Material-Intake-Workflow
+/// </summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/material-intake")]
@@ -69,8 +85,11 @@ public class MaterialIntakeController : ControllerBase
     }
 
     /// <summary>
-    /// Upload a material photo and create a new intake record.
+    /// Upload a material photo and START the material intake workflow.
+    /// This is the ONLY way to create new materials in the system.
+    /// 
     /// Supports JPEG/PNG/WebP and HEIC/HEIF (converted server-side to normalized JPEG).
+    /// The extracted data will be queued for AI vision processing and then staff review.
     /// </summary>
     [HttpPost]
     [RequestSizeLimit(52_428_800)] // 50 MB

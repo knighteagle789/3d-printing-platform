@@ -138,6 +138,9 @@ export const ordersApi = {
     }[];
   }) => apiClient.put<Order>(`/Orders/${id}`, data),
 
+  submit: (id: string) =>
+    apiClient.post<Order>(`/Orders/${id}/submit`),
+
   createPaymentSession: (orderId: string) =>
     apiClient.post<{ url: string }>(`/Payments/create-session/${orderId}`),
 };

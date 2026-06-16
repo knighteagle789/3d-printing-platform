@@ -78,15 +78,12 @@ public class MaterialsController : ControllerBase
         return Ok(material);
     }
 
-    /// <summary>Create a new material stock item.</summary>
-    [HttpPost]
-    [Authorize(Policy = "StaffOrAdmin")]
-    public async Task<ActionResult<AdminMaterialResponse>> CreateMaterial(
-        [FromBody] CreateMaterialRequest request)
-    {
-        var material = await _materialService.CreateMaterialAsync(request);
-        return CreatedAtAction(nameof(GetMaterialAdmin), new { id = material.Id }, material);
-    }
+    /// <summary>
+    /// Note: New materials are ONLY created via the Material Intake workflow (api/v1.0/material-intake).
+    /// The intake process involves uploading a material photo, extracting properties via AI vision,
+    /// and staff review/approval before the material is added to inventory.
+    /// This ensures consistency, traceability, and proper metadata collection.
+    /// </summary>
 
     /// <summary>Update an existing material.</summary>
     [HttpPut("{id:guid}")]

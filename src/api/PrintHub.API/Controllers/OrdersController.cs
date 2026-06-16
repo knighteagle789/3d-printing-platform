@@ -91,6 +91,28 @@ public class OrdersController : ControllerBase
         return Ok(history);
     }
 
+    /// <summary>
+    /// Submit a Draft order for review/payment.
+    /// Only the order owner may submit their own order.
+    /// </summary>
+    [HttpPost("{id:guid}/submit")]
+    public async Task<ActionResult<OrderResponse>> SubmitOrder(Guid id)
+    {
+        var userId = User.GetUserId();
+        var order = await _orderService.GetOrderByIdAsync(id);
+
+        if (order.User?.Id != userId)
+            return NotFound();
+
+        var updated = await _orderService.UpdateOrderStatusAsync(
+            id,
+            "Submitted",
+            userId,
+            "Submitted by customer");
+
+        return Ok(updated);
+    }
+
     // ─── Admin endpoints ──────────────────────────────────────────────────
 
     /// <summary>

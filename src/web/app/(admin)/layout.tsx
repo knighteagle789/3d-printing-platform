@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import {
   Package, FileText, Layers, LayoutDashboard,
-  Users, Image, ChevronRight, LogOut, Menu, X, Camera,
+  Users, Image, ChevronRight, LogOut, Menu, X,
 } from 'lucide-react';
 
 
@@ -16,7 +16,6 @@ const NAV_LINKS = [
   { href: '/admin/orders',    label: 'Orders',    icon: Package,         exact: false },
   { href: '/admin/quotes',    label: 'Quotes',    icon: FileText,        exact: false },
   { href: '/admin/materials', label: 'Materials', icon: Layers,          exact: false },
-  { href: '/admin/intake',    label: 'Intake',    icon: Camera,          exact: false },
   { href: '/admin/users',     label: 'Users',     icon: Users,           exact: false },
   { href: '/admin/content',   label: 'Content',   icon: Image,           exact: false },
 ];
